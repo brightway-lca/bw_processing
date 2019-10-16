@@ -1,5 +1,5 @@
 # Only need to change these two variables
-PKG_NAME=brightway_processing-dev
+PKG_NAME=bw_processing-dev
 USER=cmutel
 
 mkdir ~/conda-bld

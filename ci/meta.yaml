@@ -1,5 +1,5 @@
 package:
-  name: brightway_processing-dev
+  name: bw_processing-dev
   version: {{ environ['VERSION'] }}
 
 source:
@@ -24,10 +24,10 @@ requirements:
 
 test:
   imports:
-    - brightway_processing
+    - bw_processing
 
 about:
-  home: "https://github.com/brightway-lca/brightway_processing"
+  home: "https://github.com/brightway-lca/bw_processing"
   license: BSD License
   summary: 'Tools to create structured arrays in a common format'
 license_family: BSD
