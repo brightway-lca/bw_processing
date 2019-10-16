@@ -16,17 +16,15 @@ for dirpath, dirnames, filenames in os.walk('bw_processing'):
         packages.append(pkg)
 
 
-def package_files(directory):
-    paths = []
-    for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
-    return paths
+v_temp = {}
+with open("bw_processing/version.py") as fp:
+    exec(fp.read(), v_temp)
+version = ".".join((str(x) for x in v_temp['version']))
 
 
 setup(
     name='bw_processing',
-    version="0.1",
+    version=version,
     packages=packages,
     author="Chris Mutel",
     author_email="cmutel@gmail.com",
