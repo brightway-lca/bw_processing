@@ -94,9 +94,10 @@ def create_calculation_package(
         Absolute filepath to calculation package (zip file)
 
     """
-    assert not (
-        path is None and compress
-    ), "In-memory zipfile creation not currently supported (see https://github.com/brightway-lca/brightway_calc/issues/1)"
+    # In-memory zipfile creation not currently supported
+    # (see https://github.com/brightway-lca/brightway_calc/issues/1)"
+    if path is None:
+        compress = False
 
     if path:
         path = Path(path)
