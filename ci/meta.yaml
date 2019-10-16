@@ -1,0 +1,33 @@
+package:
+  name: brightway_processing-dev
+  version: {{ environ['VERSION'] }}
+
+source:
+  path: ..
+
+build:
+  noarch_python: True
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  script_env:
+   - VERSION
+   - CONDA_BLD_PATH
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy
+    - brightway_projects-dev
+
+test:
+  imports:
+    - brightway_processing
+
+about:
+  home: "https://github.com/brightway-lca/brightway_processing"
+  license: BSD License
+  summary: 'Tools to create structured arrays in a common format'
+license_family: BSD

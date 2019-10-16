@@ -1,0 +1,21 @@
+environment:
+  matrix:
+    - PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "36"
+      CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
+
+install:
+    # Use the pre-installed Miniconda for the desired arch
+    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+    - cmd: conda update -y -q conda
+    - cmd: conda config --add channels conda-forge
+    - cmd: conda config --append channels cmutel;
+    - cmd: conda config --append channels cmutel/label/nightly;
+    - cmd: conda install -y -q brightway_projects-dev numpy scipy peewee pytest pip
+    - cmd: pip install --no-cache-dir -r ci/test-requirements.txt
+
+build: false
+
+test_script:
+  - pytest
