@@ -1,2 +1,5 @@
+appdirs
 brightway_projects
-numpy
+peewee
+stats_arrays
+wrapt

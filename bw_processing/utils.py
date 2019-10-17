@@ -8,6 +8,13 @@ import uuid
 
 # Max signed 32 bit integer, compatible with Windows
 MAX_SIGNED_32BIT_INT = 2147483647
+
+# We could try to save space by not storing the columns
+# `row_index` and `col_index`, and them after loading from
+# disk. This saves space, but is MUCH slower, as modifying
+# a structured array requires a copy. So, for example, on
+# EXIOBASE, it takes ~218 ms to load the technosphere,
+# but -687ms to append two columns.
 COMMON_DTYPE = [
     ("row_value", np.uint32),
     ("col_value", np.uint32),
