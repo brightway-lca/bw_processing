@@ -61,11 +61,14 @@ def dictionary_formatter(row, dtype=None):
 
 
 def create_numpy_structured_array(
-    iterable, filepath=None, nrows=None, format_function=None, dtype=COMMON_DTYPE
+    iterable, filepath=None, nrows=None, format_function=None, dtype=None
 ):
     """"""
     if format_function is None:
-        format_function = lambda x, y: x
+        format_function = lambda x, y: tuple(x)
+
+    if dtype is None:
+        dtype = COMMON_DTYPE
 
     if nrows:
         array = np.zeros(nrows, dtype=dtype)
