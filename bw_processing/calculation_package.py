@@ -129,6 +129,7 @@ def create_calculation_package(
             filepath=filepath,
             nrows=resource.pop("nrows", None),
             format_function=resource.pop("format_function", None),
+            dtype=resource.pop("dtype", None),
         )
         if path is None:
             result[filename] = array
