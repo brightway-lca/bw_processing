@@ -10,6 +10,7 @@ from bw_processing import (
     greedy_set_cover,
     NAME_RE,
 )
+from bw_processing.utils import dictionary_formatter, MAX_SIGNED_32BIT_INT as M
 from bw_processing.errors import InvalidName
 from pathlib import Path
 import numpy as np
@@ -28,6 +29,36 @@ def test_chunked():
     for x in next(c):
         pass
     assert x == 599
+
+
+def test_dictionary_formatter_sparse():
+    given = {
+        'row': 1,
+        'amount': 4,
+    }
+    result = dictionary_formatter(given)
+    print(result)
+    assert result[:7] == (1, 1, M, M, 0, 4, 4)
+    assert all(np.isnan(x) for x in result[7:11])
+    assert result[11:] == (False, False)
+
+
+def test_dictionary_formatter_complete():
+    given = {
+        'row': 1,
+        'col': 2,
+        'uncertainty_type': 3,
+        'amount': 4,
+        'loc': 5,
+        'scale': 6,
+        'shape': 7,
+        'minimum': 8,
+        'maximum': 9,
+        'negative': True,
+        'flip': False
+    }
+    expected = (1, 2, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
+    assert dictionary_formatter(given) == expected
 
 
 def test_create_array():
@@ -86,7 +117,7 @@ def test_create_array_chunk_data():
         assert result["row_value"].sum() == 0
 
 
-def test_format_datapackage_metadata():
+def test_create_datapackage_metadata():
     expected = {"profile": "data-package", "name": "a", "id": "b", "licenses": "c"}
     result = create_datapackage_metadata(
         "a",
@@ -105,7 +136,7 @@ def test_name_re():
     assert not NAME_RE.match("hey_you!")
 
 
-def test_format_datapackage_metadata_no_id():
+def test_create_datapackage_metadata_no_id():
     result = create_datapackage_metadata(
         "a", [], resource_function=format_calculation_resource
     )
@@ -113,7 +144,14 @@ def test_format_datapackage_metadata_no_id():
     assert len(result["id"]) > 16
 
 
-def test_format_datapackage_metadata_default_licenses():
+def test_create_datapackage_default_formatter():
+    result = create_datapackage_metadata(
+        "a", ["b", 2]
+    )
+    assert result['resources'] == ["b", 2]
+
+
+def test_create_datapackage_metadata_default_licenses():
     result = create_datapackage_metadata(
         "a", [], resource_function=format_calculation_resource
     )
@@ -126,7 +164,7 @@ def test_format_datapackage_metadata_default_licenses():
     ]
 
 
-def test_format_datapackage_metadata_invalid_name():
+def test_create_datapackage_metadata_invalid_name():
     with pytest.raises(InvalidName):
         create_datapackage_metadata(
             "woo!", {}, resource_function=format_calculation_resource
