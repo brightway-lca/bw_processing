@@ -125,7 +125,7 @@ def create_calculation_package(
         else:
             filepath = (td if compress else path) / filename
         array = create_numpy_structured_array(
-            iterable=resource["data"],
+            iterable=resource.pop("data"),
             filepath=filepath,
             nrows=resource.pop("nrows", None),
             format_function=resource.pop("format_function", None),
