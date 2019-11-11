@@ -56,7 +56,7 @@ def format_calculation_resource(res):
 def create_calculation_package(
     name, resources, path=None, id_=None, metadata=None, replace=True, compress=True, **kwargs
 ):
-    """Create a calculation package for use in ``brightway_calc``.
+    """Create a calculation package for use in ``bw_calc``.
 
     If ``path`` is ``None``, then the package is created in memory and returned as a dict. Otherwise, the datapackage is stored to disk, either as a zipfile (if ``compress``) or as a directory. The directory should already exist.
 
@@ -95,7 +95,7 @@ def create_calculation_package(
 
     """
     # In-memory zipfile creation not currently supported
-    # (see https://github.com/brightway-lca/brightway_calc/issues/1)"
+    # (see https://github.com/brightway-lca/bw_calc/issues/1)"
     if path is None:
         compress = False
 

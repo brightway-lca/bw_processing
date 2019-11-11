@@ -1,5 +1,5 @@
 appdirs
-brightway_projects
+bw_projects
 peewee
 stats_arrays
 wrapt

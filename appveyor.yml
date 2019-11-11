@@ -12,7 +12,7 @@ install:
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --append channels cmutel
     - cmd: conda config --append channels cmutel/label/nightly
-    - cmd: conda install -y -q brightway_projects-dev numpy scipy peewee pytest pip
+    - cmd: conda install -y -q bw_projects-dev numpy scipy peewee pytest pip
     - cmd: pip install -e .
 
 build: false

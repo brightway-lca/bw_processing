@@ -20,7 +20,7 @@ requirements:
   run:
     - python
     - numpy
-    - brightway_projects-dev
+    - bw_projects-dev
 
 test:
   imports:
