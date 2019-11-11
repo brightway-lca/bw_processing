@@ -30,7 +30,7 @@ setup(
     author_email="cmutel@gmail.com",
     license="BSD 3-clause",
     install_requires=[
-        'brightway_projects',
+        'bw_projects',
         'numpy',
     ],
     url="https://github.com/brightway-lca/bw_processing",
