@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.1.dev
+## [0.1] - 2019-11-12
 
-Current working version
+First public release
