@@ -45,8 +45,8 @@ def format_calculation_resource(res):
     }
     # Leave separate because maybe want to add to later
     SKIP = set(obj)
-    if not obj['path'].endswith(".npy"):
-        obj['path'] += ".npy"
+    if not obj["path"].endswith(".npy"):
+        obj["path"] += ".npy"
     for key, value in res.items():
         if key not in obj and key not in SKIP:
             obj[key] = value
@@ -54,7 +54,14 @@ def format_calculation_resource(res):
 
 
 def create_calculation_package(
-    name, resources, path=None, id_=None, metadata=None, replace=True, compress=True, **kwargs
+    name,
+    resources,
+    path=None,
+    id_=None,
+    metadata=None,
+    replace=True,
+    compress=True,
+    **kwargs
 ):
     """Create a calculation package for use in ``bw_calc``.
 

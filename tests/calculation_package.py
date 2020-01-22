@@ -86,9 +86,7 @@ def test_calculation_package_in_memory():
             ],
         }
     ]
-    fp = create_calculation_package(
-        name="test-package", resources=resources
-    )
+    fp = create_calculation_package(name="test-package", resources=resources)
     # Test data in fp
 
 
@@ -131,7 +129,10 @@ def test_calculation_package_replace_error():
         )
         with pytest.raises(ValueError):
             create_calculation_package(
-                name="test-package", resources=deepcopy(resources), path=td, replace=False
+                name="test-package",
+                resources=deepcopy(resources),
+                path=td,
+                replace=False,
             )
 
 

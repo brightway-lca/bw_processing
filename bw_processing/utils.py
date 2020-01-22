@@ -83,14 +83,21 @@ def create_numpy_structured_array(
             for i, row in enumerate(chunk):
                 array[i] = format_function(row, dtype)
             if i < BUCKET - 1:
-                array = array[:i + 1]
+                array = array[: i + 1]
                 arrays.append(array)
             else:
                 arrays.append(array)
                 array = np.zeros(BUCKET, dtype=dtype)
         array = np.hstack(arrays)
 
-    sort_fields = ("row_value", "col_value", "uncertainty_type", "amount", "negative", "flip")
+    sort_fields = (
+        "row_value",
+        "col_value",
+        "uncertainty_type",
+        "amount",
+        "negative",
+        "flip",
+    )
     dtype_fields = {x[0] for x in dtype}
     order = [x for x in sort_fields if x in dtype_fields]
     array.sort(order=order)
