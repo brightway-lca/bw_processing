@@ -20,7 +20,6 @@ requirements:
   run:
     - python
     - numpy
-    - bw_projects-dev
 
 test:
   imports:

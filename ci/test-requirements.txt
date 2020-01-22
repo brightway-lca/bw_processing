@@ -1,3 +1,2 @@
 numpy
 pytest
-git+git://github.com/brightway-lca/bw_projects@master#egg=bw_projects

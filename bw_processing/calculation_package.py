@@ -1,5 +1,5 @@
+from .filesystem import md5, safe_filename
 from .utils import create_datapackage_metadata, create_numpy_structured_array
-from bw_projects.filesystem import md5, safe_filename
 from pathlib import Path
 import json
 import tempfile

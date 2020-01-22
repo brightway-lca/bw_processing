@@ -1,5 +1,4 @@
 appdirs
-bw_projects
 peewee
 stats_arrays
 wrapt

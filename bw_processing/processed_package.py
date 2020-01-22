@@ -1,6 +1,6 @@
 from .errors import InconsistentFields, NonUnique
+from .filesystem import md5, safe_filename
 from .utils import create_datapackage_metadata
-from bw_projects.filesystem import md5, safe_filename
 from pathlib import Path
 import csv
 import json

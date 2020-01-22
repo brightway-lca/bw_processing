@@ -32,10 +32,7 @@ def test_chunked():
 
 
 def test_dictionary_formatter_sparse():
-    given = {
-        'row': 1,
-        'amount': 4,
-    }
+    given = {"row": 1, "amount": 4}
     result = dictionary_formatter(given)
     print(result)
     assert result[:7] == (1, 1, M, M, 0, 4, 4)
@@ -45,17 +42,17 @@ def test_dictionary_formatter_sparse():
 
 def test_dictionary_formatter_complete():
     given = {
-        'row': 1,
-        'col': 2,
-        'uncertainty_type': 3,
-        'amount': 4,
-        'loc': 5,
-        'scale': 6,
-        'shape': 7,
-        'minimum': 8,
-        'maximum': 9,
-        'negative': True,
-        'flip': False
+        "row": 1,
+        "col": 2,
+        "uncertainty_type": 3,
+        "amount": 4,
+        "loc": 5,
+        "scale": 6,
+        "shape": 7,
+        "minimum": 8,
+        "maximum": 9,
+        "negative": True,
+        "flip": False,
     }
     expected = (1, 2, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
     assert dictionary_formatter(given) == expected
@@ -145,10 +142,8 @@ def test_create_datapackage_metadata_no_id():
 
 
 def test_create_datapackage_default_formatter():
-    result = create_datapackage_metadata(
-        "a", ["b", 2]
-    )
-    assert result['resources'] == ["b", 2]
+    result = create_datapackage_metadata("a", ["b", 2])
+    assert result["resources"] == ["b", 2]
 
 
 def test_create_datapackage_metadata_default_licenses():
