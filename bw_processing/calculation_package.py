@@ -15,7 +15,7 @@ def format_calculation_resource(res):
     ``res`` should be a dictionary with the following keys:
 
         name (str): Simple name or identifier to be used for this matrix data
-        matrix (str): The name of the matrix to build. See the documentation for ``bw_calc`` for more details.
+        matrix (str): The name of the matrix to build. Names should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
         data (iterator): Iterator to be fed into ``format_function`` to generate array rows.
         nrows (int, optional): Number of rows in array.
         path (str, optional): Filename for saved Numpy array
@@ -26,13 +26,12 @@ def format_calculation_resource(res):
     Returns:
         A dictionary ready for JSON serialization in the datapackage format.
 
-    TODO: Think about declaring a custom JSON schema for our datapackages, see:
-
-        * https://frictionlessdata.io/specs/profiles/
-        * https://frictionlessdata.io/schemas/data-resource.json
-        * https://json-schema.org/
-
     """
+    # TODO: Think about declaring a custom JSON schema for our datapackages, see:
+
+    #     * https://frictionlessdata.io/specs/profiles/
+    #     * https://frictionlessdata.io/schemas/data-resource.json
+    #     * https://json-schema.org/
     obj = {
         # Datapackage generic
         "format": "npy",
@@ -65,9 +64,9 @@ def create_calculation_package(
 ):
     """Create a calculation package for use in ``bw_calc``.
 
-    If ``path`` is ``None``, then the package is created in memory and returned as a dict. Otherwise, the datapackage is stored to disk, either as a zipfile (if ``compress``) or as a directory. The directory should already exist.
+    If ``path`` is ``None``, then the package is created in memory and returned as a dict. Otherwise, the datapackage is stored to disk, either as a zipfile (if ``compress``) or as a directory. The directory will be create if needed; the parent directory should exist.
 
-    The ``format_function`` should return a tuple of data that fits the structured array datatype, i.e.
+    The ``format_function`` should return a *tuple* of data that fits the structured array datatype, i.e.
 
         ("row_value", np.uint32),
         ("col_value", np.uint32),
@@ -86,9 +85,8 @@ def create_calculation_package(
     Args:
         name (str): Name of this calculation package
         resources (iterable): Resources is an iterable of dictionaries with the keys:
-            TODO: Update based on above changes
             name (str): Simple name or identifier to be used for this matrix data
-            matrix (str): The name of the matrix to build. See the documentation for ``bw_calc`` for more details.
+            matrix (str): The name of the matrix to build. Nmaes should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
             data (iterable): The numerical data to be stored
             nrows (int, optional):  The number of rows in ``array``. Will be counted if not provided, but with an efficiency penalty.
             format_function (callable, optional): Function that formats data to structured array columns.
@@ -108,7 +106,9 @@ def create_calculation_package(
 
     if path:
         path = Path(path)
-        assert path.is_dir()
+        if not path.is_dir():
+            assert path.parent.is_dir()
+            path.mkdir()
     else:
         result = {}
 

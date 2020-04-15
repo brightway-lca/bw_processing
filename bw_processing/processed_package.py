@@ -153,7 +153,7 @@ def create_processed_datapackage(
         array (numpy structured array): The numeric data. Usually generated via ``create_numpy_structured_array``.
         rows (dict): Dictionary mapping integer indices in ``row_value`` to a dictionary of attributes.
         cols (dict): Dictionary mapping integer indices in ``col_value`` to a dictionary of attributes.
-        path (str, Path): Directory to store the created package.
+        path (str, Path): Directory to store the created package. Must already exist.
         id_ (str, optional): Unique ID of this processed package
         metadata (dict, optional): Additional metadata such as licenses.
 
@@ -161,6 +161,7 @@ def create_processed_datapackage(
         Filepath (as ``Path`` object) of the created package
     """
     path = Path(path)
+    assert path.is_dir()
     archive = path / (safe_filename(name) + ".zip")
     if archive.is_file():
         archive.unlink()
