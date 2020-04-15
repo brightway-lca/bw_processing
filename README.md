@@ -30,6 +30,69 @@ Has no explicit or implicit dependence on any other part of Brightway.
 
 ## Usage
 
+Let's see it in action:
+
+```python
+In [1]: from bw_processing import create_calculation_package
+
+In [2]: create_calculation_package(
+   ...:     name="foo",
+   ...:     resources=[{
+   ...:         "name": "data from a calculation",
+   ...:         "path": "bar",
+   ...:         "matrix": "some-matrix-label",
+   ...:         "data": [
+   ...:             {"row": 1, "col": 2, "amount": 3},
+   ...:             {"row": 14, "col": 15, "amount": 16},
+   ...:         ],
+   ...:     }],
+   ...:     id_="some-id",
+   ...:     metadata={"some": "stuff"}
+   ...: )
+Out[2]:
+{
+    'bar': array(
+        [
+            ( 1,  2, 2147483647, 2147483647, 0,  3.,  3., nan, nan, nan, nan, False, False),
+            (14, 15, 2147483647, 2147483647, 0, 16., 16., nan, nan, nan, nan, False, False)
+        ],
+        dtype=[
+            ('row_value', '<u4'), ('col_value', '<u4'), ('row_index', '<u4'),
+            ('col_index', '<u4'), ('uncertainty_type', 'u1'), ('amount', '<f4'),
+            ('loc', '<f4'), ('scale', '<f4'), ('shape', '<f4'), ('minimum', '<f4'),
+            ('maximum', '<f4'), ('negative', '?'), ('flip', '?')
+        ]
+    ),
+   'datapackage': {
+        'profile': 'data-package',
+        'name': 'foo',
+        'id': 'some-id',
+        'licenses': [{
+            'name': 'ODC-PDDL-1.0',
+            'path': 'http://opendatacommons.org/licenses/pddl/',
+            'title': 'Open Data Commons Public Domain Dedication and License v1.0'
+        }],
+        'resources': [{
+            'format': 'npy',
+            'mediatype': 'application/octet-stream',
+            'path': 'bar.npy',
+            'name': 'data from a calculation',
+            'profile': 'data-resource',
+            'matrix': 'some-matrix-label'
+        }],
+        'created': '2020-04-15T21:01:35.508622Z'
+    }
+}
+```
+
+### Input data
+
+Input data can be provided in a number of ways. It can already be in memory, e.g. a numpy array; it can be generated on demand, e.g. from a generator; or it can be the result of a more complicated function. In any case, the data object
+
+### Outputs
+
+
+
 ## API
 
 ## Contributing
