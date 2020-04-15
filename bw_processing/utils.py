@@ -10,7 +10,7 @@ import uuid
 MAX_SIGNED_32BIT_INT = 2147483647
 
 # We could try to save space by not storing the columns
-# `row_index` and `col_index`, and them after loading from
+# `row_index` and `col_index`, and add them after loading from
 # disk. This saves space, but is MUCH slower, as modifying
 # a structured array requires a copy. So, for example, on
 # EXIOBASE, it takes ~218 ms to load the technosphere,
@@ -60,28 +60,44 @@ def dictionary_formatter(row, dtype=None):
     )
 
 
+def add_row(array, index, row, dtype, format_function):
+    """Add row ``row`` to ``array`` at row index ``index``. Format ``row`` data using ``format_function``, if provided. Otherwise, use ``dictionary_formatter`` if row is a dictionary, or cast to tuple if not.
+
+    Modifies ``array`` in place, returns nothing."""
+    if format_function:
+        array[index] = format_function(row, dtype)
+    elif isinstance(row, dict):
+        array[index] = dictionary_formatter(row)
+    else:
+        array[index] = tuple(row)
+
+
 def create_numpy_structured_array(
     iterable, filepath=None, nrows=None, format_function=None, dtype=None
 ):
-    """"""
-    if format_function is None:
-        format_function = lambda x, y: tuple(x)
+    """Create a numpy `structured array <https://docs.scipy.org/doc/numpy/user/basics.rec.html>`__ for data ``iterable``. Returns a filepath of a created file (if ``filepath`` is provided, or the array.
 
+    ``iterable`` can be data already in memory, or a generator.
+
+    ``nrows`` can be supplied, if known. If ``iterable`` has a length, it will be determined automatically. If ``nrows`` is not known, this function generates chunked arrays until ``iterable`` is exhausted, and concatenates them."""
     if dtype is None:
         dtype = COMMON_DTYPE
 
-    if nrows:
+    if nrows or hasattr(iterable, "__len__"):
+        if not nrows:
+            nrows = len(iterable)
         array = np.zeros(nrows, dtype=dtype)
         for i, row in enumerate(iterable):
             if i > (nrows - 1):
                 raise ValueError("More rows than `nrows`")
-            array[i] = format_function(row, dtype)
+            add_row(array, i, row, dtype, format_function)
+
     else:
         arrays, BUCKET = [], 25000
         array = np.zeros(BUCKET, dtype=dtype)
         for chunk in chunked(iterable, BUCKET):
             for i, row in enumerate(chunk):
-                array[i] = format_function(row, dtype)
+                add_row(array, i, row, dtype, format_function)
             if i < BUCKET - 1:
                 array = array[: i + 1]
                 arrays.append(array)

@@ -10,7 +10,7 @@ from bw_processing import (
     greedy_set_cover,
     NAME_RE,
 )
-from bw_processing.utils import dictionary_formatter, MAX_SIGNED_32BIT_INT as M
+from bw_processing.utils import add_row, dictionary_formatter, MAX_SIGNED_32BIT_INT as M
 from bw_processing.errors import InvalidName
 from pathlib import Path
 import numpy as np
@@ -58,6 +58,51 @@ def test_dictionary_formatter_complete():
     assert dictionary_formatter(given) == expected
 
 
+def test_dictionary_formatter_one_dimensional():
+    given = {
+        "row": 1,
+        "uncertainty_type": 3,
+        "amount": 4,
+        "loc": 5,
+        "scale": 6,
+        "shape": 7,
+        "minimum": 8,
+        "maximum": 9,
+        "negative": True,
+        "flip": False,
+    }
+    expected = (1, 1, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
+    assert dictionary_formatter(given) == expected
+
+
+def test_add_row_ff():
+    def ff(x, y):
+        return (1, 2, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
+
+    arr = np.zeros((5,), dtype=COMMON_DTYPE)
+    add_row(arr, 2, [None], None, ff)
+    assert arr[0][0] == 0
+    assert tuple(arr[2]) == (1, 2, M, M, 3, 4., 5., 6., 7., 8., 9., True, False)
+
+
+def test_add_row_dict():
+    arr = np.zeros((5,), dtype=COMMON_DTYPE)
+    row = {"row": 1, "amount": 4}
+    add_row(arr, 2, row, None, None)
+    print(arr[2])
+    print(len(arr[2]))
+    print(type(arr[2]))
+    assert tuple(arr[2])[:7] == (1, 1, M, M, 0, 4, 4)
+    assert all(np.isnan(x) for x in tuple(arr[2])[7:11])
+    assert tuple(arr[2])[11:] == (False, False)
+
+
+def test_add_row_list():
+    arr = np.zeros((4, 5))
+    add_row(arr, 2, range(5), None, None)
+    assert np.allclose(arr[2], (0, 1, 2, 3, 4))
+
+
 def test_create_array():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
@@ -96,6 +141,16 @@ def test_create_array_specify_nrows():
         assert result["row_value"].sum() == 0
 
 
+def test_create_array_calculate_nrows_from_length():
+    with tempfile.TemporaryDirectory() as td:
+        fp = Path(td) / "array.npy"
+        data = [tuple(list(range(11)) + [False, False])] * 200
+        create_numpy_structured_array(data, fp)
+        result = np.load(fp)
+        assert result.shape == (200,)
+        assert result["row_value"].sum() == 0
+
+
 def test_create_array_specify_nrows_too_many():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
@@ -107,7 +162,7 @@ def test_create_array_specify_nrows_too_many():
 def test_create_array_chunk_data():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
-        data = [tuple(list(range(11)) + [False, False])] * 90000
+        data = (tuple(list(range(11)) + [False, False]) for _ in range(90000))
         create_numpy_structured_array(data, fp)
         result = np.load(fp)
         assert result.shape == (90000,)
