@@ -82,7 +82,7 @@ def test_add_row_ff():
     arr = np.zeros((5,), dtype=COMMON_DTYPE)
     add_row(arr, 2, [None], None, ff)
     assert arr[0][0] == 0
-    assert tuple(arr[2]) == (1, 2, M, M, 3, 4., 5., 6., 7., 8., 9., True, False)
+    assert tuple(arr[2]) == (1, 2, M, M, 3, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, True, False)
 
 
 def test_add_row_dict():
