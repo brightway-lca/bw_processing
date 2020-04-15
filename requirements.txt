@@ -1,4 +1,1 @@
-appdirs
-peewee
-stats_arrays
-wrapt
+numpy

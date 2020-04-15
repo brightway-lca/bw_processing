@@ -24,8 +24,6 @@ before_install:
       conda config --set always_yes yes --set changeps1 no;
       conda update -n base -c defaults conda;
       conda config --append channels conda-forge;
-      conda config --append channels cmutel;
-      conda config --append channels cmutel/label/nightly;
       conda info -a;
       echo $(python --version);
     fi
