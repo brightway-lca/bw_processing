@@ -63,7 +63,7 @@ Out[2]:
             ('maximum', '<f4'), ('negative', '?'), ('flip', '?')
         ]
     ),
-   'datapackage': {
+    'datapackage': {
         'profile': 'data-package',
         'name': 'foo',
         'id': 'some-id',
@@ -80,12 +80,29 @@ Out[2]:
             'profile': 'data-resource',
             'matrix': 'some-matrix-label'
         }],
+        'some': 'stuff',
         'created': '2020-04-15T21:01:35.508622Z'
     }
 }
 ```
 
-### Input data
+In this example, we returned the processed data package as a dictionary in memory, but normally `bw_processing` is used to persist data to disk.
+
+There is also a utility function [`load_calculation_package`](#loading), which loads a saved calculation package in the same format as was returned by the example.
+
+### `create_calculation_package`
+
+`create_calculation_package` has the following input arguments:
+
+* *name*: The name of this package. It is stored in the data package metadata.
+* *resources*: A list of data resources. See [data resources](#data-resources).
+* *path* (optional): Where the package should be saved. If `None` (default), it is not saved to disk. Otherwise, `path` can be a `str` or a `pathlib.Path`. It doesn't have to exist yet.
+* *id_* (optional): The unique id of this package. This field is required by the data package standard. Generated automatically if not provided.
+* *metadata* (optional): Any additional metadata for the package (metadata for individual resources is given in the resource definition above).
+* *replace* (optional). Replace existing package if already present. Default is `True`.
+* *compress* (optional). Save package as a single zip archive instead of a directory. Default is `True`.
+
+### Data resources
 
 Input data can be provided in a number of ways. It can already be in memory, e.g. a numpy array; it can be generated on demand, e.g. from a generator; or it can be the result of a more complicated function. In any case, the data object
 
