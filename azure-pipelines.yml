@@ -40,6 +40,8 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
+      Python36:
+        python.version: '3.6'
       Python37:
         python.version: '3.7'
       Python38:
@@ -47,11 +49,14 @@ jobs:
 
   timeoutInMinutes: 8
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+
   - bash: |
       python --version
-      python3 --version
-      pip3 --version
-      pip3 install numpy pandas pytest pytest-cov pytest-azurepipelines
+      pip --version
+      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
       echo "which pytest"
       which pytest
       echo "pytest version"
@@ -59,12 +64,6 @@ jobs:
     displayName: Install packages
 
   - bash: |
-      echo "which pytest"
-      which pytest
-      echo "which pytest3"
-      which pytest3
-      echo "pytest version"
-      pytest --version
       pytest --color=yes -v --cov-report xml --cov=bw_processing
     displayName: pytest
 
@@ -110,9 +109,15 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
+      Python36:
+        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+
   - bash: |
       python --version
       pip3 install numpy pandas pytest pytest-cov pytest-azurepipelines
@@ -161,9 +166,15 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
+      Python36:
+        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+
   - script: |
       python --version
       pip install numpy pandas pytest pytest-cov pytest-azurepipelines
