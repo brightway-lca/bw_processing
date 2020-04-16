@@ -219,3 +219,11 @@ def test_create_datapackage_metadata_invalid_name():
         create_datapackage_metadata(
             "woo!", {}, resource_function=format_calculation_resource
         )
+
+
+def test_create_datapackage_metadata_extra_metadata():
+    result = create_datapackage_metadata(
+        "woo", {}, metadata={'some': 'stuff', 'name': 'forest'}
+    )
+    assert result['name'] == 'woo'
+    assert result['some'] == 'stuff'

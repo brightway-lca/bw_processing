@@ -164,7 +164,7 @@ def create_datapackage_metadata(
     if metadata is None:
         metadata = {}
 
-    return {
+    result = {
         "profile": "data-package",
         "name": name,
         "id": id_ or uuid.uuid4().hex,
@@ -172,3 +172,7 @@ def create_datapackage_metadata(
         "resources": [resource_function(obj) for obj in resources],
         "created": datetime.datetime.utcnow().isoformat("T") + "Z",
     }
+    for k, v in metadata.items():
+        if k not in result:
+            result[k] = v
+    return result
