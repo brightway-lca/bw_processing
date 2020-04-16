@@ -123,7 +123,6 @@ Please note we have a [code of conduct](https://github.com/brightway-lca/bw_proc
 ### Documentation and coding standards
 
 * [Black formatting](https://black.readthedocs.io/en/stable/)
-* [Sphinx docstrings](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html)
 * [Semantic versioning](http://semver.org/)
 
 ## Maintainers
