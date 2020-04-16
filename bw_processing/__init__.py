@@ -16,3 +16,4 @@ from .processed_package import (
     as_unique_attributes,
     format_processed_resource,
 )
+from .loading import load_package

@@ -10,20 +10,21 @@ import zipfile
 def format_calculation_resource(res):
     """Format metadata for a `datapackage resource <https://frictionlessdata.io/specs/data-resource/>`__.
 
-    ..note:: This function is for use together with ``create_calculation_package``, it doesn't create valid `datapackage resources <https://frictionlessdata.io/specs/data-resource/>`__.
+    **Note**: This function is for use together with ``create_calculation_package``, it doesn't create valid `datapackage resources <https://frictionlessdata.io/specs/data-resource/>`__.
 
     ``res`` should be a dictionary with the following keys:
 
-        name (str): Simple name or identifier to be used for this matrix data
-        matrix (str): The name of the matrix to build. Names should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
-        data (iterator): Iterator to be fed into ``format_function`` to generate array rows.
-        nrows (int, optional): Number of rows in array.
-        path (str, optional): Filename for saved Numpy array
-        format_function (callable, optional):  Function to call on each row in ``data`` to put elements in correct type and order for insertion into structured array.
+    * name (str): Simple name or identifier to be used for this matrix data
+    * matrix (str): The name of the matrix to build. Names should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
+    * data (iterator): Iterator to be fed into ``format_function`` to generate array rows.
+    * nrows (int, optional): Number of rows in array.
+    * path (str, optional): Filename for saved Numpy array
+    * format_function (callable, optional):  Function to call on each row in ``data`` to put elements in correct type and order for insertion into structured array.
 
     ``res`` can also have `optional keys <https://frictionlessdata.io/specs/data-resource/>`__ like ``description``, and ``title``.
 
     Returns:
+
         A dictionary ready for JSON serialization in the datapackage format.
 
     """
@@ -68,34 +69,40 @@ def create_calculation_package(
 
     The ``format_function`` should return a *tuple* of data that fits the structured array datatype, i.e.
 
-        ("row_value", np.uint32),
-        ("col_value", np.uint32),
-        ("row_index", np.uint32),
-        ("col_index", np.uint32),
-        ("uncertainty_type", np.uint8),
-        ("amount", np.float32),
-        ("loc", np.float32),
-        ("scale", np.float32),
-        ("shape", np.float32),
-        ("minimum", np.float32),
-        ("maximum", np.float32),
-        ("negative", np.bool),
-        ("flip", np.bool),
+    .. code-block:: python
+
+    ("row_value", np.uint32),
+    ("col_value", np.uint32),
+    ("row_index", np.uint32),
+    ("col_index", np.uint32),
+    ("uncertainty_type", np.uint8),
+    ("amount", np.float32),
+    ("loc", np.float32),
+    ("scale", np.float32),
+    ("shape", np.float32),
+    ("minimum", np.float32),
+    ("maximum", np.float32),
+    ("negative", np.bool),
+    ("flip", np.bool),
 
     Args:
-        name (str): Name of this calculation package
-        resources (iterable): Resources is an iterable of dictionaries with the keys:
-            name (str): Simple name or identifier to be used for this matrix data
-            matrix (str): The name of the matrix to build. Nmaes should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
-            data (iterable): The numerical data to be stored
-            nrows (int, optional):  The number of rows in ``array``. Will be counted if not provided, but with an efficiency penalty.
-            format_function (callable, optional): Function that formats data to structured array columns.
-        path (str, Path, or None): Location to store the created package.
-        id_ (str, optional): Unique ID of this calculation package
-        metadata (dict, optional): Additional metadata such as licenses, RNG seeds, etc.
-        replace (bool, optional): Replace an existing calculation package with the same name and path
+
+    * name (str): Name of this calculation package
+    * resources (iterable): Resources is an iterable of dictionaries with the keys:
+
+        * name (str): Simple name or identifier to be used for this matrix data
+        * matrix (str): The name of the matrix to build. Nmaes should be consistent with the LCA class to be used. See the documentation for ``bw_calc`` for more details.
+        * data (iterable): The numerical data to be stored
+        * nrows (int, optional):  The number of rows in ``array``. Will be counted if not provided, but with an efficiency penalty.
+        * format_function (callable, optional): Function that formats data to structured array columns.
+
+    * path (str, Path, or None): Location to store the created package.
+    * id\_ (str, optional): Unique ID of this calculation package
+    * metadata (dict, optional): Additional metadata such as licenses, RNG seeds, etc.
+    * replace (bool, optional): Replace an existing calculation package with the same name and path
 
     Returns:
+
         Absolute filepath to calculation package (zip file)
 
     """

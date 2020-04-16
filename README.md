@@ -51,7 +51,7 @@ In [2]: create_calculation_package(
    ...: )
 Out[2]:
 {
-    'bar': array(
+    'bar.npy': array(
         [
             ( 1,  2, 2147483647, 2147483647, 0,  3.,  3., nan, nan, nan, nan, False, False),
             (14, 15, 2147483647, 2147483647, 0, 16., 16., nan, nan, nan, nan, False, False)
