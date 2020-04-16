@@ -112,6 +112,8 @@ Input data can be provided in a number of ways. It can already be in memory, e.g
 
 ## API
 
+API documentation is hosted at [read the docs](https://bw-processing.readthedocs.io/en/latest/).
+
 ## Contributing
 
 Your contribution is welcome! Please follow the [pull request workflow](https://guides.github.com/introduction/flow/), even for minor changes.
