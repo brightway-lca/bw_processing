@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.DEV]
+
+* New utility function `load_package`
+* Improved documentation and continuous integration tests
+
 ### [0.1.2] - 2020-04-15
 
 Small background improvements to package creation
