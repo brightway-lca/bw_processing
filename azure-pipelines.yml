@@ -49,7 +49,7 @@ jobs:
   steps:
   - bash: |
       python --version
-      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
+      pip3 install numpy pandas pytest pytest-cov pytest-azurepipelines
     displayName: Install packages
 
   - bash: |
@@ -103,7 +103,7 @@ jobs:
   steps:
   - bash: |
       python --version
-      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
+      pip3 install numpy pandas pytest pytest-cov pytest-azurepipelines
     displayName: Install packages
 
   - bash: |
