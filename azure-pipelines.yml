@@ -35,7 +35,7 @@ jobs:
     displayName: pytest
 
 - job:
-  displayName: ubuntu-18.04-38-pip
+  displayName: ubuntu-18.04-pip
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -49,10 +49,22 @@ jobs:
   steps:
   - bash: |
       python --version
+      python3 --version
+      pip3 --version
       pip3 install numpy pandas pytest pytest-cov pytest-azurepipelines
+      echo "which pytest"
+      which pytest
+      echo "pytest version"
+      pytest --version
     displayName: Install packages
 
   - bash: |
+      echo "which pytest"
+      which pytest
+      echo "which pytest3"
+      which pytest3
+      echo "pytest version"
+      pytest --version
       pytest --color=yes -v --cov-report xml --cov=bw_processing
     displayName: pytest
 
@@ -89,7 +101,7 @@ jobs:
     displayName: pytest
 
 - job:
-  displayName: macOS-10.14-38-pip
+  displayName: macOS-10.14-pip
   pool:
     vmImage: 'macOS-10.14'
   strategy:
@@ -111,7 +123,7 @@ jobs:
     displayName: pytest
 
 - job:
-  displayName: vs2017-win2016-38-conda
+  displayName: vs2017-win2016-conda
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
@@ -140,7 +152,7 @@ jobs:
     displayName: pytest
 
 - job:
-  displayName: vs2017-win2016-38-pip
+  displayName: vs2017-win2016-pip
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
