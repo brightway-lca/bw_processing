@@ -1,6 +1,12 @@
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - master
+
 jobs:
 - job:
-  displayName: ubuntu-18.04-38
+  displayName: ubuntu-18.04-conda
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -10,6 +16,7 @@ jobs:
       Python38:
         python.version: '3.8'
 
+  timeoutInMinutes: 8
   steps:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
@@ -19,16 +26,38 @@ jobs:
 
   - bash: |
       source activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy pandas pytest pytest-azurepipelines pytest-cov
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy pandas pytest pytest-azurepipelines
     displayName: Install Anaconda packages
 
   - bash: |
       source activate bw
-      pytest --cov=bw_processing
+      pytest --color=yes -v
     displayName: pytest
 
 - job:
-  displayName: macOS-10.14-38
+  displayName: ubuntu-18.04-38-pip
+  pool:
+    vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
+
+  timeoutInMinutes: 8
+  steps:
+  - bash: |
+      python --version
+      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
+    displayName: Install packages
+
+  - bash: |
+      pytest --color=yes -v --cov-report xml --cov=bw_processing
+    displayName: pytest
+
+- job:
+  displayName: macOS-10.14-38-conda
   pool:
     vmImage: 'macOS-10.14'
   strategy:
@@ -38,6 +67,39 @@ jobs:
       Python37:
         python.version: '3.7'
 
+  timeoutInMinutes: 8
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  - bash: sudo chown -R $USER $CONDA
+    displayName: Take ownership of conda installation
+
+  - bash: conda create --yes --quiet --name bw
+    displayName: Create Anaconda environment
+
+  - bash: |
+      source activate bw
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy pandas pytest pytest-azurepipelines
+    displayName: Install Anaconda packages
+
+  - bash: |
+      source activate bw
+      pytest --color=yes -v
+    displayName: pytest
+
+- job:
+  displayName: macOS-10.14-38-pip
+  pool:
+    vmImage: 'macOS-10.14'
+  strategy:
+    matrix:
+      Python38:
+        python.version: '3.8'
+      Python37:
+        python.version: '3.7'
+
+  timeoutInMinutes: 8
   steps:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
@@ -46,17 +108,16 @@ jobs:
     displayName: Create Anaconda environment
 
   - bash: |
-      source activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy pandas pytest pytest-azurepipelines pytest-cov
-    displayName: Install Anaconda packages
+      python --version
+      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
+    displayName: Install packages
 
   - bash: |
-      source activate bw
-      pytest --cov=bw_processing
+      pytest --color=yes -v --cov-report xml --cov=bw_processing
     displayName: pytest
 
 - job:
-  displayName: vs2017-win2016-38
+  displayName: vs2017-win2016-38-conda
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
@@ -66,6 +127,7 @@ jobs:
       Python37:
         python.version: '3.7'
 
+  timeoutInMinutes: 8
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
@@ -75,10 +137,32 @@ jobs:
 
   - script: |
       call activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=%PYTHON_VERSION% numpy pandas pytest pytest-azurepipelines pytest-cov
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=%PYTHON_VERSION% numpy pandas pytest pytest-azurepipelines
     displayName: Install Anaconda packages
 
   - script: |
       call activate bw
-      pytest --cov=bw_processing
+      pytest --color=yes -v
+    displayName: pytest
+
+- job:
+  displayName: vs2017-win2016-38-pip
+  pool:
+    vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      Python38:
+        python.version: '3.8'
+      Python37:
+        python.version: '3.7'
+
+  timeoutInMinutes: 8
+  steps:
+  - script: |
+      python --version
+      pip install numpy pandas pytest pytest-cov pytest-azurepipelines
+    displayName: Install packages
+
+  - script: |
+      pytest --color=yes -v --cov-report xml --cov=bw_processing
     displayName: pytest
