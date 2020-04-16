@@ -20,3 +20,9 @@ class InvalidName(BrightwayProcessingError):
     A short url-usable (and preferably human-readable) name of the package. This MUST be lower-case and contain only alphanumeric characters along with ".", "_" or "-" characters."""
 
     pass
+
+
+class FileIntegrityError(BrightwayProcessingError):
+    """MD5 hash does not agree with file contents"""
+
+    pass
