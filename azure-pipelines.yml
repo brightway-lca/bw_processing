@@ -101,12 +101,6 @@ jobs:
 
   timeoutInMinutes: 8
   steps:
-  - bash: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
-
-  - bash: conda create --yes --quiet --name bw
-    displayName: Create Anaconda environment
-
   - bash: |
       python --version
       pip install numpy pandas pytest pytest-cov pytest-azurepipelines
