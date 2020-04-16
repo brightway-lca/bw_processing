@@ -24,9 +24,6 @@ jobs:
 
   - bash: |
       source activate bw
-      ls
-      pwd
-      pip install -e .
       pytest --cov=bw_processing
     displayName: pytest
 
