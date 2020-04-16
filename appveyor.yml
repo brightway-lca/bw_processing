@@ -10,7 +10,7 @@ install:
     - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
     - cmd: conda update -y -q conda
     - cmd: conda config --add channels conda-forge
-    - cmd: conda install -y -q numpy pytest pip
+    - cmd: conda install -y -q numpy pandas pytest pip
     - cmd: pip install -e .
 
 build: false

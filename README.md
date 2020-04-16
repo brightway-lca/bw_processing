@@ -24,7 +24,7 @@ The [Brightway LCA framework](https://brightway.dev/) has stored data used in co
 
 ## Install
 
-Install using pip or conda (channel `cmutel`). Depends on `numpy`.
+Install using pip or conda (channel `cmutel`). Depends on `numpy` and `pandas` (for CSV IO).
 
 Has no explicit or implicit dependence on any other part of Brightway.
 

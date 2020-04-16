@@ -29,7 +29,7 @@ setup(
     author="Chris Mutel",
     author_email="cmutel@gmail.com",
     license="BSD 3-clause",
-    install_requires=["numpy"],
+    install_requires=["numpy", "pandas"],
     url="https://github.com/brightway-lca/bw_processing",
     long_description_content_type="text/markdown",
     long_description=open("README.md").read(),
