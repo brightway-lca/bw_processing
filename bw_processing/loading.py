@@ -81,7 +81,7 @@ def load_package(path, check_integrity=True):
                     result[resource['path']] = function(zf.open(resource['path']))
                 except KeyError:
                     raise KeyError("No handler for file {}".format(resource['path']))
-                return result
+            return result
         elif path.is_dir():
             assert (path / "datapackage.json").is_file(), "Missing datapackage"
             result = {'datapackage': json.load(open(path / "datapackage.json"))}
