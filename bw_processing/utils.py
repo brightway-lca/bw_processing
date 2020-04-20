@@ -104,7 +104,15 @@ def create_numpy_structured_array(
             else:
                 arrays.append(array)
                 array = np.zeros(BUCKET, dtype=dtype)
-        array = np.hstack(arrays)
+
+        # Empty iterable - create zero-length array
+        # Needed because we return iterators for SQL databases
+        # but don't know if e.g. sometime a database has
+        # no biosphere exchanges
+        if arrays:
+            array = np.hstack(arrays)
+        else:
+            array = np.zeros(0, dtype=dtype)
 
     sort_fields = (
         "row_value",

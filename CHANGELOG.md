@@ -4,6 +4,7 @@
 
 * New utility function `load_package`
 * Improved documentation and continuous integration tests
+* Handle zero-length input arrays gracefully
 
 ### [0.1.2] - 2020-04-15
 

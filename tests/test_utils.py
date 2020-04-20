@@ -169,6 +169,15 @@ def test_create_array_chunk_data():
         assert result["row_value"].sum() == 0
 
 
+def test_create_array_empty_iterator_no_error():
+    with tempfile.TemporaryDirectory() as td:
+        fp = Path(td) / "array.npy"
+    def empty():
+        for _ in []:
+            yield 0
+    assert create_numpy_structured_array(empty(), "").shape == (0,)
+
+
 def test_create_datapackage_metadata():
     expected = {"profile": "data-package", "name": "a", "id": "b", "licenses": "c"}
     result = create_datapackage_metadata(
