@@ -123,7 +123,9 @@ def create_numpy_structured_array(
         "flip",
     )
     dtype_fields = {x[0] for x in dtype}
-    order = [x for x in sort_fields if x in dtype_fields]
+    order = [x for x in sort_fields if x in dtype_fields] + sorted(
+        [x for x in dtype_fields if x not in sort_fields]
+    )
     array.sort(order=order)
     if filepath:
         np.save(filepath, array, allow_pickle=False)

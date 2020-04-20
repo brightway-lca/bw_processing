@@ -21,11 +21,7 @@ def _load_csv(obj):
     return pandas.read_csv(obj)
 
 
-mapping = {
-    'npy': _load_npy,
-    'json': _load_json,
-    'csv': _load_csv
-}
+mapping = {"npy": _load_npy, "json": _load_json, "csv": _load_csv}
 
 
 def load_package(path, check_integrity=True):
@@ -54,7 +50,7 @@ def load_package(path, check_integrity=True):
         # We support passing binary numpy data as BytesIO objects
         # on the request of the activity-browser team
         for k, v in path.items():
-            if k == 'datapackage':
+            if k == "datapackage":
                 continue
             elif not isinstance(v, Mapping):
                 continue
@@ -73,29 +69,29 @@ def load_package(path, check_integrity=True):
         if path.is_file() and path.suffix == ".zip":
             zf = zipfile.ZipFile(path)
             assert "datapackage.json" in zf.namelist(), "Missing datapackage"
-            result = {'datapackage': json.load(zf.open("datapackage.json"))}
-            for resource in result['datapackage']['resources']:
-                extension = resource['path'].split(".")[-1].lower()
+            result = {"datapackage": json.load(zf.open("datapackage.json"))}
+            for resource in result["datapackage"]["resources"]:
+                extension = resource["path"].split(".")[-1].lower()
                 try:
                     function = mapping[extension]
-                    result[resource['path']] = function(zf.open(resource['path']))
+                    result[resource["path"]] = function(zf.open(resource["path"]))
                 except KeyError:
-                    raise KeyError("No handler for file {}".format(resource['path']))
+                    raise KeyError("No handler for file {}".format(resource["path"]))
             return result
         elif path.is_dir():
             assert (path / "datapackage.json").is_file(), "Missing datapackage"
-            result = {'datapackage': json.load(open(path / "datapackage.json"))}
-            for resource in result['datapackage']['resources']:
+            result = {"datapackage": json.load(open(path / "datapackage.json"))}
+            for resource in result["datapackage"]["resources"]:
                 if check_integrity:
-                    if not resource['hash'] == md5(path / resource['path']):
+                    if not resource["hash"] == md5(path / resource["path"]):
                         raise FileIntegrityError(f"MD5 check failed for {path}")
 
-                extension = resource['path'].split(".")[-1].lower()
+                extension = resource["path"].split(".")[-1].lower()
                 try:
                     function = mapping[extension]
-                    result[resource['path']] = function(open(path / resource['path']))
+                    result[resource["path"]] = function(open(path / resource["path"]))
                 except KeyError:
-                    raise KeyError("No handler for file {}".format(resource['path']))
+                    raise KeyError("No handler for file {}".format(resource["path"]))
             return result
         else:
             raise ValueError(f"Can't load file {path}")

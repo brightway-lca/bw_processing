@@ -172,9 +172,11 @@ def test_create_array_chunk_data():
 def test_create_array_empty_iterator_no_error():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
+
     def empty():
         for _ in []:
             yield 0
+
     assert create_numpy_structured_array(empty(), "").shape == (0,)
 
 
@@ -232,7 +234,7 @@ def test_create_datapackage_metadata_invalid_name():
 
 def test_create_datapackage_metadata_extra_metadata():
     result = create_datapackage_metadata(
-        "woo", {}, metadata={'some': 'stuff', 'name': 'forest'}
+        "woo", {}, metadata={"some": "stuff", "name": "forest"}
     )
-    assert result['name'] == 'woo'
-    assert result['some'] == 'stuff'
+    assert result["name"] == "woo"
+    assert result["some"] == "stuff"
