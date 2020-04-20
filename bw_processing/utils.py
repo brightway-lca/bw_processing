@@ -42,13 +42,21 @@ def chunked(iterable, chunk_size):
 
 def dictionary_formatter(row, dtype=None):
     """Format processed array row from dictionary input"""
+    def as_uncertainty_type(row):
+        if "uncertainty_type" in row:
+            return row["uncertainty_type"]
+        elif "uncertainty type" in row:
+            return row["uncertainty type"]
+        else:
+            return 0
+
     return (
         row["row"],
         # 1-d matrix
         row.get("col", row["row"]),
         MAX_SIGNED_32BIT_INT,
         MAX_SIGNED_32BIT_INT,
-        row.get("uncertainty_type", 0),
+        as_uncertainty_type(row),
         row["amount"],
         row.get("loc", row["amount"]),
         row.get("scale", np.NaN),

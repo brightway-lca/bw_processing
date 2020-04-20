@@ -5,6 +5,7 @@
 * New utility function `load_package`
 * Improved documentation and continuous integration tests
 * Changed filename handling; `safe_filename` no longer applied by default
+* Accept label `uncertainty type` in `dictionary_formatter` for backwards compatibility
 * Handle zero-length input arrays gracefully
 * Added `clean_datapackage_name` utility function
 

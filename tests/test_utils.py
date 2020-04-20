@@ -34,10 +34,23 @@ def test_chunked():
 def test_dictionary_formatter_sparse():
     given = {"row": 1, "amount": 4}
     result = dictionary_formatter(given)
-    print(result)
     assert result[:7] == (1, 1, M, M, 0, 4, 4)
     assert all(np.isnan(x) for x in result[7:11])
     assert result[11:] == (False, False)
+
+
+def test_dictionary_formatter_uncertainty_type():
+    given = {"row": 1, "amount": 4, "uncertainty_type": 3}
+    result = dictionary_formatter(given)
+    assert result[4] == 3
+
+    given = {"row": 1, "amount": 4, "uncertainty type": 3}
+    result = dictionary_formatter(given)
+    assert result[4] == 3
+
+    given = {"row": 1, "amount": 4}
+    result = dictionary_formatter(given)
+    assert result[4] == 0
 
 
 def test_dictionary_formatter_complete():
