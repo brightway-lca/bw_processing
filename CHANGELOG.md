@@ -4,7 +4,9 @@
 
 * New utility function `load_package`
 * Improved documentation and continuous integration tests
+* Changed filename handling; `safe_filename` no longer applied by default
 * Handle zero-length input arrays gracefully
+* Added `clean_datapackage_name` utility function
 
 ### [0.1.2] - 2020-04-15
 

@@ -4,6 +4,15 @@ import re
 import unicodedata
 
 re_slugify = re.compile(r"[^\w\s-]", re.UNICODE)
+SUBSTITUTION_RE = re.compile(r"[^\w\-\.]")
+MULTI_RE = re.compile(r"_{2,}")
+
+
+def clean_datapackage_name(name):
+    """Clean string ``name`` of characters not allowed in data package names.
+
+    Replaces with underscores, and drops multiple underscores."""
+    return re.sub(MULTI_RE, "_", re.sub(SUBSTITUTION_RE, "_", name).strip("_")).strip()
 
 
 def safe_filename(string, add_hash=True):

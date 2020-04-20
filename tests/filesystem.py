@@ -1,4 +1,4 @@
-from bw_processing.filesystem import safe_filename, md5
+from bw_processing.filesystem import safe_filename, md5, clean_datapackage_name
 from pathlib import Path
 
 fixtures_dir = Path(__file__, "..").resolve() / "fixtures"
@@ -16,3 +16,9 @@ def test_safe_filename():
     assert (
         safe_filename("Wave your hand yeah 🙋!", add_hash=False) == "Wave-your-hand-yeah"
     )
+
+
+def test_clean_datapackage_name():
+    a = "('IPCC', 'simple') processed arrays"
+    b = "IPCC_simple_processed_arrays"
+    assert clean_datapackage_name(a) == b

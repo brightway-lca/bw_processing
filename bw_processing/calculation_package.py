@@ -97,7 +97,7 @@ def create_calculation_package(
         * format_function (callable, optional): Function that formats data to structured array columns.
 
     * path (str, Path, or None): Location to store the created package.
-    * id\_ (str, optional): Unique ID of this calculation package
+    * id\\_ (str, optional): Unique ID of this calculation package
     * metadata (dict, optional): Additional metadata such as licenses, RNG seeds, etc.
     * replace (bool, optional): Replace an existing calculation package with the same name and path
 
@@ -120,7 +120,9 @@ def create_calculation_package(
         result = {}
 
     if path and compress:
-        archive = path / (safe_filename(name) + ".zip")
+        archive = path / name
+        if archive.suffix != ".zip":
+            archive = archive.with_suffix(archive.suffix + ".zip")
         if archive.is_file():
             if replace:
                 archive.unlink()
