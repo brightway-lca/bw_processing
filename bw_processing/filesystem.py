@@ -29,7 +29,7 @@ def safe_filename(string, add_hash=True):
     if add_hash:
         if isinstance(string, str):
             string = string.encode("utf8")
-        return safe + u"." + hashlib.md5(string).hexdigest()
+        return safe + u"." + hashlib.md5(string).hexdigest()[:8]
     else:
         return safe
 
