@@ -15,7 +15,7 @@ def clean_datapackage_name(name):
     return re.sub(MULTI_RE, "_", re.sub(SUBSTITUTION_RE, "_", name).strip("_")).strip()
 
 
-def safe_filename(string, add_hash=True):
+def safe_filename(string, add_hash=True, full=False):
     """Convert arbitrary strings to make them safe for filenames. Substitutes strange characters, and uses unicode normalization.
 
     if `add_hash`, appends hash of `string` to avoid name collisions.
@@ -29,9 +29,11 @@ def safe_filename(string, add_hash=True):
     if add_hash:
         if isinstance(string, str):
             string = string.encode("utf8")
-        return safe + u"." + hashlib.md5(string).hexdigest()[:8]
-    else:
-        return safe
+        if full:
+            safe += ("." + hashlib.md5(string).hexdigest())
+        else:
+            safe += ("." + hashlib.md5(string).hexdigest()[:8])
+    return safe
 
 
 def md5(filepath, blocksize=65536):

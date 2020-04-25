@@ -102,9 +102,6 @@ def test_add_row_dict():
     arr = np.zeros((5,), dtype=COMMON_DTYPE)
     row = {"row": 1, "amount": 4}
     add_row(arr, 2, row, None, None)
-    print(arr[2])
-    print(len(arr[2]))
-    print(type(arr[2]))
     assert tuple(arr[2])[:7] == (1, 1, M, M, 0, 4, 4)
     assert all(np.isnan(x) for x in tuple(arr[2])[7:11])
     assert tuple(arr[2])[11:] == (False, False)
