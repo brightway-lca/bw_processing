@@ -16,10 +16,10 @@ MAX_SIGNED_32BIT_INT = 2147483647
 # EXIOBASE, it takes ~218 ms to load the technosphere,
 # but -687ms to append two columns.
 COMMON_DTYPE = [
-    ("row_value", np.uint32),
-    ("col_value", np.uint32),
-    ("row_index", np.uint32),
-    ("col_index", np.uint32),
+    ("row_value", np.int32),
+    ("col_value", np.int32),
+    ("row_index", np.int32),
+    ("col_index", np.int32),
     ("uncertainty_type", np.uint8),
     ("amount", np.float32),
     ("loc", np.float32),
