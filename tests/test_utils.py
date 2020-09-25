@@ -1,10 +1,36 @@
 from bw_processing.constants import COMMON_DTYPE, MAX_SIGNED_32BIT_INT as M
-from bw_processing.utils import dictionary_formatter, chunked
+from bw_processing.utils import (
+    check_name,
+    check_suffix,
+    chunked,
+    dictionary_formatter,
+    indices_wrapper,
+    load_bytes,
+)
 from bw_processing.errors import InvalidName
 from pathlib import Path
 import numpy as np
 import pytest
 import tempfile
+from io import BytesIO
+
+
+def test_load_bytes():
+    obj = BytesIO()
+    np.save(obj, np.arange(10), allow_pickle=False)
+    assert np.allclose(np.arange(10), load_bytes(obj))
+
+    assert np.allclose(np.arange(10), load_bytes(np.arange(10)))
+
+    obj = [1, 2, 3]
+    assert np.allclose([1, 2, 3], load_bytes(obj))
+
+
+def test_check_name():
+    with pytest.raises(InvalidName):
+        check_name("woo!")
+    check_name("woo")
+    check_name(None)
 
 
 def test_chunked():
@@ -18,6 +44,14 @@ def test_chunked():
     for x in next(c):
         pass
     assert x == 599
+
+
+def test_indices_wrapper():
+    data = [{"row": "a", "col": "b"}]
+    wrapped = indices_wrapper(data)
+    assert next(wrapped) == ("a", "b", M, M)
+    with pytest.raises(StopIteration):
+        next(wrapped)
 
 
 def test_dictionary_formatter_sparse():
@@ -77,29 +111,11 @@ def test_dictionary_formatter_one_dimensional():
     assert dictionary_formatter(given) == expected
 
 
-# def test_add_row_ff():
-#     def ff(x, y):
-#         return (1, 2, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
-
-#     arr = np.zeros((5,), dtype=COMMON_DTYPE)
-#     add_row(arr, 2, [None], None, ff)
-#     assert arr[0][0] == 0
-#     assert tuple(arr[2]) == (1, 2, M, M, 3, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, True, False)
-
-
-# def test_add_row_dict():
-#     arr = np.zeros((5,), dtype=COMMON_DTYPE)
-#     row = {"row": 1, "amount": 4}
-#     add_row(arr, 2, row, None, None)
-#     assert tuple(arr[2])[:7] == (1, 1, M, M, 0, 4, 4)
-#     assert all(np.isnan(x) for x in tuple(arr[2])[7:11])
-#     assert tuple(arr[2])[11:] == (False, False)
-
-
-# def test_add_row_list():
-#     arr = np.zeros((4, 5))
-#     add_row(arr, 2, range(5), None, None)
-#     assert np.allclose(arr[2], (0, 1, 2, 3, 4))
+def test_check_suffix():
+    assert check_suffix("foo.bar.baz", "baz") == Path("foo.bar.baz")
+    assert check_suffix("foo.bar.baz", ".baz") == Path("foo.bar.baz")
+    assert check_suffix("foo.bar", ".baz") == Path("foo.bar.baz")
+    assert check_suffix(Path("foo") / "bar", "baz") == Path("foo/bar.baz")
 
 
 # def test_create_array():
@@ -222,13 +238,6 @@ def test_dictionary_formatter_one_dimensional():
 #             "title": "Open Data Commons Public Domain Dedication and License v1.0",
 #         }
 #     ]
-
-
-# def test_create_datapackage_metadata_invalid_name():
-#     with pytest.raises(InvalidName):
-#         create_datapackage_metadata(
-#             "woo!", {}, resource_function=format_calculation_resource
-#         )
 
 
 # def test_create_datapackage_metadata_extra_metadata():

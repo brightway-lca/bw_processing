@@ -1,16 +1,14 @@
+from .array_creation import (
+    create_array,
+    create_structured_array,
+    create_structured_indices_array,
+)
 from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
 from .filesystem import clean_datapackage_name
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
 from .proxies import ReadProxy, GenericProxy
-from .utils import (
-    check_name,
-    check_suffix,
-    create_array,
-    create_structured_array,
-    create_structured_indices_array,
-    load_bytes,
-)
+from .utils import check_name, check_suffix, load_bytes
 from pathlib import Path
 from typing import Union, Any
 import datetime
