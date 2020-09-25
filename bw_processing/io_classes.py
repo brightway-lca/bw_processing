@@ -16,15 +16,19 @@ class IOBase:
 
 
 class DirectoryIO(IOBase):
-    def __init__(self, dirpath):
+    def __init__(self, dirpath, new=True):
         self.dirpath = Path(dirpath)
-        if not self.dirpath.parent.is_dir():
-            raise ValueError(
-                "Parent directory `{}` doesn't exist".format(self.dirpath.parent)
-            )
-        if self.dirpath.is_dir():
-            raise ValueError("Directory `{}` already exists".format(self.dirpath))
-        self.dirpath.mkdir()
+        if new:
+            if not self.dirpath.parent.is_dir():
+                raise ValueError(
+                    "Parent directory `{}` doesn't exist".format(self.dirpath.parent)
+                )
+            if self.dirpath.is_dir():
+                raise ValueError("Directory `{}` already exists".format(self.dirpath))
+            self.dirpath.mkdir()
+        else:
+            if not self.dirpath.is_dir():
+                raise ValueError("Directory `{}` doesn't exist".format(self.dirpath))
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
         return json.load(open(self.dirpath / filename))
@@ -57,7 +61,7 @@ class DirectoryIO(IOBase):
 
 class ZipfileIO(IOBase):
     def __init__(self, filepath):
-        self.path = Path(path)
+        self.path = Path(filepath)
         self.zf = zipfile.ZipFile(self.path)
 
     def load_numpy(self, filename, proxy=False, mmap_mode=None):
@@ -72,22 +76,22 @@ class ZipfileIO(IOBase):
             return ReadProxy(np.load, **kwargs)
 
     def save_numpy(self, *args):
-        raise NotImplemented("Read-only zipfile")
+        raise NotImplementedError("Read-only zipfile")
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
         return json.load(open(self.dirpath / filename))
 
     def save_json(self, *args):
-        raise NotImplemented("Read-only zipfile")
+        raise NotImplementedError("Read-only zipfile")
 
     def load_csv(self, filename, proxy=False, mmap_mode=None):
         return pd.read_csv(self.zf.open(filename))
 
     def save_csv(self, *args, **kwargs):
-        raise NotImplemented("Read-only zipfile")
+        raise NotImplementedError("Read-only zipfile")
 
     def archive(self):
-        raise NotImplemented("Read-only zipfile")
+        raise NotImplementedError("Read-only zipfile")
 
 
 class TemporaryDirectoryIO(DirectoryIO):

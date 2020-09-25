@@ -21,8 +21,16 @@ import uuid
 
 class Datapackage:
     """
+    Interface for creating, loading, and using numerical datapackages for Brightway.
 
-    Potential gotchs:
+    Note that there are two entry points to using this class: ``Datapackage.create()`` and ``Datapackage.load()``. Do not create an instance of the class with ``Datapackage()``, it almost certainly won't work!
+
+    Data packages can be stored in memory, in a directory, or in a zip file. When creating data packages for use later, don't forget to call ``.finalize()``, or the metadata won't be written and the data package won't be usable.
+
+    Potential gotchas:
+
+    * There is currently no way to modify a zipped data package once it is finalized.
+    *
         - Zipfiles can't be modified, they must be unarchived
         - Interfaces can't be saved
         - Finalized packages shouldn't be modified
@@ -61,7 +69,7 @@ class Datapackage:
         if path.is_file():
             self.io_obj = ZipfileIO(path)
         elif path.is_dir():
-            self.io_obj = DirectoryIO(path)
+            self.io_obj = DirectoryIO(path, new=False)
         else:
             raise ValueError("Can't understand given path")
 
@@ -76,15 +84,15 @@ class Datapackage:
                 and resource["format"] == "npy"
             ):
                 self.data.append(
-                    self.io_obj.load_numpy(resource["filename"], mmap_mode=mmap_mode)
+                    self.io_obj.load_numpy(resource["path"], mmap_mode=mmap_mode)
                 )
             elif resource["mediatype"] == "text/csv":
                 self.data.append(
-                    self.io_obj.load_csv(resource["filename"], mmap_mode=mmap_mode)
+                    self.io_obj.load_csv(resource["path"], mmap_mode=mmap_mode)
                 )
             elif resource["mediatype"] == "application/json":
                 self.data.append(
-                    self.io_obj.load_json(resource["filename"], mmap_mode=mmap_mode)
+                    self.io_obj.load_json(resource["path"], mmap_mode=mmap_mode)
                 )
             else:
                 self.data.append(GenericProxy())
