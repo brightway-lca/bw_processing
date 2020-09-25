@@ -1,4 +1,4 @@
-from bw_processing.constants import COMMON_DTYPE,  MAX_SIGNED_32BIT_INT as M
+from bw_processing.constants import COMMON_DTYPE, MAX_SIGNED_32BIT_INT as M
 from bw_processing.utils import dictionary_formatter, chunked
 from bw_processing.errors import InvalidName
 from pathlib import Path

@@ -9,10 +9,7 @@ def test_md5():
 
 
 def test_safe_filename():
-    assert (
-        safe_filename("Wave your hand yeah 🙋!")
-        == "Wave-your-hand-yeah.f7952a3d"
-    )
+    assert safe_filename("Wave your hand yeah 🙋!") == "Wave-your-hand-yeah.f7952a3d"
     assert (
         safe_filename("Wave your hand yeah 🙋!", full=True)
         == "Wave-your-hand-yeah.f7952a3d4b0534cdac0e0cbbf66aac73"

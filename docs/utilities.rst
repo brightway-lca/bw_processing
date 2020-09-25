@@ -35,4 +35,3 @@ Correctly formatting metadata
 *****************************
 
 .. autofunction:: bw_processing.utils.create_datapackage_metadata
-

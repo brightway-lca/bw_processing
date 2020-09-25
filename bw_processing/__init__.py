@@ -2,12 +2,7 @@ from .version import version as __version__
 
 from .datapackage import Datapackage
 from .constants import COMMON_DTYPE, DEFAULT_LICENSES, MAX_SIGNED_32BIT_INT
-from .utils import (
-    chunked,
-    dictionary_formatter,
-    dictionary_wrapper,
-    indices_wrapper,
-)
+from .utils import chunked, dictionary_formatter, dictionary_wrapper, indices_wrapper
 from .filesystem import md5, safe_filename
 
 # from .processed_package import (

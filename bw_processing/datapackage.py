@@ -30,10 +30,7 @@ class Datapackage:
     Potential gotchas:
 
     * There is currently no way to modify a zipped data package once it is finalized.
-    *
-        - Zipfiles can't be modified, they must be unarchived
-        - Interfaces can't be saved
-        - Finalized packages shouldn't be modified
+    * Resources that are interfaces to external data sources (either in Python or other) can't be saved, but must be recreated each time a data package is used.
 
     """
 
@@ -225,7 +222,7 @@ class Datapackage:
 
         return name, data
 
-    def _add_extra_metadata(self, resource, extra):
+    def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]):
         for key in extra or {}:
             if key not in resource:
                 resource[key] = extra[key]
