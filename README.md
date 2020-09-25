@@ -21,6 +21,9 @@ The [Brightway LCA framework](https://brightway.dev/) has stored data used in co
 * **Consistent names for row and column fields**. Instead of having these vary by the kind of matrix to be constructed, they are always the same, making the code simpler and easier to use.
 * **Provision of metadata**. Numpy binary files are only data - `bw_processing` also produces a metadata file following the [data package standard](https://specs.frictionlessdata.io/data-package/). Things like data license, version, and unique id are now explicit and always included.
 * **Simpler handling of values whose sign should be flipped**. Brightway used to use a type mapping dictionary to indicate which values in a matrix should have their sign flipped after insertion. For example, matrix values which represent the *consumption* of a good or service should be negative, while values that represent a *production* should be positive. The problem with a mapping dictionary with text keys is that it can be used or interpreted inconsistently. Instead, `bw_processing` has an additional column: `flip`.
+* **Unified architecture for static and presamples data**. Both the processed data arrays, and presamples (both intermediate results and final matrix substitution data) share the same data and metadata format.
+* **Portability**. Processed arrays can include metadata that allows for reindexing on other machines, so that processed arrays can be distributed. Before, this was not possible, as integer IDs were randomly assigned, and would be different from machine to machine or even across Brightway projects. The same portability applies to presamples.
+* **Allow for data provision by cloud or external data interfaces**. Both structured arrays and presamples can be defined by external or dynamic data sources. Note that the existing functionality is relatively basic, and will be expanded upon in future releases.
 
 ## Install
 
@@ -30,60 +33,38 @@ Has no explicit or implicit dependence on any other part of Brightway.
 
 ## Usage
 
+The main interface for using this library is the `Datapackage` class, which is instantiated with either `Datapackage.create()` or `Datapackage.load()`. Data packages can be stored either in-memory, in a directory, or as a zipfile.
+
+Each data package has some generic metadata (i.e. when it was created, the data license), metadata specific to each data resource (how it can be used in calculations, its relationship to other data resources), and the actual data resources themselves.
+
 Let's see it in action:
 
 ```python
-In [1]: from bw_processing import create_calculation_package
+In [1]: import bw_processing as bwp
 
-In [2]: create_calculation_package(
-   ...:     name="foo",
-   ...:     resources=[{
-   ...:         "name": "data from a calculation",
-   ...:         "path": "bar",
-   ...:         "matrix": "some-matrix-label",
-   ...:         "data": [
-   ...:             {"row": 1, "col": 2, "amount": 3},
-   ...:             {"row": 14, "col": 15, "amount": 16},
-   ...:         ],
-   ...:     }],
-   ...:     id_="some-id",
-   ...:     metadata={"some": "stuff"}
-   ...: )
-Out[2]:
-{
-    'bar.npy': array(
-        [
-            ( 1,  2, 2147483647, 2147483647, 0,  3.,  3., nan, nan, nan, nan, False, False),
-            (14, 15, 2147483647, 2147483647, 0, 16., 16., nan, nan, nan, nan, False, False)
-        ],
-        dtype=[
-            ('row_value', '<u4'), ('col_value', '<u4'), ('row_index', '<u4'),
-            ('col_index', '<u4'), ('uncertainty_type', 'u1'), ('amount', '<f4'),
-            ('loc', '<f4'), ('scale', '<f4'), ('shape', '<f4'), ('minimum', '<f4'),
-            ('maximum', '<f4'), ('negative', '?'), ('flip', '?')
-        ]
-    ),
-    'datapackage': {
-        'profile': 'data-package',
-        'name': 'foo',
-        'id': 'some-id',
-        'licenses': [{
-            'name': 'ODC-PDDL-1.0',
-            'path': 'http://opendatacommons.org/licenses/pddl/',
-            'title': 'Open Data Commons Public Domain Dedication and License v1.0'
-        }],
-        'resources': [{
-            'format': 'npy',
-            'mediatype': 'application/octet-stream',
-            'path': 'bar.npy',
-            'name': 'data from a calculation',
-            'profile': 'data-resource',
-            'matrix': 'some-matrix-label'
-        }],
-        'some': 'stuff',
-        'created': '2020-04-15T21:01:35.508622Z'
-    }
-}
+In [2]: dp = bwp.Datapackage.load(bwp.examples_dir / "simple.zip")
+
+In [3]: dp.metadata
+Out[3]:
+{'profile': 'data-package',
+ 'name': 'simple',
+ 'id': 'e64da3c213e44a589087fb1f41429fdf',
+ 'licenses': [{'name': 'ODC-PDDL-1.0',
+   'path': 'http://opendatacommons.org/licenses/pddl/',
+   'title': 'Open Data Commons Public Domain Dedication and License v1.0'}],
+ 'resources': [{'profile': 'data-resource',
+   'format': 'npy',
+   'mediatype': 'application/octet-stream',
+   'name': 'simple-data-source',
+   'matrix': 'technosphere',
+   'path': 'simple-data-source.npy'}],
+ 'created': '2020-09-25T14:01:43.335137Z'}
+
+In [4]: dp.data
+Out[4]:
+[array([( 1,  2, 2147483647, 2147483647, 0,  3.,  3., nan, nan, nan, nan, False, False),
+        (14, 15, 2147483647, 2147483647, 0, 16., 16., nan, nan, nan, nan, False, False)],
+       dtype=[('row_value', '<i4'), ('col_value', '<i4'), ('row_index', '<i4'), ('col_index', '<i4'), ('uncertainty_type', 'u1'), ('amount', '<f4'), ('loc', '<f4'), ('scale', '<f4'), ('shape', '<f4'), ('minimum', '<f4'), ('maximum', '<f4'), ('negative', '?'), ('flip', '?')])]
 ```
 
 In this example, we returned the processed data package as a dictionary in memory, but normally `bw_processing` is used to persist data to disk.
