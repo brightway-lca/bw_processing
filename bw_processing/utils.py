@@ -1,36 +1,28 @@
+from .constants import MAX_SIGNED_32BIT_INT, COMMON_DTYPE, INDICES_DTYPE, NAME_RE
 from .errors import InvalidName
-import datetime
+from io import BytesIO
+from pathlib import Path
 import itertools
 import numpy as np
-import re
 import uuid
 
 
-# Max signed 32 bit integer, compatible with Windows
-MAX_SIGNED_32BIT_INT = 2147483647
+def load_bytes(obj):
+    if isinstance(obj, BytesIO):
+        try:
+            # Go to the beginning of content
+            obj.seek(0)
+            return np.load(obj, allow_pickle=False)
+        except ValueError:
+            pass
+    return obj
 
-# We could try to save space by not storing the columns
-# `row_index` and `col_index`, and add them after loading from
-# disk. This saves space, but is MUCH slower, as modifying
-# a structured array requires a copy. So, for example, on
-# EXIOBASE, it takes ~218 ms to load the technosphere,
-# but -687ms to append two columns.
-COMMON_DTYPE = [
-    ("row_value", np.int32),
-    ("col_value", np.int32),
-    ("row_index", np.int32),
-    ("col_index", np.int32),
-    ("uncertainty_type", np.uint8),
-    ("amount", np.float32),
-    ("loc", np.float32),
-    ("scale", np.float32),
-    ("shape", np.float32),
-    ("minimum", np.float32),
-    ("maximum", np.float32),
-    ("negative", np.bool),
-    ("flip", np.bool),
-]
-NAME_RE = re.compile(r"^[\w\-\.]*$")
+
+def check_name(name):
+    if name is not None and not NAME_RE.match(name):
+        raise InvalidName(
+            "Provided name violates datapackage spec (https://frictionlessdata.io/specs/data-package/)"
+        )
 
 
 def chunked(iterable, chunk_size):
@@ -40,15 +32,27 @@ def chunked(iterable, chunk_size):
     return iter(lambda: list(itertools.islice(iterable, chunk_size)), [])
 
 
-def dictionary_formatter(row, dtype=None):
+def indices_wrapper(datasource):
+    for row in datasource:
+        yield (row["row"], row["col"], MAX_SIGNED_32BIT_INT, MAX_SIGNED_32BIT_INT)
+
+
+def dictionary_wrapper(datasource):
+    for row in datasource:
+        yield dictionary_formatter(row)
+
+
+def as_uncertainty_type(row):
+    if "uncertainty_type" in row:
+        return row["uncertainty_type"]
+    elif "uncertainty type" in row:
+        return row["uncertainty type"]
+    else:
+        return 0
+
+
+def dictionary_formatter(row):
     """Format processed array row from dictionary input"""
-    def as_uncertainty_type(row):
-        if "uncertainty_type" in row:
-            return row["uncertainty_type"]
-        elif "uncertainty type" in row:
-            return row["uncertainty type"]
-        else:
-            return 0
 
     return (
         row["row"],
@@ -68,21 +72,97 @@ def dictionary_formatter(row, dtype=None):
     )
 
 
-def add_row(array, index, row, dtype, format_function):
-    """Add row ``row`` to ``array`` at row index ``index``. Format ``row`` data using ``format_function``, if provided. Otherwise, use ``dictionary_formatter`` if row is a dictionary, or cast to tuple if not.
+def check_suffix(path, suffix):
+    """Add ``suffix``, if not already in ``path``."""
+    path = Path(path)
+    if not suffix.startswith("."):
+        suffix = "." + suffix
+    if path.suffix != suffix:
+        path = path.with_suffix(path.suffix + suffix)
+    return path
 
-    Modifies ``array`` in place, returns nothing."""
-    if format_function:
-        array[index] = format_function(row, dtype)
-    elif isinstance(row, dict):
-        array[index] = dictionary_formatter(row)
+
+def create_chunked_structured_array(iterable, dtype, bucket_size=20000):
+    """Create a numpy structured array from an iterable of indeterminate length.
+
+    Needed when we can't determine the length of the iterable ahead of time (e.g. for a generator or a database cursor), so can't create the complete array in memory in on step
+
+    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is exhausted, then concatenates them.
+
+    Args:
+        iterable: Iterable of data used to populate the array.
+        dtype: Numpy dtype of the created array
+        format_function: If provided, this function will be called on each row of ``iterable`` before insertion in the array.
+        bucket_size: Number of rows in each intermediate array.
+
+    Returns:.
+        Returns the created array. Will return a zero-length array if ``iterable`` has no data.
+
+    """
+    arrays = []
+    array = np.zeros(bucket_size, dtype=dtype)
+
+    for chunk in chunked(iterable, bucket_size):
+        for i, row in enumerate(chunk):
+            array[i] = row
+        if i < bucket_size - 1:
+            array = array[: i + 1]
+            arrays.append(array)
+        else:
+            arrays.append(array)
+            array = np.zeros(bucket_size, dtype=dtype)
+
+    # Empty iterable - create zero-length array
+    # Needed because we return iterators for SQL databases
+    # but don't know if e.g. sometime a database has
+    # no biosphere exchanges
+    if arrays:
+        array = np.hstack(arrays)
     else:
-        array[index] = tuple(row)
+        array = np.zeros(0, dtype=dtype)
+
+    return array
 
 
-def create_numpy_structured_array(
-    iterable, filepath=None, nrows=None, format_function=None, dtype=None
-):
+def create_chunked_array(iterable, ncols, dtype=np.float32, bucket_size=500):
+    """Create a numpy array from an iterable of indeterminate length.
+
+    Needed when we can't determine the length of the iterable ahead of time (e.g. for a generator or a database cursor), so can't create the complete array in memory in on step
+
+    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is exhausted, then concatenates them.
+
+    Args:
+        iterable: Iterable of data used to populate the array.
+        ncols: Number of columns in the created array.
+        dtype: Numpy dtype of the created array
+        bucket_size: Number of rows in each intermediate array.
+
+    Returns:.
+        Returns the created array. Will return a zero-length array if ``iterable`` has no data.
+
+    """
+    arrays = []
+    array = np.zeros((bucket_size, ncols), dtype=dtype)
+
+    for chunk in chunked(iterable, bucket_size):
+        for i, row in enumerate(chunk):
+            array[i, :] = row
+        if i < bucket_size - 1:
+            array = array[: i + 1, :]
+            arrays.append(array)
+        else:
+            arrays.append(array)
+            array = np.zeros((bucket_size, ncols), dtype=dtype)
+
+    if arrays:
+        array = np.hstack(arrays)
+    else:
+        array = np.zeros((0, ncols), dtype=dtype)
+
+    return array
+
+
+def create_structured_array(iterable, nrows=None, dtype=None, sort=True):
     """Create a numpy `structured array <https://docs.scipy.org/doc/numpy/user/basics.rec.html>`__ for data ``iterable``. Returns a filepath of a created file (if ``filepath`` is provided, or the array.
 
     ``iterable`` can be data already in memory, or a generator.
@@ -98,99 +178,61 @@ def create_numpy_structured_array(
         for i, row in enumerate(iterable):
             if i > (nrows - 1):
                 raise ValueError("More rows than `nrows`")
-            add_row(array, i, row, dtype, format_function)
+            array[i] = row
 
     else:
-        arrays, BUCKET = [], 25000
-        array = np.zeros(BUCKET, dtype=dtype)
-        for chunk in chunked(iterable, BUCKET):
-            for i, row in enumerate(chunk):
-                add_row(array, i, row, dtype, format_function)
-            if i < BUCKET - 1:
-                array = array[: i + 1]
-                arrays.append(array)
-            else:
-                arrays.append(array)
-                array = np.zeros(BUCKET, dtype=dtype)
+        array = create_chunked_structured_array(iterable, dtype)
 
-        # Empty iterable - create zero-length array
-        # Needed because we return iterators for SQL databases
-        # but don't know if e.g. sometime a database has
-        # no biosphere exchanges
-        if arrays:
-            array = np.hstack(arrays)
-        else:
-            array = np.zeros(0, dtype=dtype)
-
-    sort_fields = (
-        "row_value",
-        "col_value",
-        "uncertainty_type",
-        "amount",
-        "negative",
-        "flip",
-    )
-    dtype_fields = {x[0] for x in dtype}
-    order = [x for x in sort_fields if x in dtype_fields] + sorted(
-        [x for x in dtype_fields if x not in sort_fields]
-    )
-    array.sort(order=order)
-    if filepath:
-        np.save(filepath, array, allow_pickle=False)
-        return filepath
-    else:
-        return array
-
-
-def create_datapackage_metadata(
-    name, resources, resource_function=None, id_=None, metadata=None
-):
-    """Format metadata for a processed array datapackage.
-
-    All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
-
-    Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
-
-    Args:
-        name (str): Name of this data package
-        resources (iterable): List of resources following requirements in ``format_datapackage_resource``
-        id_ (str, optional): Unique ID of this data package
-        metadata (dict, optional): Additional metadata, such as the licenses for this package
-
-    Returns:
-        A dictionary ready for writing to a ``datapackage.json`` file.
-
-    TODO: Write validation tests for all metadata elements.
-
-    """
-    DEFAULT_LICENSES = [
-        {
-            "name": "ODC-PDDL-1.0",
-            "path": "http://opendatacommons.org/licenses/pddl/",
-            "title": "Open Data Commons Public Domain Dedication and License v1.0",
-        }
-    ]
-
-    if resource_function is None:
-        resource_function = lambda x: x
-
-    if not NAME_RE.match(name):
-        raise InvalidName(
-            "Provided name violates datapackage spec (https://frictionlessdata.io/specs/data-package/)"
+    if sort:
+        sort_fields = (
+            "row_value",
+            "col_value",
+            "uncertainty_type",
+            "amount",
+            "negative",
+            "flip",
         )
+        dtype_fields = {x[0] for x in dtype}
+        order = [x for x in sort_fields if x in dtype_fields] + sorted(
+            [x for x in dtype_fields if x not in sort_fields]
+        )
+        array.sort(order=order)
 
-    if metadata is None:
-        metadata = {}
+    return array
 
-    result = {
-        "profile": "data-package",
-        "name": name,
-        "id": id_ or uuid.uuid4().hex,
-        "licenses": metadata.get("licenses", DEFAULT_LICENSES),
-        "resources": [resource_function(obj) for obj in resources],
-        "created": datetime.datetime.utcnow().isoformat("T") + "Z",
-    }
-    for k, v in metadata.items():
-        if k not in result:
-            result[k] = v
-    return result
+
+def create_structured_indices_array(iterable, nrows=None, dtype=None):
+    return create_structured_array(iterable, nrows, dtype=INDICES_DTYPE, sort=False)
+
+
+def get_ncols(iterator):
+    iterator = iter(iterator)
+    first = next(iterator)
+    return len(first), itertools.chain([first], iterator)
+
+
+def create_array(iterable, nrows=None, dtype=np.float32):
+    """Create a numpy array data ``iterable``. Returns a filepath of a created file (if ``filepath`` is provided, or the array.
+
+    ``iterable`` can be data already in memory, or a generator.
+
+    ``nrows`` can be supplied, if known. If ``iterable`` has a length, it will be determined automatically. If ``nrows`` is not known, this function generates chunked arrays until ``iterable`` is exhausted, and concatenates them.
+
+    Either ``nrows`` or ``ncols`` must be specified."""
+    if isinstance(iterable, np.ndarray):
+        array = iterable.astype(dtype)
+    elif nrows or hasattr(iterable, "__len__"):
+        if not nrows:
+            nrows = len(iterable)
+        ncols, data = get_ncols(iterable)
+        array = np.zeros((nrows, ncols), dtype=dtype)
+        for i, row in enumerate(data):
+            if i > (nrows - 1):
+                raise ValueError("More rows than `nrows`")
+            array[i, :] = tuple(row)
+
+    else:
+        ncols, data = get_ncols(iterable)
+        array = create_chunked_array(data, ncols, dtype)
+
+    return array

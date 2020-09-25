@@ -29,7 +29,7 @@ This file also defines the ``COMMON_DTYPE`` used for matrix construction:
 Creating numpy structured arrays
 ********************************
 
-.. autofunction:: bw_processing.utils.create_numpy_structured_array
+.. autofunction:: bw_processing.utils.create_structured_array
 
 Correctly formatting metadata
 *****************************

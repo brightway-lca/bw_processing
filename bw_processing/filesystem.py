@@ -30,9 +30,9 @@ def safe_filename(string, add_hash=True, full=False):
         if isinstance(string, str):
             string = string.encode("utf8")
         if full:
-            safe += ("." + hashlib.md5(string).hexdigest())
+            safe += "." + hashlib.md5(string).hexdigest()
         else:
-            safe += ("." + hashlib.md5(string).hexdigest()[:8])
+            safe += "." + hashlib.md5(string).hexdigest()[:8]
     return safe
 
 

@@ -2,9 +2,9 @@ from bw_processing import (
     as_unique_attributes,
     chunked,
     COMMON_DTYPE,
-    create_calculation_package,
+    create_package,
     create_datapackage_metadata,
-    create_numpy_structured_array,
+    create_structured_array,
     create_processed_datapackage,
     format_calculation_resource,
     greedy_set_cover,
@@ -120,7 +120,7 @@ def test_create_array():
             tuple(list(range(11)) + [False, False]),
             tuple(list(range(12, 23)) + [True, True]),
         ]
-        create_numpy_structured_array(data, fp)
+        create_structured_array(data, fp)
         result = np.load(fp)
         assert result.shape == (2,)
         assert result.dtype == COMMON_DTYPE
@@ -134,7 +134,7 @@ def test_create_array_format_function():
 
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
-        create_numpy_structured_array(range(10), fp, format_function=func)
+        create_structured_array(range(10), fp, format_function=func)
         result = np.load(fp)
         assert result.shape == (10,)
         assert result.dtype == COMMON_DTYPE
@@ -145,7 +145,7 @@ def test_create_array_specify_nrows():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
         data = [tuple(list(range(11)) + [False, False])] * 200
-        create_numpy_structured_array(data, fp, nrows=200)
+        create_structured_array(data, fp, nrows=200)
         result = np.load(fp)
         assert result.shape == (200,)
         assert result["row_value"].sum() == 0
@@ -155,7 +155,7 @@ def test_create_array_calculate_nrows_from_length():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
         data = [tuple(list(range(11)) + [False, False])] * 200
-        create_numpy_structured_array(data, fp)
+        create_structured_array(data, fp)
         result = np.load(fp)
         assert result.shape == (200,)
         assert result["row_value"].sum() == 0
@@ -166,14 +166,14 @@ def test_create_array_specify_nrows_too_many():
         fp = Path(td) / "array.npy"
         data = [tuple(list(range(11)) + [False, False])] * 200
         with pytest.raises(ValueError):
-            create_numpy_structured_array(data, fp, nrows=100)
+            create_structured_array(data, fp, nrows=100)
 
 
 def test_create_array_chunk_data():
     with tempfile.TemporaryDirectory() as td:
         fp = Path(td) / "array.npy"
         data = (tuple(list(range(11)) + [False, False]) for _ in range(90000))
-        create_numpy_structured_array(data, fp)
+        create_structured_array(data, fp)
         result = np.load(fp)
         assert result.shape == (90000,)
         assert result["row_value"].sum() == 0
@@ -187,7 +187,7 @@ def test_create_array_empty_iterator_no_error():
         for _ in []:
             yield 0
 
-    assert create_numpy_structured_array(empty(), "").shape == (0,)
+    assert create_structured_array(empty(), "").shape == (0,)
 
 
 def test_create_datapackage_metadata():

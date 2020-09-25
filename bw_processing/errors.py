@@ -26,3 +26,15 @@ class FileIntegrityError(BrightwayProcessingError):
     """MD5 hash does not agree with file contents"""
 
     pass
+
+
+class Closed(BrightwayProcessingError):
+    """Datapackage closed, can't be written to anymore."""
+
+    pass
+
+
+class LengthMismatch(BrightwayProcessingError):
+    """Number of resources doesn't match the number of data objects"""
+
+    pass
