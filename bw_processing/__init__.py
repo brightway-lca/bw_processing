@@ -8,6 +8,7 @@ from .utils import (
     dictionary_wrapper,
     indices_wrapper,
 )
+from .filesystem import md5, safe_filename
 
 # from .processed_package import (
 #     as_unique_attributes,
@@ -16,3 +17,4 @@ from .utils import (
 #     greedy_set_cover,
 # )
 from .filesystem import safe_filename, clean_datapackage_name
+from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
