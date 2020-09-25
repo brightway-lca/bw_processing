@@ -1,25 +1,22 @@
-from .constants import DEFAULT_LICENSES, NAME_RE
+from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
 from .filesystem import clean_datapackage_name
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
 from .proxies import ReadProxy, GenericProxy
 from .utils import (
-    create_structured_array,
-    check_suffix,
     check_name,
-    load_bytes,
+    check_suffix,
+    create_array,
+    create_structured_array,
     create_structured_indices_array,
+    load_bytes,
 )
 from pathlib import Path
 from typing import Union, Any
 import datetime
-import json
-import pandas as pd
-import tempfile
-import uuid
-import zipfile
 import numpy as np
-import bzip2
+import pandas as pd
+import uuid
 
 
 class Datapackage:
@@ -412,7 +409,7 @@ class Datapackage:
             "path": str(filename),
             "name": name,
             # Brightway specific
-            "data_arrayr": data_arrayr,
+            "data_array": data_array,
         }
         for key in extra or {}:
             if key not in resource:
@@ -499,7 +496,7 @@ class Datapackage:
         if is_interface:
             self.data.append(iterable_data_source)
         else:
-            array = create_array(iterable_data_source, nrows, ncols, dtype)
+            array = create_array(iterable_data_source, nrows, dtype)
 
             self.io_obj.save_numpy(array, filename)
             self.data.append(self.io_obj.load_numpy(filename, proxy=True))

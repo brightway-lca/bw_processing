@@ -4,7 +4,6 @@ from io import BytesIO
 from pathlib import Path
 import itertools
 import numpy as np
-import uuid
 
 
 def load_bytes(obj):

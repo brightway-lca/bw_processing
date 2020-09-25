@@ -1,15 +1,9 @@
-from .constants import DEFAULT_LICENSES, NAME_RE
-from .errors import Closed, LengthMismatch, NonUnique
 from .proxies import ReadProxy
-from .utils import create_structured_array, check_suffix, check_name, load_bytes
 from pathlib import Path
-from typing import Union, Any
-import datetime
 import json
 import numpy as np
 import pandas as pd
 import tempfile
-import uuid
 import zipfile
 
 

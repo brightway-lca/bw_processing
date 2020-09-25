@@ -9,7 +9,7 @@ class ReadProxy:
         self.kwargs = kwargs
 
     def __call__(self):
-        return self.func(*args, **self.kwargs)
+        return self.func(*self.args, **self.kwargs)
 
     def __repr__(self):
         return "A deferred function that will read data only when needed"
