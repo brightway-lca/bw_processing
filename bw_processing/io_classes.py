@@ -79,7 +79,7 @@ class ZipfileIO(IOBase):
         raise NotImplementedError("Read-only zipfile")
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
-        return json.load(open(self.dirpath / filename))
+        return json.load(self.zf.open(filename))
 
     def save_json(self, *args):
         raise NotImplementedError("Read-only zipfile")

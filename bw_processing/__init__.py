@@ -8,6 +8,7 @@ __all__ = (
     "Datapackage",
     "DEFAULT_LICENSES",
     "dictionary_wrapper",
+    "examples_dir",
     "GenericProxy",
     "indices_wrapper",
     "MAX_SIGNED_32BIT_INT",
@@ -25,3 +26,4 @@ from .filesystem import md5, safe_filename
 from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
 from .proxies import ReadProxy, GenericProxy
+from .examples import examples_dir
