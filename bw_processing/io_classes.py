@@ -16,20 +16,21 @@ class IOBase:
 
 
 class DirectoryIO(IOBase):
-    def __init__(self, dirpath, new=True, overwrite=False):
+    def __init__(self, dirpath, overwrite=False):
         self.dirpath = Path(dirpath)
-        if new:
+        if self.dirpath.is_dir():
+            if not overwrite:
+                raise ValueError(
+                    "Directory `{}` already exists and `overwrite` is false.".format(
+                        self.dirpath
+                    )
+                )
+        else:
             if not self.dirpath.parent.is_dir():
                 raise ValueError(
                     "Parent directory `{}` doesn't exist".format(self.dirpath.parent)
                 )
-            if self.dirpath.is_dir() and not overwrite:
-                raise ValueError("Directory `{}` already exists".format(self.dirpath))
-            elif not self.dirpath.is_dir():
-                self.dirpath.mkdir()
-        else:
-            if not self.dirpath.is_dir():
-                raise ValueError("Directory `{}` doesn't exist".format(self.dirpath))
+            self.dirpath.mkdir()
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
         return json.load(open(self.dirpath / filename))
@@ -96,7 +97,7 @@ class ZipfileIO(IOBase):
 
 
 class TemporaryDirectoryIO(DirectoryIO):
-    def __init__(self, dest_dirpath, dest_filename):
+    def __init__(self, dest_dirpath, dest_filename, overwrite=False):
         self.dest_dirpath = Path(dest_dirpath)
         if not self.dest_dirpath.is_dir():
             raise ValueError(
@@ -104,7 +105,12 @@ class TemporaryDirectoryIO(DirectoryIO):
             )
         self.dest_filepath = self.dest_dirpath / dest_filename
         if self.dest_filepath.is_file():
-            raise ValueError("This calculation package archive already exists")
+            if overwrite:
+                self.dest_filepath.unlink()
+            else:
+                raise ValueError(
+                    "This calculation package archive already exists and `overwrite` is false."
+                )
 
         self.td = tempfile.TemporaryDirectory()
         self.dirpath = Path(self.td.name)

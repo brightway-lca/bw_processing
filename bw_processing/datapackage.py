@@ -64,7 +64,7 @@ class Datapackage:
         if path.is_file():
             self.io_obj = ZipfileIO(path)
         elif path.is_dir():
-            self.io_obj = DirectoryIO(path, new=False)
+            self.io_obj = DirectoryIO(path)
         else:
             raise ValueError("Can't understand given path")
 
