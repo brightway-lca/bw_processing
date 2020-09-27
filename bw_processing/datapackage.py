@@ -374,20 +374,20 @@ class Datapackage:
         self.resources.append(resource)
 
     def add_json_metadata(
-        self, data: Any, data_array: str, name: str = None, extra: dict = None
-    ):
+        self, data: Any, valid_for: str, name: str = None, extra: dict = None
+    ) -> None:
         """Add an iterable metadata object to be stored as a JSON file.
 
         The purpose of storing metadata is to enable data exchange; therefore, this method assumes that data is written to disk.
 
-        The normal use case of this method is to provide names and other metadata for parameters whose values are stored as presamples arrays. The length of ``data`` should match the number of rows in the corresponding presamples array, and ``data`` is just a list of string labels for the parameters.
+        The normal use case of this method is to provide names and other metadata for parameters whose values are stored as presamples arrays. The length of ``data`` should match the number of rows in the corresponding presamples array, and ``data`` is just a list of string labels for the parameters. However, this method can also be used to store other metadata, e.g. for external data resources.
 
         In contrast to ``self.create_structured_array``, this always stores the dataframe in ``self.data``; no proxies are used.
 
         Args:
 
             * data: Data to be persisted to disk.
-            * data_array: Name of presample array that this metadata is valid for.
+            * valid_for: Name of structured data or presample array that this metadata is valid for.
             * name (optional): The name of this resource. Names must be unique in a given data package
             * extra (optional): Dict of extra metadata
 
@@ -398,11 +398,11 @@ class Datapackage:
         Raises:
 
             * AssertionError: If inputs are not in correct form
-            * AssertionError: If ``data_array`` refers to unavailable resources
+            * AssertionError: If ``valid_for`` refers to unavailable resources
 
         """
         assert isinstance(data_array, str)
-        assert data_array in {obj["name"] for obj in self.resources}
+        assert valid_for in {obj["name"] for obj in self.resources}
 
         data = self._prepare_modifications(data)
 
@@ -421,7 +421,7 @@ class Datapackage:
             "path": str(filename),
             "name": name,
             # Brightway specific
-            "data_array": data_array,
+            "valid_for": valid_for,
         }
         for key in extra or {}:
             if key not in resource:
