@@ -16,16 +16,17 @@ class IOBase:
 
 
 class DirectoryIO(IOBase):
-    def __init__(self, dirpath, new=True):
+    def __init__(self, dirpath, new=True, overwrite=False):
         self.dirpath = Path(dirpath)
         if new:
             if not self.dirpath.parent.is_dir():
                 raise ValueError(
                     "Parent directory `{}` doesn't exist".format(self.dirpath.parent)
                 )
-            if self.dirpath.is_dir():
+            if self.dirpath.is_dir() and not overwrite:
                 raise ValueError("Directory `{}` already exists".format(self.dirpath))
-            self.dirpath.mkdir()
+            elif not self.dirpath.is_dir():
+                self.dirpath.mkdir()
         else:
             if not self.dirpath.is_dir():
                 raise ValueError("Directory `{}` doesn't exist".format(self.dirpath))

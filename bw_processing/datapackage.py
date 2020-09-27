@@ -35,7 +35,7 @@ class Datapackage:
     def __init__(self):
         self._finalized = False
 
-    def _check_length_consistency(self):
+    def _check_length_consistency(self) -> None:
         if len(self.resources) != len(self.data):
             raise LengthMismatch(
                 "Number of resources ({}) doesn't match number of data objects ({})".format(
@@ -46,18 +46,18 @@ class Datapackage:
     def __get_resources(self):
         return self.metadata["resources"]
 
-    def __set_resources(self, dct):
+    def __set_resources(self, dct: dict):
         self.metadata["resources"] = dct
 
     resources = property(__get_resources, __set_resources)
 
     @staticmethod
-    def load(path, mmap_mode=None):
+    def load(path: Union[Path, str], mmap_mode: Union[None, str] = None) -> Datapackage:
         obj = Datapackage()
         obj._load(path, mmap_mode)
         return obj
 
-    def _load(self, path, mmap_mode):
+    def _load(self, path: Union[Path, str], mmap_mode: Union[None, str]) -> None:
         path = Path(path)
         if not path.exists():
             raise ValueError("Given path doesn't exist")
@@ -72,7 +72,7 @@ class Datapackage:
         self.data = []
         self._load_all(mmap_mode)
 
-    def _load_all(self, mmap_mode):
+    def _load_all(self, mmap_mode: Union[None, str]) -> None:
         for resource in self.resources:
             if (
                 resource["mediatype"] == "application/octet-stream"
@@ -93,7 +93,14 @@ class Datapackage:
                 self.data.append(GenericProxy())
 
     @staticmethod
-    def create(dirpath=None, name=None, id_=None, metadata=None, compress=False):
+    def create(
+        dirpath: Union[Path, str] = None,
+        name: Union[None, str] = None,
+        id_: Union[None, str] = None,
+        metadata: Union[dict, str] = None,
+        overwrite: bool = False,
+        compress: bool = False,
+    ) -> Datapackage:
         obj = Datapackage()
         obj._create(dirpath, name, id_, metadata, compress)
         return obj
@@ -104,8 +111,9 @@ class Datapackage:
         name: Union[str, None],
         id_: Union[str, None],
         metadata: Union[dict, None],
+        overwrite: bool = False,
         compress: bool,
-    ):
+    ) -> None:
         """Start a new data package.
 
         All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
@@ -136,7 +144,7 @@ class Datapackage:
 
         self.data = []
 
-    def _purge_interfaces(self):
+    def _purge_interfaces(self) -> None:
         """Remove resources with the profile ``interface``, as they can't be saved to disk."""
         interface_indices = [
             index
@@ -152,7 +160,7 @@ class Datapackage:
             obj for index, obj in enumerate(self.data) if index not in interface_indices
         ]
 
-    def finalize(self):
+    def finalize(self) -> None:
         self._purge_interfaces()
         self._check_length_consistency()
 
@@ -162,7 +170,7 @@ class Datapackage:
         self.io_obj.save_json(self.metadata, "datapackage.json")
         self.io_obj.archive()
 
-    def get_resource(self, name_or_index: Union[str, int]) -> (int, Any):
+    def get_resource(self, name_or_index: Union[str, int]) -> (Any, dict):
         """Return data and metadata for ``name_or_index``.
 
         Args:
@@ -203,7 +211,7 @@ class Datapackage:
 
         return self.data[index], self.resources[index]
 
-    def _prepare_modifications(self, data, name):
+    def _prepare_modifications(self, data: Any, name: str) -> (str, Any):
         data = load_bytes(data)
 
         if self._finalized:
@@ -220,7 +228,7 @@ class Datapackage:
 
         return name, data
 
-    def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]):
+    def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]) -> None:
         for key in extra or {}:
             if key not in resource:
                 resource[key] = extra[key]
@@ -234,7 +242,7 @@ class Datapackage:
         dtype: Any = None,
         extra: Union[None, dict] = None,
         is_interface: bool = False,
-    ):
+    ) -> None:
         """Add a numpy structured array resource that will be used to create at least part of a matrix.
 
         ``iterable_data_source`` can be any of the following:
@@ -294,6 +302,7 @@ class Datapackage:
             "name": name,
             # Brightway specific
             "matrix": matrix_label,
+            "kind": "processed array",
         }
         if not is_interface:
             resource["path"] = str(filename)
@@ -306,7 +315,7 @@ class Datapackage:
         valid_for: list,
         name: str = None,
         extra: dict = None,
-    ):
+    ) -> None:
         """Add an iterable metadata object to be stored as a CSV file.
 
         The purpose of storing metadata is to enable data exchange; therefore, this method assumes that data is written to disk.
@@ -427,7 +436,7 @@ class Datapackage:
         name: Union[str, None] = None,
         nrows: Union[int, None] = None,
         extra: Union[None, dict] = None,
-    ):
+    ) -> None:
         """Add a numpy structured array resource that will be used to identify row and column matrix indices of presamples data.
 
         Each presamples data array which will be used in modifying matrices must have a corresponding indices array.
@@ -484,14 +493,14 @@ class Datapackage:
 
     def add_presamples_data_array(
         self,
-        iterable_data_source,
-        matrix_label,
-        name=None,
-        nrows=None,
-        dtype=np.float32,
-        extra=None,
-        is_interface=False,
-    ):
+        iterable_data_source: Any,
+        matrix_label: str,
+        name: Union[None, str] = None,
+        nrows: Union[None, int] = None,
+        dtype: Any = np.float32,
+        extra: Union[None, dict] = None,
+        is_interface: bool = False,
+    ) -> None:
         name, data = self._prepare_modifications(iterable_data_source, name)
 
         filename = check_suffix(name, ".npy")
@@ -512,6 +521,7 @@ class Datapackage:
             "name": name,
             # Brightway specific
             "matrix": matrix_label,
+            "kind": "presamples",
         }
         if not is_interface:
             resource["path"] = str(filename)
