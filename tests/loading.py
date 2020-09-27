@@ -7,16 +7,6 @@
 # import tempfile
 
 
-# def test_load_bytes():
-#     obj = BytesIO()
-#     np.save(obj, np.arange(10), allow_pickle=False)
-
-#     given = {"foo": obj}
-#     result = load_bytes(given)['foo']
-#     print(result)
-#     assert np.allclose(np.arange(10), result)
-
-
 # def test_load_package_in_directory():
 #     with tempfile.TemporaryDirectory() as td:
 #         td = Path(td)
