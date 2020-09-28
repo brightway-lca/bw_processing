@@ -32,6 +32,9 @@ class DirectoryIO(IOBase):
                 )
             self.dirpath.mkdir()
 
+    def delete_file(self, filename):
+        (self.dirpath / filename).unlink()
+
     def load_json(self, filename, proxy=False, mmap_mode=None):
         return json.load(open(self.dirpath / filename))
 
@@ -65,6 +68,9 @@ class ZipfileIO(IOBase):
     def __init__(self, filepath):
         self.path = Path(filepath)
         self.zf = zipfile.ZipFile(self.path)
+
+    def delete_file(self, filename):
+        raise NotImplementedError("Read-only zipfile")
 
     def load_numpy(self, filename, proxy=False, mmap_mode=None):
         kwargs = {
@@ -130,6 +136,12 @@ class InMemoryIO(IOBase):
         self._np_cache = {}
         self._json_cache = {}
         self._csv_cache = {}
+
+    def delete_file(self, filename):
+        for cache in (self._np_cache, self._json_cache, self._csv_cache):
+            if filename in cache:
+                del cache[filename]
+                break
 
     def load_json(self, filename, *args, **kwargss):
         return self._json_cache[filename]

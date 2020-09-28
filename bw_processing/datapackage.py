@@ -146,6 +146,52 @@ class Datapackage:
         self.io_obj.save_json(self.metadata, "datapackage.json")
         self.io_obj.archive()
 
+    def _get_index(self, name_or_index: Union[str, int]) -> int:
+        """Get index of a resource by name or index.
+
+        Returning the same number is a bit silly, but makes the other code simpler :)
+
+        Raises:
+
+        * IndexError: ``name_or_index`` was too big
+        * ValueError: Name ``name_or_index`` not found
+        * NonUnique: Name ``name_or_index`` not unique in given resources
+
+        """
+        if isinstance(name_or_index, int):
+            if name_or_index >= len(self.resources):
+                raise IndexError(
+                    "Index {} given, but only {} resources available".format(
+                        name_or_index, len(self.resources)
+                    )
+                )
+            return name_or_index
+        else:
+            indices = []
+            for i, o in enumerate(self.metadata):
+                if o["name"] == name_or_index:
+                    indices.append(i)
+
+            if not indices:
+                raise ValueError("Name {} not found in metadata".format(name_or_index))
+            elif len(indices) > 1:
+                raise NonUnique("This name present at indices: {}".format(indices))
+            else:
+                return indices[0]
+
+    def del_resource(self, name_or_index: Union[str, int]) -> None:
+        """Remove a resource, and delete its data file, if any."""
+        index = self._get_index(name_or_index)
+
+        try:
+            self.io_obj.delete_file(self.resources["path"])
+        except KeyError:
+            # Interface has no path
+            pass
+
+        del self.metadata["resources"][index]
+        del self.data[index]
+
     def get_resource(self, name_or_index: Union[str, int]) -> (Any, dict):
         """Return data and metadata for ``name_or_index``.
 
@@ -160,26 +206,7 @@ class Datapackage:
         Returns:
             Metadata dict
         """
-        if isinstance(name_or_index, int):
-            if name_or_index >= len(self.resources):
-                raise IndexError(
-                    "Index {} given, but only {} resources available".format(
-                        name_or_index, len(self.resources)
-                    )
-                )
-            index = name_or_index
-        else:
-            indices = []
-            for i, o in enumerate(self.metadata):
-                if o["name"] == name_or_index:
-                    indices.append(i)
-
-            if not indices:
-                raise ValueError("Name {} not found in metadata".format(name_or_index))
-            elif len(indices) > 1:
-                raise NonUnique("This name present at indices: {}".format(indices))
-            else:
-                index = indices[0]
+        index = self._get_index(name_or_index)
 
         if isinstance(self.data[index], ReadProxy):
             obj = self.data[index]()
