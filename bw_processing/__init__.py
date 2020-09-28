@@ -11,8 +11,8 @@ __all__ = (
     "DEFAULT_LICENSES",
     "dictionary_wrapper",
     "examples_dir",
-    "GenericProxy",
     "indices_wrapper",
+    "InterfaceResource",
     "load_datapackage",
     "MAX_SIGNED_32BIT_INT",
     "md5",
@@ -28,5 +28,5 @@ from .utils import dictionary_wrapper, indices_wrapper
 from .filesystem import md5, safe_filename, clean_datapackage_name
 from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
-from .proxies import ReadProxy, GenericProxy
+from .proxies import ReadProxy, InterfaceResource
 from .examples import examples_dir

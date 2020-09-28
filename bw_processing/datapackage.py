@@ -7,7 +7,7 @@ from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
 from .filesystem import clean_datapackage_name
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
-from .proxies import ReadProxy, GenericProxy
+from .proxies import ReadProxy, InterfaceResource
 from .utils import check_name, check_suffix, load_bytes
 from pathlib import Path
 from typing import Union, Any
@@ -84,7 +84,7 @@ class Datapackage:
                     self.io_obj.load_json(resource["path"], mmap_mode=mmap_mode)
                 )
             else:
-                self.data.append(GenericProxy())
+                self.data.append(InterfaceResource())
 
     def _create(
         self,
@@ -125,28 +125,23 @@ class Datapackage:
 
         self.data = []
 
-    def _purge_interfaces(self) -> None:
-        """Remove resources with the profile ``interface``, as they can't be saved to disk."""
+    def _substitute_interfaces(self) -> None:
+        """Substitute an interface resource with ``InterfaceResource``, in preparation for finalizing data on disk."""
         interface_indices = [
             index
             for index, obj in enumerate(self.resources)
             if obj["profile"] == "interface"
         ]
-        self.resources = [
-            obj
-            for index, obj in enumerate(self.resources)
-            if index not in interface_indices
-        ]
-        self.data = [
-            obj for index, obj in enumerate(self.data) if index not in interface_indices
-        ]
+
+        for index in interface_indices:
+            self.resources[index] = InterfaceResource()
 
     def finalize(self) -> None:
-        self._purge_interfaces()
-        self._check_length_consistency()
-
         if self._finalized:
             raise Closed("Datapackage already finalized")
+
+        self._substitute_interfaces()
+        self._check_length_consistency()
 
         self.io_obj.save_json(self.metadata, "datapackage.json")
         self.io_obj.archive()

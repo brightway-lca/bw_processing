@@ -15,7 +15,7 @@ class ReadProxy:
         return "A deferred function that will read data only when needed"
 
 
-class GenericProxy:
-    """A resource that we don't understand"""
+class InterfaceResource:
+    """An interface to external data that isn't saved to disk."""
 
     pass
