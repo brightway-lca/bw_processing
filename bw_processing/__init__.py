@@ -3,6 +3,7 @@ __all__ = (
     "as_unique_attributes",
     "as_unique_attributes_dataframe",
     "COMMON_DTYPE",
+    "clean_datapackage_name",
     "create_array",
     "create_datapackage",
     "create_structured_array",
@@ -24,7 +25,7 @@ from .version import version as __version__
 from .datapackage import Datapackage, create_datapackage, load_datapackage
 from .constants import COMMON_DTYPE, DEFAULT_LICENSES, MAX_SIGNED_32BIT_INT
 from .utils import dictionary_wrapper, indices_wrapper
-from .filesystem import md5, safe_filename
+from .filesystem import md5, safe_filename, clean_datapackage_name
 from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
 from .proxies import ReadProxy, GenericProxy
