@@ -21,7 +21,7 @@ class Datapackage:
     """
     Interface for creating, loading, and using numerical datapackages for Brightway.
 
-    Note that there are two entry points to using this class: ``Datapackage.create()`` and ``Datapackage.load()``. Do not create an instance of the class with ``Datapackage()``, it almost certainly won't work!
+    Note that there are two entry points to using this class, both separate functions: ``create_datapackage()`` and ``load_datapackage()``. Do not create an instance of the class with ``Datapackage()``, unless you like playing with danger :)
 
     Data packages can be stored in memory, in a directory, or in a zip file. When creating data packages for use later, don't forget to call ``.finalize()``, or the metadata won't be written and the data package won't be usable.
 
@@ -50,12 +50,6 @@ class Datapackage:
         self.metadata["resources"] = dct
 
     resources = property(__get_resources, __set_resources)
-
-    @staticmethod
-    def load(path: Union[Path, str], mmap_mode: Union[None, str] = None) -> Datapackage:
-        obj = Datapackage()
-        obj._load(path, mmap_mode)
-        return obj
 
     def _load(self, path: Union[Path, str], mmap_mode: Union[None, str]) -> None:
         path = Path(path)
@@ -92,19 +86,6 @@ class Datapackage:
             else:
                 self.data.append(GenericProxy())
 
-    @staticmethod
-    def create(
-        dirpath: Union[Path, str] = None,
-        name: Union[None, str] = None,
-        id_: Union[None, str] = None,
-        metadata: Union[dict, str] = None,
-        overwrite: bool = False,
-        compress: bool = False,
-    ) -> Datapackage:
-        obj = Datapackage()
-        obj._create(dirpath, name, id_, metadata, compress)
-        return obj
-
     def _create(
         self,
         dirpath: Union[str, Path, None],
@@ -112,7 +93,7 @@ class Datapackage:
         id_: Union[str, None],
         metadata: Union[dict, None],
         overwrite: bool = False,
-        compress: bool,
+        compress: bool = False,
     ) -> None:
         """Start a new data package.
 
@@ -527,3 +508,24 @@ class Datapackage:
             resource["path"] = str(filename)
         self._add_extra_metadata(resource, extra)
         self.resources.append(resource)
+
+
+def create_datapackage(
+    dirpath: Union[Path, str] = None,
+    name: Union[None, str] = None,
+    id_: Union[None, str] = None,
+    metadata: Union[dict, str] = None,
+    overwrite: bool = False,
+    compress: bool = False,
+) -> Datapackage:
+    obj = Datapackage()
+    obj._create(dirpath, name, id_, metadata, compress)
+    return obj
+
+
+def load_datapackage(
+    path: Union[Path, str], mmap_mode: Union[None, str] = None
+) -> Datapackage:
+    obj = Datapackage()
+    obj._load(path, mmap_mode)
+    return obj
