@@ -229,7 +229,7 @@ class Datapackage:
         if name in existing_names:
             raise NonUnique("This name already used")
 
-        return name, data
+        return data, name
 
     def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]) -> None:
         for key in extra or {}:
@@ -282,7 +282,7 @@ class Datapackage:
             Nothing, but appends objects to ``self.metadata['resources']`` and ``self.data``.
 
         """
-        name, data = self._prepare_modifications(iterable_data_source, name)
+        data, name = self._prepare_modifications(iterable_data_source, name)
 
         filename = check_suffix(name, ".npy")
 
@@ -354,7 +354,7 @@ class Datapackage:
         names = {obj["name"] for obj in self.resources}
         assert all(x in names for x, y in valid_for)
 
-        name, data = self._prepare_modifications(dataframe, name)
+        data, name = self._prepare_modifications(dataframe, name)
 
         filename = check_suffix(name, ".csv")
 
@@ -404,10 +404,10 @@ class Datapackage:
             * AssertionError: If ``valid_for`` refers to unavailable resources
 
         """
-        assert isinstance(data_array, str)
+        assert isinstance(valid_for, str)
         assert valid_for in {obj["name"] for obj in self.resources}
 
-        data = self._prepare_modifications(data)
+        data, name = self._prepare_modifications(data, name)
 
         name = name or uuid.uuid4().hex
         check_name(name)
@@ -469,7 +469,7 @@ class Datapackage:
         assert isinstance(data_array, str)
         assert data_array in {obj["name"] for obj in self.resources}
 
-        name, data = self._prepare_modifications(iterable_data_source, name)
+        data, name = self._prepare_modifications(iterable_data_source, name)
 
         filename = check_suffix(name, ".npy")
 
@@ -504,7 +504,7 @@ class Datapackage:
         extra: Union[None, dict] = None,
         is_interface: bool = False,
     ) -> None:
-        name, data = self._prepare_modifications(iterable_data_source, name)
+        data, name = self._prepare_modifications(iterable_data_source, name)
 
         filename = check_suffix(name, ".npy")
 
