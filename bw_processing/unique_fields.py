@@ -60,12 +60,9 @@ def greedy_set_cover(data, exclude=None, raise_error=True):
 
 def as_unique_attributes_dataframe(df, exclude=None, include=None, raise_error=False):
     assert isinstance(df, pd.DataFrame)
-
-    exclude = set(exclude or [])
     include = greedy_set_cover(
         df.reset_index().to_dict("records"), exclude=exclude, raise_error=raise_error
     ).union(include or [])
-
     to_drop = [col for col in df.columns if col not in include]
     return df.drop(columns=to_drop)
 
@@ -93,7 +90,6 @@ def as_unique_attributes(data, exclude=None, include=None, raise_error=False):
         InconsistentFields: Not all features provides all fields.
     """
     include = set(include or [])
-    exclude = set(exclude or set()).union("id")
     fields = greedy_set_cover(data, exclude=exclude, raise_error=raise_error)
 
     if len({tuple(sorted(obj.keys())) for obj in data}) > 1:
