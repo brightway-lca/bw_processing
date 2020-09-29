@@ -100,7 +100,7 @@ def create_structured_array(iterable, nrows=None, dtype=None, sort=True):
         for i, row in enumerate(iterable):
             if i > (nrows - 1):
                 raise ValueError("More rows than `nrows`")
-            array[i] = row
+            array[i] = tuple(row)
 
     else:
         array = create_chunked_structured_array(iterable, dtype)
