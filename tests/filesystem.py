@@ -5,7 +5,7 @@ fixtures_dir = Path(__file__, "..").resolve() / "fixtures"
 
 
 def test_md5():
-    assert md5(fixtures_dir / "lorem.txt") == "edc715389af2498a623134608ba0a55b"
+    assert md5(fixtures_dir / "basic_array.npy") == "45aebe85c3a7b11d0427a98c07a4b90d"
 
 
 def test_safe_filename():
