@@ -2,8 +2,8 @@ __all__ = (
     "__version__",
     "as_unique_attributes",
     "as_unique_attributes_dataframe",
-    "COMMON_DTYPE",
     "clean_datapackage_name",
+    "COMMON_DTYPE",
     "create_array",
     "create_datapackage",
     "create_structured_array",
@@ -12,12 +12,12 @@ __all__ = (
     "dictionary_wrapper",
     "examples_dir",
     "indices_wrapper",
-    "InterfaceResource",
     "load_datapackage",
     "MAX_SIGNED_32BIT_INT",
     "md5",
     "ReadProxy",
     "safe_filename",
+    "UndefinedInterface",
 )
 
 from .version import version as __version__
@@ -28,5 +28,5 @@ from .utils import dictionary_wrapper, indices_wrapper
 from .filesystem import md5, safe_filename, clean_datapackage_name
 from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
-from .proxies import ReadProxy, InterfaceResource
+from .proxies import ReadProxy, UndefinedInterface
 from .examples import examples_dir

@@ -15,7 +15,7 @@ class ReadProxy:
         return "A deferred function that will read data only when needed"
 
 
-class InterfaceResource:
+class UndefinedInterface:
     """An interface to external data that isn't saved to disk."""
 
     pass

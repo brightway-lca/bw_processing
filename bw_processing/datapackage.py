@@ -7,7 +7,7 @@ from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
 from .filesystem import clean_datapackage_name
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
-from .proxies import ReadProxy, InterfaceResource
+from .proxies import ReadProxy, UndefinedInterface
 from .utils import check_name, check_suffix, load_bytes
 from pathlib import Path
 from typing import Union, Any
@@ -56,7 +56,7 @@ class Datapackage:
         if not path.exists():
             raise ValueError("Given path doesn't exist")
         if path.is_file():
-            self.io_obj = ZipfileIO(path)
+            self.io_obj = ZipfileIO(filepath=path)
         elif path.is_dir():
             self.io_obj = DirectoryIO(path)
         else:
@@ -84,7 +84,7 @@ class Datapackage:
                     self.io_obj.load_json(resource["path"], mmap_mode=mmap_mode)
                 )
             else:
-                self.data.append(InterfaceResource())
+                self.data.append(UndefinedInterface())
 
     def _create(
         self,
@@ -107,9 +107,13 @@ class Datapackage:
         if dirpath is None:
             self.io_obj = InMemoryIO()
         elif compress:
-            self.io_obj = TemporaryDirectoryIO(dirpath, check_suffix(name, ".zip"))
+            self.io_obj = TemporaryDirectoryIO(
+                dest_dirpath=dirpath,
+                dest_filename=check_suffix(name, ".zip"),
+                overwrite=overwrite,
+            )
         else:
-            self.io_obj = DirectoryIO(dirpath)
+            self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
 
         self.metadata = {
             "profile": "data-package",
@@ -126,7 +130,7 @@ class Datapackage:
         self.data = []
 
     def _substitute_interfaces(self) -> None:
-        """Substitute an interface resource with ``InterfaceResource``, in preparation for finalizing data on disk."""
+        """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
         interface_indices = [
             index
             for index, obj in enumerate(self.resources)
@@ -134,7 +138,7 @@ class Datapackage:
         ]
 
         for index in interface_indices:
-            self.resources[index] = InterfaceResource()
+            self.resources[index] = UndefinedInterface()
 
     def finalize(self) -> None:
         if self._finalized:
@@ -168,7 +172,7 @@ class Datapackage:
             return name_or_index
         else:
             indices = []
-            for i, o in enumerate(self.metadata):
+            for i, o in enumerate(self.resources):
                 if o["name"] == name_or_index:
                     indices.append(i)
 
@@ -541,7 +545,14 @@ def create_datapackage(
     compress: bool = False,
 ) -> Datapackage:
     obj = Datapackage()
-    obj._create(dirpath, name, id_, metadata, compress)
+    obj._create(
+        dirpath=dirpath,
+        name=name,
+        id_=id_,
+        metadata=metadata,
+        overwrite=overwrite,
+        compress=compress,
+    )
     return obj
 
 
@@ -549,5 +560,5 @@ def load_datapackage(
     path: Union[Path, str], mmap_mode: Union[None, str] = None
 ) -> Datapackage:
     obj = Datapackage()
-    obj._load(path, mmap_mode)
+    obj._load(path=path, mmap_mode=mmap_mode)
     return obj
