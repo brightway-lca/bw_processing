@@ -183,6 +183,12 @@ class Datapackage:
             else:
                 return indices[0]
 
+    def define_interface_resource(
+        self, name_or_index: Union[str, int], resource: Any
+    ) -> None:
+        """Substitute the undefined interface with ``resource``"""
+        self.data[self._get_index(name_or_index)] = resource
+
     def del_resource(self, name_or_index: Union[str, int]) -> None:
         """Remove a resource, and delete its data file, if any."""
         index = self._get_index(name_or_index)
@@ -218,103 +224,235 @@ class Datapackage:
 
         return self.data[index], self.resources[index]
 
-    def _prepare_modifications(self, data: Any, name: str) -> (str, Any):
-        data = load_bytes(data)
+    def _prepare_modifications(self) -> None:
+        self._check_length_consistency()
 
         if self._finalized:
             raise Closed("Datapackage already finalized")
 
-        self._check_length_consistency()
-
+    def _prepare_name(self, name: str) -> str:
         name = name or uuid.uuid4().hex
-        check_name(name)
 
         existing_names = {o["name"] for o in self.resources}
         if name in existing_names:
             raise NonUnique("This name already used")
 
-        return data, name
+        return name
 
     def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]) -> None:
         for key in extra or {}:
             if key not in resource:
                 resource[key] = extra[key]
 
-    def add_structured_array(
+    def add_persistent_vector(
         self,
-        iterable_data_source: Any,
-        matrix_label: str,
+        *,  # Forces use of keyword arguments
+        matrix_label: str = None,
+        name: Union[str, None] = None,
+        dict_iterator=None,
+        nrows: Union[int, None] = None,
+        data_array=None,
+        indices_array=None,
+        flip_array=None,
+        extra: Union[None, dict] = None,
+    ) -> None:
+        """"""
+        self._prepare_modifications()
+
+        if matrix_label is None:
+            raise ValueError("`matrix_label` is required")
+        elif dict_iterator is None or (data_array is None or indices_array is None):
+            raise ValueError(
+                "Must pass either `dict_iterator` or (`data_array` and `indices_array`)"
+            )
+        elif dict_iterator is not None and (
+            data_array is not None or indices_array is not None
+        ):
+            raise ValueError(
+                "Can't pass both `dict_iterator` and (`data_array` and `indices_array`)"
+            )
+
+        if dict_iterator is not None:
+            data_array, indices_array, flip_array = resolve_dict_iterator(
+                dict_iterator, nrows
+            )
+
+        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
+            flip_array = None
+
+        kwargs = {"matrix_label": matrix_label, "category": "vector", "extra": extra}
+
+        self._add_processed_array_resource(
+            array=load_bytes(data_array), name=name + ".data", kind="data", **kwargs
+        )
+        self._add_processed_array_resource(
+            array=load_bytes(indices_array),
+            name=name + ".indices",
+            kind="indices",
+            **kwargs,
+        )
+        if flip_array is not None:
+            self._add_processed_array_resource(
+                array=load_bytes(flip_array), name=name + ".flip", kind="flip", **kwargs
+            )
+
+    def add_persistent_array(
+        self,
+        *,  # Forces use of keyword arguments
+        matrix_label: str = None,
         name: Union[str, None] = None,
         nrows: Union[int, None] = None,
-        dtype: Any = None,
+        data_array=None,
+        indices_array=None,
+        flip_array=None,
         extra: Union[None, dict] = None,
-        is_interface: bool = False,
     ) -> None:
-        """Add a numpy structured array resource that will be used to create at least part of a matrix.
+        """"""
+        self._prepare_modifications()
 
-        ``iterable_data_source`` can be any of the following:
+        if matrix_label is None:
+            raise ValueError("`matrix_label` is required")
 
-        * An iterable (i.e. an object that supports the python iterator interface) that will return rows that can be used to create a numpy array. This is the most common use case, with the iterable being a wrapped database cursor. This object must return rows as tuples which match the dtype of the structured array. I strongly encourage using the common datatype (``COMMON_DTYPE``), which is also the default.
-        * A numpy structured array.
-        * A numpy structured array serialized into a ``BytesIO`` object.
+        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
+            flip_array = None
 
-        In contrast with presamples arrays, ``iterable_data_source`` cannot be an infinite generator. We need a finite set of data to build a matrix.
+        kwargs = {"matrix_label": matrix_label, "category": "array", "extra": extra}
 
-        A file will be created on disk if both of the following hold:
+        self._add_processed_array_resource(
+            array=load_bytes(data_array), name=name + ".data", kind="data", **kwargs
+        )
+        self._add_processed_array_resource(
+            array=load_bytes(indices_array),
+            name=name + ".indices",
+            kind="indices",
+            **kwargs,
+        )
+        if flip_array is not None:
+            self._add_processed_array_resource(
+                array=load_bytes(flip_array), name=name + ".flip", kind="flip", **kwargs
+            )
 
-            * The ``Datapackage.io_obj`` object is not ``InMemoryIO``, i.e. the call to ``Datapackage.create`` had a real file or directory path.
-            * ``is_interface`` is false.
-
-        Memory notes:
-
-            * This method will not retain a reference to ``iterable_data_source``.
-            * If the array is written to disk, a ``ReadProxy`` object is added to ``self.data``. Once a ``ReadProxy`` object is accessed using ``self.get_resource()``, it is loaded into memory (and the object in ``self.data`` is substituted by the loaded array).
-            * If the data package is created in memory, the entire array is kept in memory.
-
-        Args:
-
-            * iterable_data_source: See discussion above
-            * matrix_label: The label of the matrix to be constructed
-            * name (optional): The name of this resource. Names must be unique in a given data package
-            * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
-            * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
-            * extra (optional): Dict of extra metadata
-            * is_interface (optional): Flag indicating whether this resource is an interface to an external data source. Interfaces are never saved to disk.
-
-        Returns:
-
-            Nothing, but appends objects to ``self.metadata['resources']`` and ``self.data``.
-
-        """
-        data, name = self._prepare_modifications(iterable_data_source, name)
-
+    def _add_array_resource(self, array, name, matrix_label, kind, extra):
         filename = check_suffix(name, ".npy")
 
-        if isinstance(iterable_data_source, np.ndarray):
-            array = iterable_data_source
-        else:
-            array = create_structured_array(iterable_data_source, nrows, dtype)
-
-        if not is_interface:
-            self.io_obj.save_numpy(array, filename)
-            self.data.append(self.io_obj.load_numpy(filename, proxy=True))
-        else:
-            self.data.append(array)
+        self.io_obj.save_numpy(array, filename)
+        self.data.append(self.io_obj.load_numpy(filename, proxy=True))
 
         resource = {
             # Datapackage generic
-            "profile": "interface" if is_interface else "data-resource",
+            "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
             "name": name,
             # Brightway specific
             "matrix": matrix_label,
-            "kind": "processed array",
+            "kind": kind,
+            "path": str(filename),
         }
-        if not is_interface:
-            resource["path"] = str(filename)
         self._add_extra_metadata(resource, extra)
         self.resources.append(resource)
+
+    # def add_structured_array(
+    #     self,
+    #     iterable_data_source: Any,
+    #     matrix_label: str,
+    #     name: Union[str, None] = None,
+    #     nrows: Union[int, None] = None,
+    #     dtype: Any = None,
+    #     extra: Union[None, dict] = None,
+    #     is_interface: bool = False,
+    # ) -> None:
+    #     """Add a numpy structured array resource that will be used to create at least part of a matrix.
+
+    #     ``iterable_data_source`` can be any of the following:
+
+    #     * An iterable (i.e. an object that supports the python iterator interface) that will return rows that can be used to create a numpy array. This is the most common use case, with the iterable being a wrapped database cursor. This object must return rows as tuples which match the dtype of the structured array. I strongly encourage using the common datatype (``COMMON_DTYPE``), which is also the default.
+    #     * A numpy structured array.
+    #     * A numpy structured array serialized into a ``BytesIO`` object.
+
+    #     In contrast with presamples arrays, ``iterable_data_source`` cannot be an infinite generator. We need a finite set of data to build a matrix.
+
+    #     A file will be created on disk if both of the following hold:
+
+    #         * The ``Datapackage.io_obj`` object is not ``InMemoryIO``, i.e. the call to ``Datapackage.create`` had a real file or directory path.
+    #         * ``is_interface`` is false.
+
+    #     Memory notes:
+
+    #         * This method will not retain a reference to ``iterable_data_source``.
+    #         * If the array is written to disk, a ``ReadProxy`` object is added to ``self.data``. Once a ``ReadProxy`` object is accessed using ``self.get_resource()``, it is loaded into memory (and the object in ``self.data`` is substituted by the loaded array).
+    #         * If the data package is created in memory, the entire array is kept in memory.
+
+    #     Args:
+
+    #         * iterable_data_source: See discussion above
+    #         * matrix_label: The label of the matrix to be constructed
+    #         * name (optional): The name of this resource. Names must be unique in a given data package
+    #         * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
+    #         * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
+    #         * extra (optional): Dict of extra metadata
+    #         * is_interface (optional): Flag indicating whether this resource is an interface to an external data source. Interfaces are never saved to disk.
+
+    #     Returns:
+
+    #         Nothing, but appends objects to ``self.metadata['resources']`` and ``self.data``.
+
+    #     """
+    #     data, name = self._prepare_modifications(iterable_data_source, name)
+
+    #     filename = check_suffix(name, ".npy")
+
+    #     if isinstance(iterable_data_source, np.ndarray):
+    #         array = iterable_data_source
+    #     else:
+    #         array = create_structured_array(iterable_data_source, nrows, dtype)
+
+    #     if not is_interface:
+    #         self.io_obj.save_numpy(array, filename)
+    #         self.data.append(self.io_obj.load_numpy(filename, proxy=True))
+    #     else:
+    #         self.data.append(array)
+
+    #     resource = {
+    #         # Datapackage generic
+    #         "profile": "interface" if is_interface else "data-resource",
+    #         "format": "npy",
+    #         "mediatype": "application/octet-stream",
+    #         "name": name,
+    #         # Brightway specific
+    #         "matrix": matrix_label,
+    #         "kind": "processed array",
+    #     }
+    #     if not is_interface:
+    #         resource["path"] = str(filename)
+    #     self._add_extra_metadata(resource, extra)
+    #     self.resources.append(resource)
+
+    def add_dynamic_vector(
+        self,
+        *,
+        matrix_label: str,
+        name: Union[str, None] = None,
+        interface=None,
+        indices_array=None,  # Not interface
+        flip_array=None,  # Not interface
+        extra: Union[None, dict] = None,
+    ):
+        pass
+
+    def add_dynamic_array(
+        self,
+        *,
+        matrix_label: str,
+        name: Union[str, None] = None,
+        nrows: Union[int, None] = None,
+        interface=None,
+        indices_array=None,
+        flip_array=None,
+        extra: Union[None, dict] = None,
+    ):
+        """`interface` must support the presamples API."""
+        pass
 
     def add_csv_metadata(
         self,
@@ -436,67 +574,67 @@ class Datapackage:
 
         self.resources.append(resource)
 
-    def add_presamples_indices_array(
-        self,
-        iterable_data_source: Any,
-        data_array: str,
-        name: Union[str, None] = None,
-        nrows: Union[int, None] = None,
-        extra: Union[None, dict] = None,
-    ) -> None:
-        """Add a numpy structured array resource that will be used to identify row and column matrix indices of presamples data.
+    # def add_presamples_indices_array(
+    #     self,
+    #     iterable_data_source: Any,
+    #     data_array: str,
+    #     name: Union[str, None] = None,
+    #     nrows: Union[int, None] = None,
+    #     extra: Union[None, dict] = None,
+    # ) -> None:
+    #     """Add a numpy structured array resource that will be used to identify row and column matrix indices of presamples data.
 
-        Each presamples data array which will be used in modifying matrices must have a corresponding indices array.
+    #     Each presamples data array which will be used in modifying matrices must have a corresponding indices array.
 
-        ``iterable_data_source`` can be any of the following:
+    #     ``iterable_data_source`` can be any of the following:
 
-        * An iterable (i.e. an object that supports the python iterator interface) that will return rows that can be used to create a numpy array. This is the most common use case, with the iterable being a wrapped database cursor. This object must return rows as tuples which match the indices dtype (``constants.INDICES_DTYPE``).
-        * A numpy structured array which has the dtype ``constants.INDICES_DTYPE``.
-        * A numpy structured array serialized into a ``BytesIO`` object which has the dtype ``constants.INDICES_DTYPE``.
+    #     * An iterable (i.e. an object that supports the python iterator interface) that will return rows that can be used to create a numpy array. This is the most common use case, with the iterable being a wrapped database cursor. This object must return rows as tuples which match the indices dtype (``constants.INDICES_DTYPE``).
+    #     * A numpy structured array which has the dtype ``constants.INDICES_DTYPE``.
+    #     * A numpy structured array serialized into a ``BytesIO`` object which has the dtype ``constants.INDICES_DTYPE``.
 
-        I strongly recommend using the utility function ``indices_wrapper``.
+    #     I strongly recommend using the utility function ``indices_wrapper``.
 
-        Args:
+    #     Args:
 
-            * iterable_data_source: See discussion above matrix_label: The label of the matrix to be constructed
-            * name (optional): The name of this resource. Names must be unique in a given data package
-            * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
-            * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
-            * extra (optional): Dict of extra metadata
-            * is_interface (optional): Flag indicating whether this resource is an interface to an external data source. Interfaces are never saved to disk.
+    #         * iterable_data_source: See discussion above matrix_label: The label of the matrix to be constructed
+    #         * name (optional): The name of this resource. Names must be unique in a given data package
+    #         * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
+    #         * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
+    #         * extra (optional): Dict of extra metadata
+    #         * is_interface (optional): Flag indicating whether this resource is an interface to an external data source. Interfaces are never saved to disk.
 
-        Returns:
+    #     Returns:
 
-            Nothing, but appends objects to ``self.metadata['resources']`` and ``self.data``.
+    #         Nothing, but appends objects to ``self.metadata['resources']`` and ``self.data``.
 
-        """
-        assert isinstance(data_array, str)
-        assert data_array in {obj["name"] for obj in self.resources}
+    #     """
+    #     assert isinstance(data_array, str)
+    #     assert data_array in {obj["name"] for obj in self.resources}
 
-        data, name = self._prepare_modifications(iterable_data_source, name)
+    #     data, name = self._prepare_modifications(iterable_data_source, name)
 
-        filename = check_suffix(name, ".npy")
+    #     filename = check_suffix(name, ".npy")
 
-        if isinstance(iterable_data_source, np.ndarray):
-            array = iterable_data_source
-        else:
-            array = create_structured_indices_array(iterable_data_source, nrows)
+    #     if isinstance(iterable_data_source, np.ndarray):
+    #         array = iterable_data_source
+    #     else:
+    #         array = create_structured_indices_array(iterable_data_source, nrows)
 
-        self.io_obj.save_numpy(array, filename)
-        self.data.append(self.io_obj.load_numpy(filename, proxy=True))
+    #     self.io_obj.save_numpy(array, filename)
+    #     self.data.append(self.io_obj.load_numpy(filename, proxy=True))
 
-        resource = {
-            # Datapackage generic
-            "profile": "data-resource",
-            "format": "npy",
-            "mediatype": "application/octet-stream",
-            "name": name,
-            "path": str(filename),
-            # Brightway specific
-            "data_array": data_array,
-        }
-        self._add_extra_metadata(resource, extra)
-        self.resources.append(resource)
+    #     resource = {
+    #         # Datapackage generic
+    #         "profile": "data-resource",
+    #         "format": "npy",
+    #         "mediatype": "application/octet-stream",
+    #         "name": name,
+    #         "path": str(filename),
+    #         # Brightway specific
+    #         "data_array": data_array,
+    #     }
+    #     self._add_extra_metadata(resource, extra)
+    #     self.resources.append(resource)
 
     def add_presamples_data_array(
         self,
