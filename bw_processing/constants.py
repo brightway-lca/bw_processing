@@ -10,11 +10,7 @@ MAX_SIGNED_32BIT_INT = 2147483647
 # a structured array requires a copy. So, for example, on
 # EXIOBASE, it takes ~218 ms to load the technosphere,
 # but -687ms to append two columns.
-COMMON_DTYPE = [
-    ("row_value", np.int32),
-    ("col_value", np.int32),
-    ("row_index", np.int32),
-    ("col_index", np.int32),
+UNCERTAINTY_DTYPE = [
     ("uncertainty_type", np.uint8),
     ("amount", np.float32),
     ("loc", np.float32),
@@ -25,12 +21,8 @@ COMMON_DTYPE = [
     ("negative", np.bool),
     ("flip", np.bool),
 ]
-INDICES_DTYPE = [
-    ("row_value", np.int32),
-    ("col_value", np.int32),
-    ("row_index", np.int32),
-    ("col_index", np.int32),
-]
+INDICES_DTYPE = [("row_value", np.int32), ("col_value", np.int32)]
+MAPPED_INDICES_DTYPE = [("row_index", np.int32), ("col_index", np.int32)]
 
 NAME_RE = re.compile(r"^[\w\-\.]*$")
 
