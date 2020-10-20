@@ -1,8 +1,9 @@
-from .constants import MAX_SIGNED_32BIT_INT, NAME_RE
+from .array_creation import create_structured_array
+from .constants import NAME_RE, UNCERTAINTY_DTYPE, INDICES_DTYPE
 from .errors import InvalidName
 from io import BytesIO
+from numpy.lib.recfunctions import repack_fields
 from pathlib import Path
-import itertools
 import numpy as np
 
 
@@ -24,21 +25,14 @@ def check_name(name):
         )
 
 
-def chunked(iterable, chunk_size):
-    # Black magic, see https://stackoverflow.com/a/31185097
-    # and https://docs.python.org/3/library/functions.html#iter
-    iterable = iter(iterable)  # Fix e.g. range from restarting
-    return iter(lambda: list(itertools.islice(iterable, chunk_size)), [])
-
-
-def indices_wrapper(datasource):
-    for row in datasource:
-        yield (row["row"], row["col"], MAX_SIGNED_32BIT_INT, MAX_SIGNED_32BIT_INT)
-
-
-def dictionary_wrapper(datasource):
-    for row in datasource:
-        yield dictionary_formatter(row)
+def check_suffix(path, suffix):
+    """Add ``suffix``, if not already in ``path``."""
+    path = Path(path)
+    if not suffix.startswith("."):
+        suffix = "." + suffix
+    if path.suffix != suffix:
+        path = path.with_suffix(path.suffix + suffix)
+    return path
 
 
 def as_uncertainty_type(row):
@@ -57,10 +51,8 @@ def dictionary_formatter(row):
         row["row"],
         # 1-d matrix
         row.get("col", row["row"]),
-        MAX_SIGNED_32BIT_INT,
-        MAX_SIGNED_32BIT_INT,
-        as_uncertainty_type(row),
         row["amount"],
+        as_uncertainty_type(row),
         row.get("loc", row["amount"]),
         row.get("scale", np.NaN),
         row.get("shape", np.NaN),
@@ -71,11 +63,37 @@ def dictionary_formatter(row):
     )
 
 
-def check_suffix(path, suffix):
-    """Add ``suffix``, if not already in ``path``."""
-    path = Path(path)
-    if not suffix.startswith("."):
-        suffix = "." + suffix
-    if path.suffix != suffix:
-        path = path.with_suffix(path.suffix + suffix)
-    return path
+def resolve_dict_iterator(iterator, nrows=None):
+    sort_fields = ["row_value", "col_value", "amount", "uncertainty_type"]
+    data = (dictionary_formatter(row) for row in iterator)
+    array = create_structured_array(
+        data,
+        INDICES_DTYPE
+        + [("amount", np.float32)]
+        + UNCERTAINTY_DTYPE
+        + [("flip", np.bool)],
+        nrows=nrows,
+        sort=True,
+        sort_fields=sort_fields,
+    )
+    return (
+        array["amount"],
+        # Not repacking fields would cause this multi-field index to return a view
+        # All columns would be serialized
+        # See https://numpy.org/doc/stable/user/basics.rec.html#indexing-structured-arrays
+        repack_fields(array[["row_value", "col_value"]]),
+        repack_fields(
+            array[
+                [
+                    "uncertainty_type",
+                    "loc",
+                    "scale",
+                    "shape",
+                    "minimum",
+                    "maximum",
+                    "negative",
+                ]
+            ]
+        ),
+        array["flip"],
+    )

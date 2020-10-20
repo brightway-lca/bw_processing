@@ -1,47 +1,23 @@
-from .array_creation import (
-    create_array,
-    create_structured_array,
-    create_structured_indices_array,
-)
 from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
-from .filesystem import clean_datapackage_name
+from .filesystem import clean_datapackage_name, safe_filename
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
-from .proxies import ReadProxy, UndefinedInterface
-from .utils import check_name, check_suffix, load_bytes
+from .proxies import UndefinedInterface
+from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator
 from pathlib import Path
 from typing import Union, Any
 import datetime
 import numpy as np
 import pandas as pd
 import uuid
+import itertools
+from copy import deepcopy
+from functools import partial
 
 
-class Datapackage:
-    """
-    Interface for creating, loading, and using numerical datapackages for Brightway.
-
-    Note that there are two entry points to using this class, both separate functions: ``create_datapackage()`` and ``load_datapackage()``. Do not create an instance of the class with ``Datapackage()``, unless you like playing with danger :)
-
-    Data packages can be stored in memory, in a directory, or in a zip file. When creating data packages for use later, don't forget to call ``.finalize()``, or the metadata won't be written and the data package won't be usable.
-
-    Potential gotchas:
-
-    * There is currently no way to modify a zipped data package once it is finalized.
-    * Resources that are interfaces to external data sources (either in Python or other) can't be saved, but must be recreated each time a data package is used.
-
-    """
-
+class FilteredDatapackage:
     def __init__(self):
         self._finalized = False
-
-    def _check_length_consistency(self) -> None:
-        if len(self.resources) != len(self.data):
-            raise LengthMismatch(
-                "Number of resources ({}) doesn't match number of data objects ({})".format(
-                    len(self.resources), len(self.data)
-                )
-            )
 
     def __get_resources(self):
         return self.metadata["resources"]
@@ -51,104 +27,13 @@ class Datapackage:
 
     resources = property(__get_resources, __set_resources)
 
-    def _load(self, path: Union[Path, str], mmap_mode: Union[None, str]) -> None:
-        path = Path(path)
-        if not path.exists():
-            raise ValueError("Given path doesn't exist")
-        if path.is_file():
-            self.io_obj = ZipfileIO(filepath=path)
-        elif path.is_dir():
-            self.io_obj = DirectoryIO(path)
-        else:
-            raise ValueError("Can't understand given path")
-
-        self.metadata = self.io_obj.load_json("datapackage.json")
-        self.data = []
-        self._load_all(mmap_mode)
-
-    def _load_all(self, mmap_mode: Union[None, str]) -> None:
-        for resource in self.resources:
-            if (
-                resource["mediatype"] == "application/octet-stream"
-                and resource["format"] == "npy"
-            ):
-                self.data.append(
-                    self.io_obj.load_numpy(resource["path"], mmap_mode=mmap_mode)
-                )
-            elif resource["mediatype"] == "text/csv":
-                self.data.append(
-                    self.io_obj.load_csv(resource["path"], mmap_mode=mmap_mode)
-                )
-            elif resource["mediatype"] == "application/json":
-                self.data.append(
-                    self.io_obj.load_json(resource["path"], mmap_mode=mmap_mode)
-                )
-            else:
-                self.data.append(UndefinedInterface())
-
-    def _create(
-        self,
-        dirpath: Union[str, Path, None],
-        name: Union[str, None],
-        id_: Union[str, None],
-        metadata: Union[dict, None],
-        overwrite: bool = False,
-        compress: bool = False,
-    ) -> None:
-        """Start a new data package.
-
-        All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
-
-        Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
-        """
-        name = clean_datapackage_name(name or uuid.uuid4().hex)
-        check_name(name)
-
-        if dirpath is None:
-            self.io_obj = InMemoryIO()
-        elif compress:
-            self.io_obj = TemporaryDirectoryIO(
-                dest_dirpath=dirpath,
-                dest_filename=check_suffix(name, ".zip"),
-                overwrite=overwrite,
-            )
-        else:
-            self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
-
-        self.metadata = {
-            "profile": "data-package",
-            "name": name,
-            "id": id_ or uuid.uuid4().hex,
-            "licenses": (metadata or {}).get("licenses", DEFAULT_LICENSES),
-            "resources": [],
-            "created": datetime.datetime.utcnow().isoformat("T") + "Z",
+    @property
+    def groups(self):
+        return {
+            k: {o["name"]: o for o in v}
+            for k, v in itertools.groupby(self.resources, lambda x: x.get("group"))
+            if k
         }
-        for k, v in (metadata or {}).items():
-            if k not in self.metadata:
-                self.metadata[k] = v
-
-        self.data = []
-
-    def _substitute_interfaces(self) -> None:
-        """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
-        interface_indices = [
-            index
-            for index, obj in enumerate(self.resources)
-            if obj["profile"] == "interface"
-        ]
-
-        for index in interface_indices:
-            self.resources[index] = UndefinedInterface()
-
-    def finalize(self) -> None:
-        if self._finalized:
-            raise Closed("Datapackage already finalized")
-
-        self._substitute_interfaces()
-        self._check_length_consistency()
-
-        self.io_obj.save_json(self.metadata, "datapackage.json")
-        self.io_obj.archive()
 
     def _get_index(self, name_or_index: Union[str, int]) -> int:
         """Get index of a resource by name or index.
@@ -183,12 +68,6 @@ class Datapackage:
             else:
                 return indices[0]
 
-    def define_interface_resource(
-        self, name_or_index: Union[str, int], resource: Any
-    ) -> None:
-        """Substitute the undefined interface with ``resource``"""
-        self.data[self._get_index(name_or_index)] = resource
-
     def del_resource(self, name_or_index: Union[str, int]) -> None:
         """Remove a resource, and delete its data file, if any."""
         index = self._get_index(name_or_index)
@@ -218,11 +97,175 @@ class Datapackage:
         """
         index = self._get_index(name_or_index)
 
-        if isinstance(self.data[index], ReadProxy):
+        if isinstance(self.data[index], partial):
             obj = self.data[index]()
             self.data[index] = obj
 
         return self.data[index], self.resources[index]
+
+    def filter_by_attribute(self, key, value):
+        """"""
+        fdp = FilteredDatapackage()
+        fdp.metadata = deepcopy(self.metadata)
+        fdp.data = [
+            array
+            for array, resource in zip(self.data, self.resources)
+            if resource.get(key) == value
+        ]
+        fdp.resources = [
+            resource for resource in self.resources if resource.get(key) == value
+        ]
+        return fdp
+
+
+class Datapackage(FilteredDatapackage):
+    """
+    Interface for creating, loading, and using numerical datapackages for Brightway.
+
+    Note that there are two entry points to using this class, both separate functions: ``create_datapackage()`` and ``load_datapackage()``. Do not create an instance of the class with ``Datapackage()``, unless you like playing with danger :)
+
+    Data packages can be stored in memory, in a directory, or in a zip file. When creating data packages for use later, don't forget to call ``.finalize_serialization()``, or the metadata won't be written and the data package won't be usable.
+
+    Potential gotchas:
+
+    * There is currently no way to modify a zipped data package once it is finalized.
+    * Resources that are interfaces to external data sources (either in Python or other) can't be saved, but must be recreated each time a data package is used.
+
+    """
+
+    def _check_length_consistency(self) -> None:
+        if len(self.resources) != len(self.data):
+            raise LengthMismatch(
+                "Number of resources ({}) doesn't match number of data objects ({})".format(
+                    len(self.resources), len(self.data)
+                )
+            )
+
+    def _load(
+        self,
+        path: Union[Path, str],
+        mmap_mode: Union[None, str] = None,
+        proxy: bool = False,
+    ) -> None:
+        path = Path(path)
+        if not path.exists():
+            raise ValueError("Given path doesn't exist")
+        if path.is_file():
+            self.io_obj = ZipfileIO(filepath=path)
+        elif path.is_dir():
+            self.io_obj = DirectoryIO(path)
+        else:
+            raise ValueError("Can't understand given path")
+
+        self.metadata = self.io_obj.load_json("datapackage.json")
+        self.data = []
+        self._load_all(mmap_mode=mmap_mode, proxy=proxy)
+
+    def _load_all(
+        self, mmap_mode: Union[None, str] = None, proxy: bool = False
+    ) -> None:
+        for resource in self.resources:
+            if (
+                resource["mediatype"] == "application/octet-stream"
+                and resource["format"] == "npy"
+            ):
+                self.data.append(
+                    self.io_obj.load_numpy(
+                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
+                    )
+                )
+            elif resource["mediatype"] == "text/csv":
+                self.data.append(
+                    self.io_obj.load_csv(
+                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
+                    )
+                )
+            elif resource["mediatype"] == "application/json":
+                self.data.append(
+                    self.io_obj.load_json(
+                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
+                    )
+                )
+            else:
+                self.data.append(UndefinedInterface())
+
+    def _create(
+        self,
+        dirpath: Union[str, Path, None],
+        name: Union[str, None],
+        id_: Union[str, None],
+        metadata: Union[dict, None],
+        overwrite: bool = False,
+        compress: bool = False,
+        combinatorial: bool = False,
+        sequential: bool = False,
+        seed: Union[int, None] = None,
+        duplicates: str = "substitute",
+    ) -> None:
+        """Start a new data package.
+
+        All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
+
+        Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
+        """
+        name = clean_datapackage_name(name or uuid.uuid4().hex)
+        check_name(name)
+
+        if dirpath is None:
+            self.io_obj = InMemoryIO()
+        elif compress:
+            self.io_obj = TemporaryDirectoryIO(
+                dest_dirpath=dirpath,
+                dest_filename=check_suffix(name, ".zip"),
+                overwrite=overwrite,
+            )
+        else:
+            self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
+
+        self.metadata = {
+            "profile": "data-package",
+            "name": name,
+            "id": id_ or uuid.uuid4().hex,
+            "licenses": (metadata or {}).get("licenses", DEFAULT_LICENSES),
+            "resources": [],
+            "created": datetime.datetime.utcnow().isoformat("T") + "Z",
+            "combinatorial": combinatorial,
+            "sequential": sequential,
+            "seed": seed,
+            "duplicates": duplicates,
+        }
+        for k, v in (metadata or {}).items():
+            if k not in self.metadata:
+                self.metadata[k] = v
+
+        self.data = []
+
+    def _substitute_interfaces(self) -> None:
+        """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
+        interface_indices = [
+            index
+            for index, obj in enumerate(self.resources)
+            if obj["profile"] == "interface"
+        ]
+
+        for index in interface_indices:
+            self.resources[index] = UndefinedInterface()
+
+    def finalize_serialization(self) -> None:
+        if self._finalized:
+            raise Closed("Datapackage already finalized")
+
+        self._substitute_interfaces()
+        self._check_length_consistency()
+
+        self.io_obj.save_json(self.metadata, "datapackage.json")
+        self.io_obj.archive()
+
+    def define_interface_resource(
+        self, name_or_index: Union[str, int], resource: Any
+    ) -> None:
+        """Substitute the undefined interface with ``resource``"""
+        self.data[self._get_index(name_or_index)] = resource
 
     def _prepare_modifications(self) -> None:
         self._check_length_consistency()
@@ -239,100 +282,137 @@ class Datapackage:
 
         return name
 
-    def _add_extra_metadata(self, resource: dict, extra: Union[dict, None]) -> None:
-        for key in extra or {}:
-            if key not in resource:
-                resource[key] = extra[key]
-
-    def add_persistent_vector(
+    def add_persistent_vector_from_iterator(
         self,
         *,  # Forces use of keyword arguments
         matrix_label: str = None,
         name: Union[str, None] = None,
-        dict_iterator=None,
+        dict_iterator: Any = None,
         nrows: Union[int, None] = None,
-        data_array=None,
-        indices_array=None,
-        flip_array=None,
-        extra: Union[None, dict] = None,
+        **kwargs,
+    ) -> None:
+        (
+            data_array,
+            indices_array,
+            distributions_array,
+            flip_array,
+        ) = resolve_dict_iterator(dict_iterator, nrows)
+        self.add_persistent_vector(
+            matrix_label=matrix_label,
+            name=name,
+            nrows=len(data_array),
+            data_array=data_array,
+            indices_array=indices_array,
+            flip_array=flip_array,
+            distributions_array=distributions_array,
+            **kwargs,
+        )
+
+    def add_persistent_vector(
+        self,
+        *,  # Forces use of keyword arguments
+        matrix_label: str,
+        indices_array: np.ndarray,
+        name: Union[str, None] = None,
+        data_array: Union[np.ndarray, None] = None,
+        flip_array: Union[np.ndarray, None] = None,
+        distributions_array: Union[np.ndarray, None] = None,
+        **kwargs,
     ) -> None:
         """"""
         self._prepare_modifications()
 
-        if matrix_label is None:
-            raise ValueError("`matrix_label` is required")
-        elif dict_iterator is None or (data_array is None or indices_array is None):
-            raise ValueError(
-                "Must pass either `dict_iterator` or (`data_array` and `indices_array`)"
-            )
-        elif dict_iterator is not None and (
-            data_array is not None or indices_array is not None
-        ):
-            raise ValueError(
-                "Can't pass both `dict_iterator` and (`data_array` and `indices_array`)"
-            )
+        # Check lengths
 
-        if dict_iterator is not None:
-            data_array, indices_array, flip_array = resolve_dict_iterator(
-                dict_iterator, nrows
-            )
-
-        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
-            flip_array = None
-
-        kwargs = {"matrix_label": matrix_label, "category": "vector", "extra": extra}
-
-        self._add_processed_array_resource(
-            array=load_bytes(data_array), name=name + ".data", kind="data", **kwargs
+        kwargs.update(
+            {
+                "matrix_label": matrix_label,
+                "category": "vector",
+                "nrows": len(indices_array),
+            }
         )
-        self._add_processed_array_resource(
+
+        self._add_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
+            group=name,
             kind="indices",
             **kwargs,
         )
-        if flip_array is not None:
-            self._add_processed_array_resource(
-                array=load_bytes(flip_array), name=name + ".flip", kind="flip", **kwargs
+        if data_array is not None:
+            self._add_array_resource(
+                array=load_bytes(data_array),
+                group=name,
+                name=name + ".data",
+                kind="data",
+                **kwargs,
+            )
+        if distributions_array is not None:
+            # If no uncertainty, don't need to store it
+            if (distributions_array["uncertainty_type"] < 2).sum() < len(
+                distributions_array
+            ):
+                self._add_array_resource(
+                    array=load_bytes(distributions_array),
+                    name=name + ".distributions",
+                    group=name,
+                    kind="distributions",
+                    **kwargs,
+                )
+        if flip_array is not None and flip_array.sum():
+            self._add_array_resource(
+                array=load_bytes(flip_array),
+                group=name,
+                name=name + ".flip",
+                kind="flip",
+                **kwargs,
             )
 
     def add_persistent_array(
         self,
         *,  # Forces use of keyword arguments
-        matrix_label: str = None,
+        matrix_label: str,
+        data_array: np.ndarray,
+        indices_array: np.ndarray,
         name: Union[str, None] = None,
-        nrows: Union[int, None] = None,
-        data_array=None,
-        indices_array=None,
-        flip_array=None,
-        extra: Union[None, dict] = None,
+        flip_array: Union[None, np.ndarray] = None,
+        **kwargs,
     ) -> None:
         """"""
         self._prepare_modifications()
 
-        if matrix_label is None:
-            raise ValueError("`matrix_label` is required")
-
-        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
-            flip_array = None
-
-        kwargs = {"matrix_label": matrix_label, "category": "array", "extra": extra}
-
-        self._add_processed_array_resource(
-            array=load_bytes(data_array), name=name + ".data", kind="data", **kwargs
+        kwargs.update(
+            {
+                "matrix_label": matrix_label,
+                "category": "array",
+                "nrows": len(self.indices_array),
+            }
         )
-        self._add_processed_array_resource(
+
+        self._add_array_resource(
+            array=load_bytes(data_array),
+            name=name + ".data",
+            group=name,
+            kind="data",
+            **kwargs,
+        )
+        self._add_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
             kind="indices",
+            group=name,
             **kwargs,
         )
-        if flip_array is not None:
-            self._add_processed_array_resource(
-                array=load_bytes(flip_array), name=name + ".flip", kind="flip", **kwargs
+        if flip_array is not None and flip_array.sum():
+            self._add_array_resource(
+                array=load_bytes(flip_array),
+                group=name,
+                name=name + ".flip",
+                kind="flip",
+                **kwargs,
             )
 
-    def _add_array_resource(self, array, name, matrix_label, kind, extra):
+    def _add_array_resource(self, array, name, matrix_label, kind, **kwargs):
         filename = check_suffix(name, ".npy")
 
         self.io_obj.save_numpy(array, filename)
@@ -349,7 +429,7 @@ class Datapackage:
             "kind": kind,
             "path": str(filename),
         }
-        self._add_extra_metadata(resource, extra)
+        resource.update(**kwargs)
         self.resources.append(resource)
 
     # def add_structured_array(
@@ -380,7 +460,7 @@ class Datapackage:
     #     Memory notes:
 
     #         * This method will not retain a reference to ``iterable_data_source``.
-    #         * If the array is written to disk, a ``ReadProxy`` object is added to ``self.data``. Once a ``ReadProxy`` object is accessed using ``self.get_resource()``, it is loaded into memory (and the object in ``self.data`` is substituted by the loaded array).
+    #         * If the array is written to disk, a ``functools.partial`` object is added to ``self.data``. Once a ``functools.partial`` object is called, it is loaded into memory (and the object in ``self.data`` is substituted by the loaded array).
     #         * If the data package is created in memory, the entire array is kept in memory.
 
     #     Args:
@@ -432,34 +512,84 @@ class Datapackage:
         self,
         *,
         matrix_label: str,
+        interface: Any,
+        indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
-        interface=None,
-        indices_array=None,  # Not interface
-        flip_array=None,  # Not interface
-        extra: Union[None, dict] = None,
+        flip_array: Union[None, np.ndarray] = None,  # Not interface
+        **kwargs,
     ):
-        pass
+        self._prepare_modifications()
+
+        kwargs.update(
+            {
+                "matrix_label": matrix_label,
+                "category": "vector",
+                "nrows": len(self.indices_array),
+            }
+        )
+
+        # Do something with dynamic vector
+
+        self._add_array_resource(
+            array=load_bytes(indices_array),
+            name=name + ".indices",
+            group=name,
+            kind="indices",
+            **kwargs,
+        )
+        if flip_array is not None and flip_array.sum():
+            self._add_array_resource(
+                array=load_bytes(flip_array),
+                group=name,
+                name=name + ".flip",
+                kind="flip",
+                **kwargs,
+            )
 
     def add_dynamic_array(
         self,
         *,
         matrix_label: str,
+        interface: Any,
+        indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
-        nrows: Union[int, None] = None,
-        interface=None,
-        indices_array=None,
-        flip_array=None,
-        extra: Union[None, dict] = None,
+        flip_array: Union[None, np.ndarray] = None,
+        **kwargs,
     ):
         """`interface` must support the presamples API."""
-        pass
+        self._prepare_modifications()
+
+        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
+            flip_array = None
+
+        kwargs.update(
+            {
+                "matrix_label": matrix_label,
+                "category": "array",
+                "nrows": len(indices_array),
+            }
+        )
+
+        # Do something with dynamic vector
+
+        self._add_array_resource(
+            array=load_bytes(indices_array),
+            name=name + ".indices",
+            group=name,
+            kind="indices",
+            **kwargs,
+        )
+        if flip_array is not None:
+            self._add_array_resource(
+                array=load_bytes(flip_array),
+                group=name,
+                name=name + ".flip",
+                kind="flip",
+                **kwargs,
+            )
 
     def add_csv_metadata(
-        self,
-        dataframe: pd.DataFrame,
-        valid_for: list,
-        name: str = None,
-        extra: dict = None,
+        self, *, dataframe: pd.DataFrame, valid_for: list, name: str = None, **kwargs
     ) -> None:
         """Add an iterable metadata object to be stored as a CSV file.
 
@@ -493,33 +623,30 @@ class Datapackage:
         assert isinstance(dataframe, pd.DataFrame)
         assert isinstance(valid_for, list)
 
-        names = {obj["name"] for obj in self.resources}
-        assert all(x in names for x, y in valid_for)
+        assert all(x in self.groups for x, y in valid_for)
 
-        data, name = self._prepare_modifications(dataframe, name)
+        self._prepare_modifications()
 
         filename = check_suffix(name, ".csv")
 
         self.io_obj.save_csv(dataframe, filename)
         self.data.append(dataframe)
 
-        resource = {
-            # Datapackage generic
-            "profile": "data-resource",
-            "mediatype": "text/csv",
-            "path": str(filename),
-            "name": name,
-            # Brightway specific
-            "valid_for": valid_for,
-        }
-        for key in extra or {}:
-            if key not in resource:
-                resource[key] = extra[key]
-
-        self.resources.append(resource)
+        kwargs.update(
+            {
+                # Datapackage generic
+                "profile": "data-resource",
+                "mediatype": "text/csv",
+                "path": str(filename),
+                "name": name,
+                # Brightway specific
+                "valid_for": valid_for,
+            }
+        )
+        self.resources.append(kwargs)
 
     def add_json_metadata(
-        self, data: Any, valid_for: str, name: str = None, extra: dict = None
+        self, *, data: Any, valid_for: str, name: str = None, **kwargs
     ) -> None:
         """Add an iterable metadata object to be stored as a JSON file.
 
@@ -547,9 +674,9 @@ class Datapackage:
 
         """
         assert isinstance(valid_for, str)
-        assert valid_for in {obj["name"] for obj in self.resources}
+        assert valid_for in self.groups
 
-        data, name = self._prepare_modifications(data, name)
+        self._prepare_modifications()
 
         name = name or uuid.uuid4().hex
         check_name(name)
@@ -559,20 +686,18 @@ class Datapackage:
         self.io_obj.save_json(data, filename)
         self.data.append(data)
 
-        resource = {
-            # Datapackage generic
-            "profile": "data-resource",
-            "mediatype": "application/json",
-            "path": str(filename),
-            "name": name,
-            # Brightway specific
-            "valid_for": valid_for,
-        }
-        for key in extra or {}:
-            if key not in resource:
-                resource[key] = extra[key]
-
-        self.resources.append(resource)
+        kwargs.update(
+            {
+                # Datapackage generic
+                "profile": "data-resource",
+                "mediatype": "application/json",
+                "path": str(filename),
+                "name": name,
+                # Brightway specific
+                "valid_for": valid_for,
+            }
+        )
+        self.resources.append(kwargs)
 
     # def add_presamples_indices_array(
     #     self,
@@ -591,8 +716,6 @@ class Datapackage:
     #     * An iterable (i.e. an object that supports the python iterator interface) that will return rows that can be used to create a numpy array. This is the most common use case, with the iterable being a wrapped database cursor. This object must return rows as tuples which match the indices dtype (``constants.INDICES_DTYPE``).
     #     * A numpy structured array which has the dtype ``constants.INDICES_DTYPE``.
     #     * A numpy structured array serialized into a ``BytesIO`` object which has the dtype ``constants.INDICES_DTYPE``.
-
-    #     I strongly recommend using the utility function ``indices_wrapper``.
 
     #     Args:
 
@@ -636,51 +759,55 @@ class Datapackage:
     #     self._add_extra_metadata(resource, extra)
     #     self.resources.append(resource)
 
-    def add_presamples_data_array(
-        self,
-        iterable_data_source: Any,
-        matrix_label: str,
-        name: Union[None, str] = None,
-        nrows: Union[None, int] = None,
-        dtype: Any = np.float32,
-        extra: Union[None, dict] = None,
-        is_interface: bool = False,
-    ) -> None:
-        data, name = self._prepare_modifications(iterable_data_source, name)
+    # def add_presamples_data_array(
+    #     self,
+    #     iterable_data_source: Any,
+    #     matrix_label: str,
+    #     name: Union[None, str] = None,
+    #     nrows: Union[None, int] = None,
+    #     dtype: Any = np.float32,
+    #     extra: Union[None, dict] = None,
+    #     is_interface: bool = False,
+    # ) -> None:
+    #     data, name = self._prepare_modifications(iterable_data_source, name)
 
-        filename = check_suffix(name, ".npy")
+    #     filename = check_suffix(name, ".npy")
 
-        if is_interface:
-            self.data.append(iterable_data_source)
-        else:
-            array = create_array(iterable_data_source, nrows, dtype)
+    #     if is_interface:
+    #         self.data.append(iterable_data_source)
+    #     else:
+    #         array = create_array(iterable_data_source, nrows, dtype)
 
-            self.io_obj.save_numpy(array, filename)
-            self.data.append(self.io_obj.load_numpy(filename, proxy=True))
+    #         self.io_obj.save_numpy(array, filename)
+    #         self.data.append(self.io_obj.load_numpy(filename, proxy=True))
 
-        resource = {
-            # Datapackage generic
-            "profile": "interface" if is_interface else "data-resource",
-            "format": "npy",
-            "mediatype": "application/octet-stream",
-            "name": name,
-            # Brightway specific
-            "matrix": matrix_label,
-            "kind": "presamples",
-        }
-        if not is_interface:
-            resource["path"] = str(filename)
-        self._add_extra_metadata(resource, extra)
-        self.resources.append(resource)
+    #     resource = {
+    #         # Datapackage generic
+    #         "profile": "interface" if is_interface else "data-resource",
+    #         "format": "npy",
+    #         "mediatype": "application/octet-stream",
+    #         "name": name,
+    #         # Brightway specific
+    #         "matrix": matrix_label,
+    #         "kind": "presamples",
+    #     }
+    #     if not is_interface:
+    #         resource["path"] = str(filename)
+    #     self._add_extra_metadata(resource, extra)
+    #     self.resources.append(resource)
 
 
 def create_datapackage(
-    dirpath: Union[Path, str] = None,
+    dirpath: Union[Path, str, None] = None,
     name: Union[None, str] = None,
     id_: Union[None, str] = None,
-    metadata: Union[dict, str] = None,
+    metadata: Union[dict, None] = None,
     overwrite: bool = False,
     compress: bool = False,
+    combinatorial: bool = False,
+    sequential: bool = False,
+    seed: Union[int, None] = None,
+    duplicates: str = "substitute",
 ) -> Datapackage:
     obj = Datapackage()
     obj._create(
@@ -690,13 +817,22 @@ def create_datapackage(
         metadata=metadata,
         overwrite=overwrite,
         compress=compress,
+        sequential=sequential,
+        combinatorial=combinatorial,
+        seed=seed,
+        duplicates=duplicates,
     )
     return obj
 
 
 def load_datapackage(
-    path: Union[Path, str], mmap_mode: Union[None, str] = None
+    path: Union[FilteredDatapackage, Path, str],
+    mmap_mode: Union[None, str] = None,
+    proxy: bool = False,
 ) -> Datapackage:
-    obj = Datapackage()
-    obj._load(path=path, mmap_mode=mmap_mode)
+    if isinstance(FilteredDatapackage, path):
+        obj = path
+    else:
+        obj = Datapackage()
+        obj._load(path=path, mmap_mode=mmap_mode, proxy=proxy)
     return obj

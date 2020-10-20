@@ -8,15 +8,10 @@ __all__ = (
     "create_structured_array",
     "Datapackage",
     "DEFAULT_LICENSES",
-    "dictionary_wrapper",
     "examples_dir",
     "INDICES_DTYPE",
-    "indices_wrapper",
     "load_datapackage",
-    "MAPPED_INDICES_DTYPE",
-    "MAX_SIGNED_32BIT_INT",
     "md5",
-    "ReadProxy",
     "safe_filename",
     "UNCERTAINTY_DTYPE",
     "UndefinedInterface",
@@ -25,16 +20,9 @@ __all__ = (
 from .version import version as __version__
 
 from .datapackage import Datapackage, create_datapackage, load_datapackage
-from .constants import (
-    MAPPED_INDICES_DTYPE,
-    INDICES_DTYPE,
-    UNCERTAINTY_DTYPE,
-    DEFAULT_LICENSES,
-    MAX_SIGNED_32BIT_INT,
-)
-from .utils import dictionary_wrapper, indices_wrapper
+from .constants import INDICES_DTYPE, UNCERTAINTY_DTYPE, DEFAULT_LICENSES
 from .filesystem import md5, safe_filename, clean_datapackage_name
 from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
-from .proxies import ReadProxy, UndefinedInterface
+from .proxies import UndefinedInterface
 from .examples import examples_dir

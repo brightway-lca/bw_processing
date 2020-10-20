@@ -1,7 +1,6 @@
 import numpy as np
 import re
 
-# Max signed 32 bit integer, compatible with Windows
 MAX_SIGNED_32BIT_INT = 2147483647
 
 # We could try to save space by not storing the columns
@@ -12,14 +11,12 @@ MAX_SIGNED_32BIT_INT = 2147483647
 # but -687ms to append two columns.
 UNCERTAINTY_DTYPE = [
     ("uncertainty_type", np.uint8),
-    ("amount", np.float32),
     ("loc", np.float32),
     ("scale", np.float32),
     ("shape", np.float32),
     ("minimum", np.float32),
     ("maximum", np.float32),
     ("negative", np.bool),
-    ("flip", np.bool),
 ]
 INDICES_DTYPE = [("row_value", np.int32), ("col_value", np.int32)]
 MAPPED_INDICES_DTYPE = [("row_index", np.int32), ("col_index", np.int32)]

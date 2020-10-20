@@ -1,24 +1,56 @@
-from bw_processing.io_classes import (
-    DirectoryIO,
-    ZipfileIO,
-    TemporaryDirectoryIO,
-    InMemoryIO,
-)
-from bw_processing import create_datapackage, load_datapackage
-from bw_processing.constants import MAX_SIGNED_32BIT_INT as M
+from bw_processing.io_classes import DirectoryIO, TemporaryDirectoryIO, InMemoryIO
+from bw_processing.constants import INDICES_DTYPE
+from bw_processing import create_datapackage
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import tempfile
 
 
+class Dummy:
+    pass
+
+
 def add_data(dp):
-    sa = [
-        np.array([0, 1, M, M, 2, 3.3, 4, M, M, 2.7, 3.9, False, True]),
-        np.array([5, 6, M, M, 7, 8.3, 9, M, M, 7.7, 8.9, True, False]),
+    from_dicts = [
+        {
+            "row": 0,
+            "col": 1,
+            "flip": True,
+            "amount": 3.3,
+            "uncertainty_type": 2,
+            "loc": 2.7,
+            "scale": 3.9,
+        },
+        {
+            "row": 5,
+            "col": 6,
+            "flip": False,
+            "amount": 8.3,
+            "uncertainty_type": 7,
+            "loc": 7.7,
+            "scale": 8.9,
+        },
     ]
-    indices = [np.array([0, 1, M, M]), np.array([2, 3, M, M]), np.array([4, 5, M, M])]
-    data = np.arange(12).reshape((3, 4))
+    dp.add_persistent_vector_from_iterator(
+        matrix_label="sa_matrix",
+        name="sa-data-vector-from-dict",
+        dict_iterator=from_dicts,
+        foo="bar",
+    )
+
+    data_array = np.array([(2, 7, 12)])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    flip_array = np.array([1, 0, 0], dtype=bool)
+    dp.add_persistent_vector(
+        matrix_label="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        nrows=2,
+        flip_array=flip_array,
+    )
+
     json_data = [{"a": "b"}, 1, True]
     json_parameters = ["a", "foo"]
     df = pd.DataFrame(
@@ -28,72 +60,220 @@ def add_data(dp):
             {"id": 3, "a": 1, "c": 4, "d": 11},
         ]
     ).set_index(["id"])
-    dp.add_structured_array(sa, "sa_matrix", name="sa-data")
-    dp.add_presamples_data_array(
-        data, matrix_label="sa-data", name="presamples-sa-matrix"
+
+    dp.add_persistent_array(
+        matrix_label="sa_matrix",
+        data_array=np.arange(12).reshape((3, 4)),
+        indices_array=indices_array,
+        name="sa-data-array",
+        flip_array=flip_array,
     )
-    dp.add_presamples_indices_array(
-        indices, data_array="presamples-sa-matrix", name="presamples-indices"
+
+    dp.add_dynamic_vector(
+        interface=Dummy(),
+        indices_array=indices_array,
+        matrix_label="sa_matrix",
+        name="sa-vector-interface",
+    )
+
+    dp.add_dynamic_array(
+        interface=Dummy(),
+        matrix_label="sa_matrix",
+        name="sa-array-interface",
+        indices_array=indices_array,
     )
     dp.add_csv_metadata(
-        df, valid_for=[("presamples-sa-matrix", "rows")], name="presamples-csv-metadata"
+        dataframe=df,
+        valid_for=[("sa-data-vector", "rows")],
+        name="sa-data-vector-csv-metadata",
     )
     dp.add_json_metadata(
-        json_data, valid_for="presamples-sa-matrix", name="presamples-json-metadata"
+        data=json_data, valid_for="sa-data-array", name="sa-data-array-json-metadata"
     )
     dp.add_json_metadata(
-        json_parameters, valid_for="sa-data", name="presamples-json-parameters"
+        data=json_parameters,
+        valid_for="sa-data-array",
+        name="sa-data-array-json-parameters",
     )
+
+
+def check_data(dp):
+    assert len(dp.resources) == len(dp.data) == 15
+    d, _ = dp.get_resource("sa-data-array-json-parameters")
+    assert d == ["a", "foo"]
+
+    d, _ = dp.get_resource("sa-data-array-json-metadata")
+    assert d == [{"a": "b"}, 1, True]
+
+    d, _ = dp.get_resource("sa-data-vector-csv-metadata")
+    assert d["a"].sum() == 4
+
+    # d, _ = dp.get_resource("presamples-indices")
+    # print(d)
+    # assert d["row_value"].sum() == 6
+
+    # d, _ = dp.get_resource("sa-data")
+    # assert d["col_value"].sum() == 7
 
 
 def check_metadata(dp):
     assert dp.metadata["resources"] == [
         {
+            "category": "vector",
+            "foo": "bar",
             "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
-            "name": "sa-data",
+            "name": "sa-data-vector-from-dict.data",
             "matrix": "sa_matrix",
-            "kind": "processed array",
-            "path": "sa-data.npy",
+            "kind": "data",
+            "path": "sa-data-vector-from-dict.data.npy",
+            "group": "sa-data-vector-from-dict",
         },
         {
+            "category": "vector",
+            "foo": "bar",
             "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
-            "name": "presamples-sa-matrix",
-            "matrix": "sa-data",
-            "kind": "presamples",
-            "path": "presamples-sa-matrix.npy",
+            "name": "sa-data-vector-from-dict.indices",
+            "matrix": "sa_matrix",
+            "kind": "indices",
+            "path": "sa-data-vector-from-dict.indices.npy",
+            "group": "sa-data-vector-from-dict",
         },
         {
+            "category": "vector",
+            "foo": "bar",
             "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
-            "name": "presamples-indices",
-            "path": "presamples-indices.npy",
-            "data_array": "presamples-sa-matrix",
+            "name": "sa-data-vector-from-dict.distributions",
+            "matrix": "sa_matrix",
+            "kind": "distributions",
+            "path": "sa-data-vector-from-dict.distributions.npy",
+            "group": "sa-data-vector-from-dict",
+        },
+        {
+            "category": "vector",
+            "foo": "bar",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-vector-from-dict.flip",
+            "matrix": "sa_matrix",
+            "kind": "flip",
+            "path": "sa-data-vector-from-dict.flip.npy",
+            "group": "sa-data-vector-from-dict",
+        },
+        {
+            "category": "vector",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-vector.data",
+            "matrix": "sa_matrix",
+            "kind": "data",
+            "path": "sa-data-vector.data.npy",
+            "group": "sa-data-vector",
+        },
+        {
+            "category": "vector",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-vector.indices",
+            "matrix": "sa_matrix",
+            "kind": "indices",
+            "path": "sa-data-vector.indices.npy",
+            "group": "sa-data-vector",
+        },
+        {
+            "category": "vector",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-vector.flip",
+            "matrix": "sa_matrix",
+            "kind": "flip",
+            "path": "sa-data-vector.flip.npy",
+            "group": "sa-data-vector",
+        },
+        {
+            "category": "array",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-array.data",
+            "matrix": "sa_matrix",
+            "kind": "data",
+            "path": "sa-data-array.data.npy",
+            "group": "sa-data-array",
+        },
+        {
+            "category": "array",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-array.indices",
+            "matrix": "sa_matrix",
+            "kind": "indices",
+            "path": "sa-data-array.indices.npy",
+            "group": "sa-data-array",
+        },
+        {
+            "category": "array",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-data-array.flip",
+            "matrix": "sa_matrix",
+            "kind": "flip",
+            "path": "sa-data-array.flip.npy",
+            "group": "sa-data-array",
+        },
+        {
+            "category": "vector",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-vector-interface.indices",
+            "matrix": "sa_matrix",
+            "kind": "indices",
+            "path": "sa-vector-interface.indices.npy",
+            "group": "sa-vector-interface",
+        },
+        {
+            "category": "array",
+            "profile": "data-resource",
+            "format": "npy",
+            "mediatype": "application/octet-stream",
+            "name": "sa-array-interface.indices",
+            "matrix": "sa_matrix",
+            "kind": "indices",
+            "path": "sa-array-interface.indices.npy",
+            "group": "sa-array-interface",
         },
         {
             "profile": "data-resource",
             "mediatype": "text/csv",
-            "path": "presamples-csv-metadata.csv",
-            "name": "presamples-csv-metadata",
-            "valid_for": [("presamples-sa-matrix", "rows")],
+            "path": "sa-data-vector-csv-metadata.csv",
+            "name": "sa-data-vector-csv-metadata",
+            "valid_for": [("sa-data-vector", "rows")],
         },
         {
             "profile": "data-resource",
             "mediatype": "application/json",
-            "path": "presamples-json-metadata.json",
-            "name": "presamples-json-metadata",
-            "valid_for": "presamples-sa-matrix",
+            "path": "sa-data-array-json-metadata.json",
+            "name": "sa-data-array-json-metadata",
+            "valid_for": "sa-data-array",
         },
         {
             "profile": "data-resource",
             "mediatype": "application/json",
-            "path": "presamples-json-parameters.json",
-            "name": "presamples-json-parameters",
-            "valid_for": "sa-data",
+            "path": "sa-data-array-json-parameters.json",
+            "name": "sa-data-array-json-parameters",
+            "valid_for": "sa-data-array",
         },
     ]
     assert dp.metadata["created"].endswith("Z")
@@ -107,6 +287,50 @@ def test_integration_test_in_memory():
     dp = create_datapackage(None, "the-name", "the id", compress=False)
     assert isinstance(dp.io_obj, InMemoryIO)
     add_data(dp)
-    dp.finalize()
+    dp.finalize_serialization()
 
     check_metadata(dp)
+    check_data(dp)
+
+
+def test_integration_test_directory():
+    with tempfile.TemporaryDirectory() as td:
+        dp = create_datapackage(
+            dirpath=td, name="the-name", id_="the id", compress=False, overwrite=True
+        )
+        assert isinstance(dp.io_obj, DirectoryIO)
+        add_data(dp)
+        dp.finalize_serialization()
+
+        check_metadata(dp)
+        check_data(dp)
+
+
+def test_integration_test_zipfile():
+    with tempfile.TemporaryDirectory() as td:
+        dp = create_datapackage(
+            dirpath=td, name="the-name", id_="the id", compress=True
+        )
+        assert isinstance(dp.io_obj, TemporaryDirectoryIO)
+        add_data(dp)
+        dp.finalize_serialization()
+
+        check_metadata(dp)
+        check_data(dp)
+
+
+if __name__ == "__main__":
+    dirpath = Path(__file__).parent.resolve() / "fixtures"
+    dirpath.mkdir(exist_ok=True)
+
+    dp = create_datapackage(
+        dirpath / "tfd", "test-fixture", "fixture-42", compress=False, overwrite=True
+    )
+    add_data(dp)
+    dp.finalize_serialization()
+
+    dp = create_datapackage(
+        dirpath, "test-fixture", "fixture-42", compress=True, overwrite=True
+    )
+    add_data(dp)
+    dp.finalize_serialization()

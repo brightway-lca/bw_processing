@@ -25,7 +25,7 @@ The [Brightway LCA framework](https://brightway.dev/) has stored data used in co
 * **Portability**. Processed arrays can include metadata that allows for reindexing on other machines, so that processed arrays can be distributed. Before, this was not possible, as integer IDs were randomly assigned, and would be different from machine to machine or even across Brightway projects. The same portability applies to presamples, making them more useful.
 * **Dynamic data sources**. Data for matrix construction (both static and presamples) can be provided dynamically using a defined API. This allows for data sources on the cloud, or other external data interfaces.
 * **In-memory data packages**. Data packages can be created in-memory and used for calculations.
-* **Separation of uncertainty distribution parameters from other data**. Fitting data to an uncertainty distribution, or estimating such distributions, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including presamples, at the same level. Therefore, uncertainty distribution parameters are stored separately, and only loaded if needed.
+* **Separation of uncertainty distribution parameters from other data**. Fitting data to an uncertainty distribution, or estimating such distributions, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including [direct sampling from real data](https://github.com/PascalLesage/presamples/). Therefore, uncertainty distribution parameters are stored separately, and only loaded if needed.
 
 ## Install
 
@@ -39,9 +39,11 @@ Has no explicit or implicit dependence on any other part of Brightway.
 
 Because this library supports multiple use cases, there are several dimensions to be aware of:
 
-* In-memory versus on-disk. This is a (hopefully!) obvious difference :)
-* Static versus dynamic data: Static data can be completely loaded into memory and used directly or written to disk. Dynamic data is only resolved as the data is used (i.e. not even during package creation), and can even be infinite generators in the case of presamples.
-* Creating versus loading. On-disk arrays cannot be used directly after being created - they instead must be loaded. This is because saving a package to disk flushes the data from memory. In-memory arrays cannot be loaded, but can be used directly.
+* In-memory versus on-disk. This is a (hopefully!) obvious difference. In-memory and on-disk presamples can be used together, but each datapackage must be only in-memory or on-disk.
+* Static versus dynamic data: Static data can be completely loaded into memory and used directly or written to disk. Dynamic data is only resolved as the data is used (i.e. during matrix construction, not during package creation), and can be infinite generators.
+* Creating versus loading. In-memory arrays can only be created and then used, but not loaded. On-disk arrays, on the other hand, must be created, stored, and then loaded to be used. This is because saving a package to disk flushes the data from memory.
+* Vectors versus arrays. Each element in a vector can only have one possible value - this is the same as a static matrix. Arrays have the same number of rows as the length of a vector, but multiple possible values of each parameter. Each column is therefore one conssitent possible set of parameter values. See the [presample library for more information](https://github.com/PascalLesage/presamples/).
+* Probability distributions. Probability distributions can only be defined for *static vectors*. Dynamic data can have uncertainty, but the dynamic data generator is responsible for modelling that uncertainty. Static arrays can't have uncertainty, as each column in the array represents the uncertainty and/or variability in the system performance or configuration.
 
 The main interface for using this library is the `Datapackage` class. However, instead of creating an instance of this class directly, you should use the utility functions `create_datapackage` and `load_datapackage`.
 
@@ -99,6 +101,27 @@ In this example, we returned the processed data package as a dictionary in memor
 There is also a utility function, `load_calculation_package`, which loads a saved calculation package in the same format as was returned by the example.
 
 See the [documentation](https://bw-processing.readthedocs.io/en/latest/) for more information on how to use `bw_processing` to load, save, and use data.
+
+### Adding data interfaces
+
+A data interface is a data source which can not be saved to a numpy array when the datapackage is created. There are many possible use cases for data interfaces, including:
+
+* Data that is provided by an external source, such as a web service
+* Data that comes from an infinite python generator
+* Data from another programming language
+* Data that needs processing steps before it can be directly inserted into a matrix
+
+Such data interfaces as supported by `bw_processing`, but the following conditions must be met:
+
+#### Vector interfaces
+
+* The interface itself must be a python object that supports the [iterator interface](https://wiki.python.org/moin/Iterator). Calling `next()` on the interface must return a numpy vector (1-d array).
+* In addition to the interface, `indices_array` must be supplied. `indices_array` is a numpy structured array with the dtype `bw_processing.constants.INDICES_DTYPE`, and has the same length (and in the same order) as the vector returned by the interface.
+
+You may also provide `flip_array`, a numpy structured array with the dtype `bw_processing.constants.FLIP_DTYPE`, which also has the same length and order as `indices_array`.
+
+#### Array interfaces
+
 
 ## Contributing
 

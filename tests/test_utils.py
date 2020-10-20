@@ -1,17 +1,13 @@
-from bw_processing.constants import COMMON_DTYPE, MAX_SIGNED_32BIT_INT as M
 from bw_processing.utils import (
     check_name,
     check_suffix,
-    chunked,
     dictionary_formatter,
-    indices_wrapper,
     load_bytes,
 )
 from bw_processing.errors import InvalidName
 from pathlib import Path
 import numpy as np
 import pytest
-import tempfile
 from io import BytesIO
 
 
@@ -33,55 +29,34 @@ def test_check_name():
     check_name(None)
 
 
-def test_chunked():
-    c = chunked(range(600), 250)
-    for x in next(c):
-        pass
-    assert x == 249
-    for x in next(c):
-        pass
-    assert x == 499
-    for x in next(c):
-        pass
-    assert x == 599
-
-
-def test_indices_wrapper():
-    data = [{"row": "a", "col": "b"}]
-    wrapped = indices_wrapper(data)
-    assert next(wrapped) == ("a", "b", M, M)
-    with pytest.raises(StopIteration):
-        next(wrapped)
-
-
 def test_dictionary_formatter_sparse():
     given = {"row": 1, "amount": 4}
     result = dictionary_formatter(given)
-    assert result[:7] == (1, 1, M, M, 0, 4, 4)
-    assert all(np.isnan(x) for x in result[7:11])
-    assert result[11:] == (False, False)
+    assert result[:5] == (1, 1, 4, 0, 4)
+    assert all(np.isnan(x) for x in result[5:9])
+    assert result[9:] == (False, False)
 
 
 def test_dictionary_formatter_uncertainty_type():
     given = {"row": 1, "amount": 4, "uncertainty_type": 3}
     result = dictionary_formatter(given)
-    assert result[4] == 3
+    assert result[3] == 3
 
     given = {"row": 1, "amount": 4, "uncertainty type": 3}
     result = dictionary_formatter(given)
-    assert result[4] == 3
+    assert result[3] == 3
 
     given = {"row": 1, "amount": 4}
     result = dictionary_formatter(given)
-    assert result[4] == 0
+    assert result[3] == 0
 
 
 def test_dictionary_formatter_complete():
     given = {
         "row": 1,
         "col": 2,
-        "uncertainty_type": 3,
-        "amount": 4,
+        "amount": 3,
+        "uncertainty_type": 4,
         "loc": 5,
         "scale": 6,
         "shape": 7,
@@ -90,15 +65,15 @@ def test_dictionary_formatter_complete():
         "negative": True,
         "flip": False,
     }
-    expected = (1, 2, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
+    expected = (1, 2, 3, 4, 5, 6, 7, 8, 9, True, False)
     assert dictionary_formatter(given) == expected
 
 
 def test_dictionary_formatter_one_dimensional():
     given = {
         "row": 1,
-        "uncertainty_type": 3,
-        "amount": 4,
+        "amount": 3,
+        "uncertainty_type": 4,
         "loc": 5,
         "scale": 6,
         "shape": 7,
@@ -107,7 +82,7 @@ def test_dictionary_formatter_one_dimensional():
         "negative": True,
         "flip": False,
     }
-    expected = (1, 1, M, M, 3, 4, 5, 6, 7, 8, 9, True, False)
+    expected = (1, 1, 3, 4, 5, 6, 7, 8, 9, True, False)
     assert dictionary_formatter(given) == expected
 
 

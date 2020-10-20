@@ -1,10 +1,10 @@
-from .proxies import ReadProxy
 from pathlib import Path
 import json
 import numpy as np
 import pandas as pd
 import tempfile
 import zipfile
+from functools import partial
 
 
 class IOBase:
@@ -13,6 +13,12 @@ class IOBase:
 
     def archive(self):
         pass
+
+    def _load_resource(self, func, kwargs, proxy=False):
+        if proxy:
+            return func(**kwargs)
+        else:
+            return partial(func, **kwargs)
 
 
 class DirectoryIO(IOBase):
@@ -36,7 +42,9 @@ class DirectoryIO(IOBase):
         (self.dirpath / filename).unlink()
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
-        return json.load(open(self.dirpath / filename))
+        return self._load_resource(
+            json.load, {"fp": open(self.dirpath / filename)}, proxy
+        )
 
     def save_json(self, data, filename):
         with open(self.dirpath / filename, "w", encoding="utf-8") as f:
@@ -48,16 +56,15 @@ class DirectoryIO(IOBase):
             "mmap_mode": mmap_mode,
             "allow_pickle": False,
         }
-        if not proxy:
-            return np.load(**kwargs)
-        else:
-            return ReadProxy(np.load, **kwargs)
+        return self._load_resource(np.load, kwargs, proxy)
 
     def save_numpy(self, array, filename):
         np.save(self.dirpath / filename, array, allow_pickle=False)
 
     def load_csv(self, filename, proxy=False, mmap_mode=None):
-        return pd.read_csv(open(self.dirpath / filename))
+        return self._load_resource(
+            pd.read_csv, {"filepath_or_buffer": open(self.dirpath / filename)}, proxy
+        )
 
     def save_csv(self, data, filename):
         assert isinstance(data, pd.DataFrame)
@@ -78,22 +85,21 @@ class ZipfileIO(IOBase):
             "mmap_mode": mmap_mode,
             "allow_pickle": False,
         }
-        if not proxy:
-            return np.load(**kwargs)
-        else:
-            return ReadProxy(np.load, **kwargs)
+        return self._load_resource(np.load, kwargs, proxy)
 
     def save_numpy(self, *args):
         raise NotImplementedError("Read-only zipfile")
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
-        return json.load(self.zf.open(filename))
+        return self._load_resource(json.load, {"fp": self.zf.open(filename)}, proxy)
 
     def save_json(self, *args):
         raise NotImplementedError("Read-only zipfile")
 
     def load_csv(self, filename, proxy=False, mmap_mode=None):
-        return pd.read_csv(self.zf.open(filename))
+        return self._load_resource(
+            pd.read_csv, {"filepath_or_buffer": self.zf.open(filename)}, proxy
+        )
 
     def save_csv(self, *args, **kwargs):
         raise NotImplementedError("Read-only zipfile")
