@@ -15,7 +15,7 @@ from copy import deepcopy
 from functools import partial
 
 
-class FilteredDatapackage:
+class DatapackageBase:
     def __init__(self):
         self._finalized = False
 
@@ -30,9 +30,8 @@ class FilteredDatapackage:
     @property
     def groups(self):
         return {
-            k: {o["name"]: o for o in v}
-            for k, v in itertools.groupby(self.resources, lambda x: x.get("group"))
-            if k
+            label: self.filter_by_attribute("group", label)
+            for label in sorted({x.get("group") for x in self.resources})
         }
 
     def _get_index(self, name_or_index: Union[str, int]) -> int:
@@ -118,7 +117,11 @@ class FilteredDatapackage:
         return fdp
 
 
-class Datapackage(FilteredDatapackage):
+class FilteredDatapackage(DatapackageBase):
+    pass
+
+
+class Datapackage(DatapackageBase):
     """
     Interface for creating, loading, and using numerical datapackages for Brightway.
 
