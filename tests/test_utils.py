@@ -3,6 +3,7 @@ from bw_processing.utils import (
     check_suffix,
     dictionary_formatter,
     load_bytes,
+    NoneSorter,
 )
 from bw_processing.errors import InvalidName
 from pathlib import Path
@@ -91,6 +92,15 @@ def test_check_suffix():
     assert check_suffix("foo.bar.baz", ".baz") == Path("foo.bar.baz")
     assert check_suffix("foo.bar", ".baz") == Path("foo.bar.baz")
     assert check_suffix(Path("foo") / "bar", "baz") == Path("foo/bar.baz")
+
+
+def test_none_sorter():
+    a = ["1", "bbb", None, "a"]
+    with pytest.raises(TypeError):
+        a.sort()
+    a.sort(key=lambda x: NoneSorter() if x is None else x)
+    expected = ["1", "a", "bbb", None]
+    assert a == expected
 
 
 # def test_create_array():

@@ -1,6 +1,7 @@
 from .array_creation import create_structured_array
 from .constants import NAME_RE, UNCERTAINTY_DTYPE, INDICES_DTYPE
 from .errors import InvalidName
+from functools import total_ordering
 from io import BytesIO
 from numpy.lib.recfunctions import repack_fields
 from pathlib import Path
@@ -97,3 +98,12 @@ def resolve_dict_iterator(iterator, nrows=None):
         ),
         array["flip"],
     )
+
+
+@total_ordering
+class NoneSorter:
+    def __gt__(self, other):
+        return True
+
+    def __eq__(self, other):
+        return self is other
