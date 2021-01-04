@@ -18,8 +18,7 @@ UNCERTAINTY_DTYPE = [
     ("maximum", np.float32),
     ("negative", np.bool),
 ]
-INDICES_DTYPE = [("row_value", np.int32), ("col_value", np.int32)]
-MAPPED_INDICES_DTYPE = [("row_index", np.int32), ("col_index", np.int32)]
+INDICES_DTYPE = [("row", np.float32), ("col", np.float32)]
 
 NAME_RE = re.compile(r"^[\w\-\.]*$")
 

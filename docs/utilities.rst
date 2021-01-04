@@ -4,8 +4,6 @@ Utility functions
 ``bw_processing.utils``
 -----------------------
 
-``MAX_SIGNED_32BIT_INT`` is given here as a global constant. A signed integer is used to ensure cross-OS compatibility.
-
 This file also defines the ``COMMON_DTYPE`` used for matrix construction:
 
 .. code-block:: python

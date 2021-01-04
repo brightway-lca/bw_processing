@@ -64,7 +64,7 @@ def dictionary_formatter(row):
 
 
 def resolve_dict_iterator(iterator, nrows=None):
-    sort_fields = ["row_value", "col_value", "amount", "uncertainty_type"]
+    sort_fields = ["row", "col", "amount", "uncertainty_type"]
     data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(
         data,
@@ -81,7 +81,7 @@ def resolve_dict_iterator(iterator, nrows=None):
         # Not repacking fields would cause this multi-field index to return a view
         # All columns would be serialized
         # See https://numpy.org/doc/stable/user/basics.rec.html#indexing-structured-arrays
-        repack_fields(array[["row_value", "col_value"]]),
+        repack_fields(array[["row", "col"]]),
         repack_fields(
             array[
                 [
