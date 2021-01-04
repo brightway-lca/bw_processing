@@ -1,0 +1,39 @@
+{
+  "profile": "data-package",
+  "name": "a227c871c02648f78fe75df905bf8d4b",
+  "id": "04e4ea83757c4e938fbb9ca06c79461e",
+  "licenses": [
+    {
+      "name": "ODC-PDDL-1.0",
+      "path": "http://opendatacommons.org/licenses/pddl/",
+      "title": "Open Data Commons Public Domain Dedication and License v1.0"
+    }
+  ],
+  "resources": [
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "infinite-data-indices",
+      "path": "infinite-data-indices.npy",
+      "data_array": "infinite-data"
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "infinite-data-meta.csv",
+      "name": "infinite-data-meta",
+      "valid_for": [
+        [
+          "infinite-data-indices",
+          "rows"
+        ],
+        [
+          "infinite-data-indices",
+          "cols"
+        ]
+      ]
+    }
+  ],
+  "created": "2020-09-25T07:08:23.284964Z"
+}
