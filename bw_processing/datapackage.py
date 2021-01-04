@@ -3,7 +3,13 @@ from .errors import Closed, LengthMismatch, NonUnique
 from .filesystem import clean_datapackage_name, safe_filename
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
 from .proxies import UndefinedInterface
-from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator
+from .utils import (
+    check_name,
+    check_suffix,
+    load_bytes,
+    resolve_dict_iterator,
+    NoneSorter,
+)
 from pathlib import Path
 from typing import Union, Any
 import datetime
@@ -31,7 +37,10 @@ class DatapackageBase:
     def groups(self):
         return {
             label: self.filter_by_attribute("group", label)
-            for label in sorted({x.get("group") for x in self.resources})
+            for label in sorted(
+                {x.get("group") for x in self.resources},
+                key=lambda x: NoneSorter() if x is None else x,
+            )
         }
 
     def _get_index(self, name_or_index: Union[str, int]) -> int:
@@ -388,7 +397,7 @@ class Datapackage(DatapackageBase):
             {
                 "matrix_label": matrix_label,
                 "category": "array",
-                "nrows": len(self.indices_array),
+                "nrows": len(indices_array),
             }
         )
 
@@ -527,7 +536,7 @@ class Datapackage(DatapackageBase):
             {
                 "matrix_label": matrix_label,
                 "category": "vector",
-                "nrows": len(self.indices_array),
+                "nrows": len(indices_array),
             }
         )
 
