@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 import numpy as np
 import pandas as pd
+import shutil
 import tempfile
 import zipfile
 from functools import partial
@@ -16,21 +17,18 @@ class IOBase:
 
     def _load_resource(self, func, kwargs, proxy=False):
         if proxy:
-            return func(**kwargs)
-        else:
             return partial(func, **kwargs)
+        else:
+            return func(**kwargs)
 
 
 class DirectoryIO(IOBase):
     def __init__(self, dirpath, overwrite=False):
         self.dirpath = Path(dirpath)
         if self.dirpath.is_dir():
-            if not overwrite:
-                raise ValueError(
-                    "Directory `{}` already exists and `overwrite` is false.".format(
-                        self.dirpath
-                    )
-                )
+            if overwrite:
+                shutil.rmtree(self.dirpath)
+                self.dirpath.mkdir()
         else:
             if not self.dirpath.parent.is_dir():
                 raise ValueError(
@@ -40,6 +38,10 @@ class DirectoryIO(IOBase):
 
     def delete_file(self, filename):
         (self.dirpath / filename).unlink()
+
+    def delete_all(self):
+        shutil.rmtree(self.dirpath)
+        self.dirpath = None
 
     def load_json(self, filename, proxy=False, mmap_mode=None):
         return self._load_resource(
@@ -74,10 +76,16 @@ class DirectoryIO(IOBase):
 class ZipfileIO(IOBase):
     def __init__(self, filepath):
         self.path = Path(filepath)
+        if not self.path.is_file():
+            raise ValueError("Given zipfile '{}' doesn't exist".format(self.path))
         self.zf = zipfile.ZipFile(self.path)
 
     def delete_file(self, filename):
         raise NotImplementedError("Read-only zipfile")
+
+    def delete_all(self):
+        self.path.unlink()
+        self.zf = None
 
     def load_numpy(self, filename, proxy=False, mmap_mode=None):
         kwargs = {
@@ -119,13 +127,12 @@ class TemporaryDirectoryIO(DirectoryIO):
         if self.dest_filepath.is_file():
             if overwrite:
                 self.dest_filepath.unlink()
-            else:
-                raise ValueError(
-                    "This calculation package archive already exists and `overwrite` is false."
-                )
 
         self.td = tempfile.TemporaryDirectory()
         self.dirpath = Path(self.td.name)
+
+    def delete_all(self):
+        del self.td
 
     def archive(self):
         with zipfile.ZipFile(
@@ -148,6 +155,9 @@ class InMemoryIO(IOBase):
             if filename in cache:
                 del cache[filename]
                 break
+
+    def delete_all(self):
+        self._np_cache = self._json_cache = self._csv_cache = None
 
     def load_json(self, filename, *args, **kwargss):
         return self._json_cache[filename]

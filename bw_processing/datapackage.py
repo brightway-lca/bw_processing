@@ -1,6 +1,6 @@
 from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique
-from .filesystem import clean_datapackage_name, safe_filename
+from .filesystem import clean_datapackage_name
 from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
 from .proxies import UndefinedInterface
 from .utils import (
@@ -10,15 +10,14 @@ from .utils import (
     resolve_dict_iterator,
     NoneSorter,
 )
+from copy import deepcopy
+from functools import partial
 from pathlib import Path
 from typing import Union, Any
 import datetime
 import numpy as np
 import pandas as pd
 import uuid
-import itertools
-from copy import deepcopy
-from functools import partial
 
 
 class DatapackageBase:
@@ -144,6 +143,11 @@ class Datapackage(DatapackageBase):
     * Resources that are interfaces to external data sources (either in Python or other) can't be saved, but must be recreated each time a data package is used.
 
     """
+
+    def del_package(self):
+        """Delete this data package, including any saved data. Frees up any memory used by data resources."""
+        self.io_obj.delete_all()
+        self.io_obj = self.resources = self.data = None
 
     def _check_length_consistency(self) -> None:
         if len(self.resources) != len(self.data):
@@ -838,13 +842,13 @@ def create_datapackage(
 
 
 def load_datapackage(
-    path: Union[FilteredDatapackage, Path, str],
+    path_or_obj: Union[DatapackageBase, Path, str],
     mmap_mode: Union[None, str] = None,
     proxy: bool = False,
 ) -> Datapackage:
-    if isinstance(FilteredDatapackage, path):
-        obj = path
+    if isinstance(path_or_obj, DatapackageBase):
+        obj = path_or_obj
     else:
         obj = Datapackage()
-        obj._load(path=path, mmap_mode=mmap_mode, proxy=proxy)
+        obj._load(path=path_or_obj, mmap_mode=mmap_mode, proxy=proxy)
     return obj

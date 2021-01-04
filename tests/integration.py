@@ -1,9 +1,10 @@
 from bw_processing.io_classes import DirectoryIO, TemporaryDirectoryIO, InMemoryIO
+from bw_processing import create_datapackage, load_datapackage
 from bw_processing.constants import INDICES_DTYPE
-from bw_processing import create_datapackage
+from copy import deepcopy
+from pathlib import Path
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import tempfile
 
 
@@ -116,8 +117,8 @@ def check_data(dp):
     # assert d["col_value"].sum() == 7
 
 
-def check_metadata(dp):
-    assert dp.metadata["resources"] == [
+def check_metadata(dp, as_tuples=True):
+    expected = [
         {
             "category": "vector",
             "foo": "bar",
@@ -288,6 +289,12 @@ def check_metadata(dp):
             "valid_for": "sa-data-array",
         },
     ]
+    expected_as_list = deepcopy(expected)
+    expected_as_list[12]["valid_for"][0] = list(expected_as_list[12]["valid_for"][0])
+    if as_tuples:
+        assert dp.metadata["resources"] == expected
+    else:
+        assert dp.metadata["resources"] == expected_as_list
     assert dp.metadata["created"].endswith("Z")
     assert isinstance(dp.metadata["licenses"], list)
     assert dp.metadata["profile"] == "data-package"
@@ -317,6 +324,11 @@ def test_integration_test_directory():
         check_metadata(dp)
         check_data(dp)
 
+        loaded = load_datapackage(dp.io_obj.dirpath)
+
+        check_metadata(loaded, False)
+        check_data(loaded)
+
 
 def test_integration_test_zipfile():
     with tempfile.TemporaryDirectory() as td:
@@ -329,6 +341,11 @@ def test_integration_test_zipfile():
 
         check_metadata(dp)
         check_data(dp)
+
+        loaded = load_datapackage(dp.io_obj.dest_filepath)
+
+        check_metadata(loaded, False)
+        check_data(loaded)
 
 
 if __name__ == "__main__":
