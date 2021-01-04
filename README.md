@@ -18,32 +18,43 @@ Library for storing numeric data for use in matrix-based calculations. Designed 
 
 The [Brightway LCA framework](https://brightway.dev/) has stored data used in constructing matrices in binary form as numpy arrays for years. This package is an evolution of that approach, and adds the following features:
 
-* **Consistent names for row and column fields**. Previously, these changed for each matrix, to reflect the role each row or column played in the model. Now they are always the same for all arrays, making the code simpler and easier to use.
+* **Consistent names for row and column fields**. Previously, these changed for each matrix, to reflect the role each row or column played in the model. Now they are always the same for all arrays (`"row"` and `"col"`), making the code simpler and easier to use.
 * **Provision of metadata**. Numpy binary files are only data - `bw_processing` also produces a metadata file following the [data package standard](https://specs.frictionlessdata.io/data-package/). Things like data license, version, and unique id are now explicit and always included.
-* **Simpler handling of values whose sign should be flipped**. Brightway used to use a type mapping dictionary to indicate which values in a matrix should have their sign flipped after insertion. For example, matrix values which represent the *consumption* of a good or service should be negative, while values that represent a *production* should be positive. The problem with a mapping dictionary with text keys is that it can be used or interpreted inconsistently. Instead, `bw_processing` simply has an additional column, `flip`.
-* **Unified architecture for static and presamples data**. The way that static (i.e. only one possible value per input) and presamples (i.e. many possible values) data are handled is now exactly the same, allowing for simpler code and removing the possibility for inconsistent behaviour between these two.
+* **Simpler handling of numeric values whose sign should be flipped**. Brightway used to use a type mapping dictionary to indicate which values in a matrix should have their sign flipped after insertion. For example, matrix values which represent the *consumption* of a good or service should be negative, while values that represent a *production* should be positive. The problem with a mapping dictionary with text keys is that it can be used or interpreted inconsistently. Instead, `bw_processing` uses a separate `flip` vector.
+* **Unified architecture for vector and array data**. The way that vector (i.e. only one possible value per input) and array (i.e. many possible values, also called presamples) data are handled is now exactly the same, allowing for simpler code and removing the possibility for inconsistent behaviour between these two.
 * **Portability**. Processed arrays can include metadata that allows for reindexing on other machines, so that processed arrays can be distributed. Before, this was not possible, as integer IDs were randomly assigned, and would be different from machine to machine or even across Brightway projects. The same portability applies to presamples, making them more useful.
-* **Dynamic data sources**. Data for matrix construction (both static and presamples) can be provided dynamically using a defined API. This allows for data sources on the cloud, or other external data interfaces.
-* **In-memory data packages**. Data packages can be created in-memory and used for calculations.
-* **Separation of uncertainty distribution parameters from other data**. Fitting data to an uncertainty distribution, or estimating such distributions, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including [direct sampling from real data](https://github.com/PascalLesage/presamples/). Therefore, uncertainty distribution parameters are stored separately, and only loaded if needed.
+* **Dynamic data sources**. Data for matrix construction (both vectors and arrays) can be provided dynamically using a defined API. This allows for data sources on the cloud, or other external data interfaces.
+* **In-memory data provision**. Data packages can be created in-memory and used for calculations.
+* **Separation of uncertainty distribution parameters from other data**. Fitting data to a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function) (PDF), or an estimate of such a PDF, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including [direct sampling from real data](https://github.com/PascalLesage/presamples/). Therefore, uncertainty distribution parameters are stored separately, and only loaded if needed.
 
 ## Install
 
-Install using pip or conda (channel `cmutel`). Depends on `numpy` and `pandas` (for CSV IO).
+Install using pip or conda (channel `cmutel`). Depends on `numpy` and `pandas` (for reading and writing CSVs).
 
 Has no explicit or implicit dependence on any other part of Brightway.
 
 ## Usage
 
-### Basic concepts
+`bw_processing` uses a hierarchical structure: Data is stored in data packages, and inside each data package is a series of groups, each of which consists of multiple data objects that define one part of a matrix.
+
+Each data package can be either in memory, or on disk. If on disk, it can be stored as multiple files in a directory, or as a zipfile.
+
+Data objects can be vectors or arrays. Vectors will always produce the same matrix, while arrays have multiple possible values for each element of the matrix. Arrays are a generalization of the [presamples library](https://github.com/PascalLesage/presamples/).
+
+Data objects can also be either persistent or dynamic. Persistent arrays can be saved, and are always the same, while dynamic arrays are resolved at run time, and can change every time they are accessed.
+
+Probability distribution functions can only be defined for persistent vectors. Dynamic data can have uncertainty, but the dynamic data generator is responsible for modeling that uncertainty. Static arrays can't have uncertainty, as each column in the array represents the uncertainty and/or variability in the system performance or configuration.
+
+
+
 
 Because this library supports multiple use cases, there are several dimensions to be aware of:
 
-* In-memory versus on-disk. This is a (hopefully!) obvious difference. In-memory and on-disk presamples can be used together, but each datapackage must be only in-memory or on-disk.
+* In-memory versus on-disk. Each dataIn-memory and on-disk presamples can be used together, but each datapackage must be only in-memory or on-disk.
 * Static versus dynamic data: Static data can be completely loaded into memory and used directly or written to disk. Dynamic data is only resolved as the data is used (i.e. during matrix construction, not during package creation), and can be infinite generators.
 * Creating versus loading. In-memory arrays can only be created and then used, but not loaded. On-disk arrays, on the other hand, must be created, stored, and then loaded to be used. This is because saving a package to disk flushes the data from memory.
 * Vectors versus arrays. Each element in a vector can only have one possible value - this is the same as a static matrix. Arrays have the same number of rows as the length of a vector, but multiple possible values of each parameter. Each column is therefore one conssitent possible set of parameter values. See the [presample library for more information](https://github.com/PascalLesage/presamples/).
-* Probability distributions. Probability distributions can only be defined for *static vectors*. Dynamic data can have uncertainty, but the dynamic data generator is responsible for modelling that uncertainty. Static arrays can't have uncertainty, as each column in the array represents the uncertainty and/or variability in the system performance or configuration.
+* Probability distributions.
 
 The main interface for using this library is the `Datapackage` class. However, instead of creating an instance of this class directly, you should use the utility functions `create_datapackage` and `load_datapackage`.
 
@@ -63,8 +74,6 @@ Datapackages are created using `create_datapackage`, which takes the following a
 Calling this function return an instance of `Datapackage`. You still need to add data.
 
 ### Adding normal matrix data
-
-
 
 Let's see it in action:
 
