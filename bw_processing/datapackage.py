@@ -1,7 +1,7 @@
 from .constants import DEFAULT_LICENSES
-from .errors import Closed, LengthMismatch, NonUnique
+from .errors import Closed, LengthMismatch, NonUnique, InvalidMimetype
 from .filesystem import clean_datapackage_name
-from .io_classes import InMemoryIO, ZipfileIO, TemporaryDirectoryIO, DirectoryIO
+from .io_classes import file_writer, file_reader
 from .proxies import UndefinedInterface
 from .utils import (
     check_name,
@@ -11,6 +11,8 @@ from .utils import (
     NoneSorter,
 )
 from copy import deepcopy
+from fs.base import FS
+from fs.memoryfs import MemoryFS
 from functools import partial
 from pathlib import Path
 from typing import Union, Any
@@ -80,7 +82,7 @@ class DatapackageBase:
         index = self._get_index(name_or_index)
 
         try:
-            self.io_obj.delete_file(self.resources["path"])
+            self.fs.remove(self.resources["path"])
         except KeyError:
             # Interface has no path
             pass
@@ -144,10 +146,10 @@ class Datapackage(DatapackageBase):
 
     """
 
-    def del_package(self):
-        """Delete this data package, including any saved data. Frees up any memory used by data resources."""
-        self.io_obj.delete_all()
-        self.io_obj = self.resources = self.data = None
+    # def del_package(self):
+    #     """Delete this data package, including any saved data. Frees up any memory used by data resources."""
+    #     self.io_obj.delete_all()
+    #     self.io_obj = self.resources = self.data = None
 
     def _check_length_consistency(self) -> None:
         if len(self.resources) != len(self.data):
@@ -158,22 +160,12 @@ class Datapackage(DatapackageBase):
             )
 
     def _load(
-        self,
-        path: Union[Path, str],
-        mmap_mode: Union[None, str] = None,
-        proxy: bool = False,
+        self, fs: FS, mmap_mode: Union[None, str] = None, proxy: bool = False
     ) -> None:
-        path = Path(path)
-        if not path.exists():
-            raise ValueError("Given path doesn't exist")
-        if path.is_file():
-            self.io_obj = ZipfileIO(filepath=path)
-        elif path.is_dir():
-            self.io_obj = DirectoryIO(path)
-        else:
-            raise ValueError("Can't understand given path")
-
-        self.metadata = self.io_obj.load_json("datapackage.json")
+        self.fs = fs
+        self.metadata = file_reader(
+            fs=self.fs, resource="datapackage.json", mimetype="application/json"
+        )
         self.data = []
         self._load_all(mmap_mode=mmap_mode, proxy=proxy)
 
@@ -181,38 +173,25 @@ class Datapackage(DatapackageBase):
         self, mmap_mode: Union[None, str] = None, proxy: bool = False
     ) -> None:
         for resource in self.resources:
-            if (
-                resource["mediatype"] == "application/octet-stream"
-                and resource["format"] == "npy"
-            ):
+            try:
                 self.data.append(
-                    self.io_obj.load_numpy(
-                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
+                    file_reader(
+                        fs=self.fs,
+                        resource=resource["path"],
+                        mimetype=resource["mediatype"],
+                        proxy=proxy,
+                        mmap_mode=mmap_mode,
                     )
                 )
-            elif resource["mediatype"] == "text/csv":
-                self.data.append(
-                    self.io_obj.load_csv(
-                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
-                    )
-                )
-            elif resource["mediatype"] == "application/json":
-                self.data.append(
-                    self.io_obj.load_json(
-                        resource["path"], mmap_mode=mmap_mode, proxy=proxy
-                    )
-                )
-            else:
+            except InvalidMimetype:
                 self.data.append(UndefinedInterface())
 
     def _create(
         self,
-        dirpath: Union[str, Path, None],
+        fs: Union[FS, None],
         name: Union[str, None],
         id_: Union[str, None],
         metadata: Union[dict, None],
-        overwrite: bool = False,
-        compress: bool = False,
         combinatorial: bool = False,
         sequential: bool = False,
         seed: Union[int, None] = None,
@@ -227,16 +206,20 @@ class Datapackage(DatapackageBase):
         name = clean_datapackage_name(name or uuid.uuid4().hex)
         check_name(name)
 
-        if dirpath is None:
-            self.io_obj = InMemoryIO()
-        elif compress:
-            self.io_obj = TemporaryDirectoryIO(
-                dest_dirpath=dirpath,
-                dest_filename=check_suffix(name, ".zip"),
-                overwrite=overwrite,
-            )
-        else:
-            self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
+        if fs is None:
+            fs = MemoryFS()
+        self.fs = fs
+
+        # if dirpath is None:
+        #     self.io_obj = InMemoryIO()
+        # elif compress:
+        #     self.io_obj = TemporaryDirectoryIO(
+        #         dest_dirpath=dirpath,
+        #         dest_filename=check_suffix(name, ".zip"),
+        #         overwrite=overwrite,
+        #     )
+        # else:
+        #     self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
 
         self.metadata = {
             "profile": "data-package",
@@ -274,8 +257,13 @@ class Datapackage(DatapackageBase):
         self._substitute_interfaces()
         self._check_length_consistency()
 
-        self.io_obj.save_json(self.metadata, "datapackage.json")
-        self.io_obj.archive()
+        file_writer(
+            data=self.metadata,
+            fs=self.fs,
+            resource="datapackage.json",
+            mimetype="application/json",
+        )
+        self.fs.close()
 
     def define_interface_resource(
         self, name_or_index: Union[str, int], resource: Any
@@ -431,8 +419,21 @@ class Datapackage(DatapackageBase):
     def _add_array_resource(self, array, name, matrix_label, kind, **kwargs):
         filename = check_suffix(name, ".npy")
 
-        self.io_obj.save_numpy(array, filename)
-        self.data.append(self.io_obj.load_numpy(filename, proxy=True))
+        file_writer(
+            data=array,
+            fs=self.fs,
+            resource=filename,
+            mimetype="application/octet-stream",
+        )
+        self.data.append(
+            file_reader(
+                fs=self.fs,
+                resource=filename,
+                mimetype="application/octet-stream",
+                proxy=True,
+                **kwargs,
+            )
+        )
 
         resource = {
             # Datapackage generic
@@ -645,7 +646,7 @@ class Datapackage(DatapackageBase):
 
         filename = check_suffix(name, ".csv")
 
-        self.io_obj.save_csv(dataframe, filename)
+        file_writer(data=dataframe, fs=self.fs, resource=filename, mimetype="text/csv")
         self.data.append(dataframe)
 
         kwargs.update(
@@ -653,7 +654,7 @@ class Datapackage(DatapackageBase):
                 # Datapackage generic
                 "profile": "data-resource",
                 "mediatype": "text/csv",
-                "path": str(filename),
+                "path": filename,
                 "name": name,
                 # Brightway specific
                 "valid_for": valid_for,
@@ -699,7 +700,9 @@ class Datapackage(DatapackageBase):
 
         filename = check_suffix(name, ".json")
 
-        self.io_obj.save_json(data, filename)
+        file_writer(
+            data=data, fs=self.fs, resource=filename, mimetype="application/json"
+        )
         self.data.append(data)
 
         kwargs.update(
@@ -814,12 +817,10 @@ class Datapackage(DatapackageBase):
 
 
 def create_datapackage(
-    dirpath: Union[Path, str, None] = None,
+    fs: Union[FS, None] = None,
     name: Union[None, str] = None,
     id_: Union[None, str] = None,
     metadata: Union[dict, None] = None,
-    overwrite: bool = False,
-    compress: bool = False,
     combinatorial: bool = False,
     sequential: bool = False,
     seed: Union[int, None] = None,
@@ -827,12 +828,10 @@ def create_datapackage(
 ) -> Datapackage:
     obj = Datapackage()
     obj._create(
-        dirpath=dirpath,
+        fs=fs,
         name=name,
         id_=id_,
         metadata=metadata,
-        overwrite=overwrite,
-        compress=compress,
         sequential=sequential,
         combinatorial=combinatorial,
         seed=seed,
@@ -842,13 +841,13 @@ def create_datapackage(
 
 
 def load_datapackage(
-    path_or_obj: Union[DatapackageBase, Path, str],
+    fs_or_obj: Union[DatapackageBase, Path, str],
     mmap_mode: Union[None, str] = None,
     proxy: bool = False,
 ) -> Datapackage:
-    if isinstance(path_or_obj, DatapackageBase):
-        obj = path_or_obj
+    if isinstance(fs_or_obj, DatapackageBase):
+        obj = fs_or_obj
     else:
         obj = Datapackage()
-        obj._load(path=path_or_obj, mmap_mode=mmap_mode, proxy=proxy)
+        obj._load(fs=fs_or_obj, mmap_mode=mmap_mode, proxy=proxy)
     return obj

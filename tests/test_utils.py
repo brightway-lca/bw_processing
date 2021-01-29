@@ -88,10 +88,10 @@ def test_dictionary_formatter_one_dimensional():
 
 
 def test_check_suffix():
-    assert check_suffix("foo.bar.baz", "baz") == Path("foo.bar.baz")
-    assert check_suffix("foo.bar.baz", ".baz") == Path("foo.bar.baz")
-    assert check_suffix("foo.bar", ".baz") == Path("foo.bar.baz")
-    assert check_suffix(Path("foo") / "bar", "baz") == Path("foo/bar.baz")
+    assert check_suffix("foo.bar.baz", "baz") == "foo.bar.baz"
+    assert check_suffix("foo.bar.baz", ".baz") == "foo.bar.baz"
+    assert check_suffix("foo.bar", ".baz") == "foo.bar.baz"
+    assert check_suffix(Path("foo") / "bar", "baz") == "foo/bar.baz"
 
 
 def test_none_sorter():

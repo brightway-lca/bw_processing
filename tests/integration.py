@@ -1,10 +1,14 @@
-from bw_processing.io_classes import DirectoryIO, TemporaryDirectoryIO, InMemoryIO
 from bw_processing import create_datapackage, load_datapackage
 from bw_processing.constants import INDICES_DTYPE
 from copy import deepcopy
+from fs import open_fs
+from fs.memoryfs import MemoryFS
+from fs.osfs import OSFS
+from fs.zipfs import ZipFS
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import pytest
 import tempfile
 
 
@@ -303,8 +307,8 @@ def check_metadata(dp, as_tuples=True):
 
 
 def test_integration_test_in_memory():
-    dp = create_datapackage(None, "the-name", "the id", compress=False)
-    assert isinstance(dp.io_obj, InMemoryIO)
+    dp = create_datapackage(fs=None, name="the-name", id_="the id")
+    assert isinstance(dp.fs, MemoryFS)
     add_data(dp)
     dp.finalize_serialization()
 
@@ -312,19 +316,23 @@ def test_integration_test_in_memory():
     check_data(dp)
 
 
-def test_integration_test_directory():
+@pytest.mark.slow
+def test_integration_test_ftp():
+    dp = load_datapackage(fs_or_obj=open_fs("ftp://brightway.dev/tfd/"))
+    check_metadata(dp)
+    check_data(dp)
+
+
+def test_integration_test_fs_temp_directory():
     with tempfile.TemporaryDirectory() as td:
-        dp = create_datapackage(
-            dirpath=td, name="the-name", id_="the id", compress=False, overwrite=True
-        )
-        assert isinstance(dp.io_obj, DirectoryIO)
+        dp = create_datapackage(fs=OSFS(td), name="the-name", id_="the id")
         add_data(dp)
         dp.finalize_serialization()
 
         check_metadata(dp)
         check_data(dp)
 
-        loaded = load_datapackage(dp.io_obj.dirpath)
+        loaded = load_datapackage(OSFS(td))
 
         check_metadata(loaded, False)
         check_data(loaded)
@@ -333,16 +341,17 @@ def test_integration_test_directory():
 def test_integration_test_zipfile():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(
-            dirpath=td, name="the-name", id_="the id", compress=True
+            fs=ZipFS(str(Path(td) / "foo.zip"), write=True),
+            name="the-name",
+            id_="the id",
         )
-        assert isinstance(dp.io_obj, TemporaryDirectoryIO)
         add_data(dp)
         dp.finalize_serialization()
 
         check_metadata(dp)
         check_data(dp)
 
-        loaded = load_datapackage(dp.io_obj.dest_filepath)
+        loaded = load_datapackage(ZipFS(str(Path(td) / "foo.zip"), write=False))
 
         check_metadata(loaded, False)
         check_data(loaded)
@@ -353,13 +362,15 @@ if __name__ == "__main__":
     dirpath.mkdir(exist_ok=True)
 
     dp = create_datapackage(
-        dirpath / "tfd", "test-fixture", "fixture-42", compress=False, overwrite=True
+        fs=OSFS(str(dirpath / "tfd")), name="test-fixture", id_="fixture-42"
     )
     add_data(dp)
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        dirpath, "test-fixture", "fixture-42", compress=True, overwrite=True
+        fs=ZipFS(str(dirpath / "test-fixture.zip")),
+        name="test-fixture",
+        id_="fixture-42",
     )
     add_data(dp)
     dp.finalize_serialization()

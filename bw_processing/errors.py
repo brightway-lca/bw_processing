@@ -38,3 +38,9 @@ class LengthMismatch(BrightwayProcessingError):
     """Number of resources doesn't match the number of data objects"""
 
     pass
+
+
+class InvalidMimetype(BrightwayProcessingError):
+    """Provided mimetype missing or not understood"""
+
+    pass

@@ -33,7 +33,7 @@ def check_suffix(path, suffix):
         suffix = "." + suffix
     if path.suffix != suffix:
         path = path.with_suffix(path.suffix + suffix)
-    return path
+    return str(path)
 
 
 def as_uncertainty_type(row):
