@@ -5,7 +5,7 @@ fixtures_dir = Path(__file__, "..").resolve() / "fixtures"
 
 
 def test_md5():
-    assert md5(fixtures_dir / "test-fixture.zip") == "d4251ce941641ca807889214f808ae97"
+    assert md5(fixtures_dir / "test-fixture.zip") == "8d14ae6b1f64c535d2072c2f598eadb6"
 
 
 def test_safe_filename():

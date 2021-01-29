@@ -302,12 +302,12 @@ def check_metadata(dp, as_tuples=True):
     assert dp.metadata["created"].endswith("Z")
     assert isinstance(dp.metadata["licenses"], list)
     assert dp.metadata["profile"] == "data-package"
-    assert dp.metadata["name"] == "the-name"
-    assert dp.metadata["id"] == "the id"
+    assert dp.metadata["name"] == "test-fixture"
+    assert dp.metadata["id"] == "fixture-42"
 
 
 def test_integration_test_in_memory():
-    dp = create_datapackage(fs=None, name="the-name", id_="the id")
+    dp = create_datapackage(fs=None, name="test-fixture", id_="fixture-42")
     assert isinstance(dp.fs, MemoryFS)
     add_data(dp)
     dp.finalize_serialization()
@@ -316,16 +316,44 @@ def test_integration_test_in_memory():
     check_data(dp)
 
 
+def test_integration_test_directory():
+    dp = load_datapackage(
+        fs_or_obj=open_fs(str(Path(__file__).parent.resolve() / "fixtures" / "tfd"))
+    )
+
+    check_metadata(dp, False)
+    check_data(dp)
+
+
 @pytest.mark.slow
 def test_integration_test_ftp():
     dp = load_datapackage(fs_or_obj=open_fs("ftp://brightway.dev/tfd/"))
-    check_metadata(dp)
+    check_metadata(dp, False)
     check_data(dp)
+
+
+@pytest.mark.slow
+def test_integration_test_s3():
+    try:
+        import fs_s3fs
+        from botocore.exceptions import NoCredentialsError
+    except ImportError:
+        raise ImportError(
+            "https://github.com/PyFilesystem/s3fs must be installed for this test."
+        )
+    try:
+        dp = load_datapackage(fs_or_obj=open_fs("s3://bwprocessing"))
+        check_metadata(dp, False)
+        check_data(dp)
+    except NoCredentialsError:
+        raise NoCredentialsError(
+            "Supply AWS credentials (https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)"
+        )
 
 
 def test_integration_test_fs_temp_directory():
     with tempfile.TemporaryDirectory() as td:
-        dp = create_datapackage(fs=OSFS(td), name="the-name", id_="the id")
+        dp = create_datapackage(fs=OSFS(td), name="test-fixture", id_="fixture-42")
         add_data(dp)
         dp.finalize_serialization()
 
@@ -338,12 +366,12 @@ def test_integration_test_fs_temp_directory():
         check_data(loaded)
 
 
-def test_integration_test_zipfile():
+def test_integration_test_new_zipfile():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(
             fs=ZipFS(str(Path(td) / "foo.zip"), write=True),
-            name="the-name",
-            id_="the id",
+            name="test-fixture",
+            id_="fixture-42",
         )
         add_data(dp)
         dp.finalize_serialization()
@@ -357,9 +385,22 @@ def test_integration_test_zipfile():
         check_data(loaded)
 
 
+def test_integration_test_fixture_zipfile():
+    loaded = load_datapackage(
+        ZipFS(
+            str(Path(__file__).parent.resolve() / "fixtures" / "test-fixture.zip"),
+            write=False,
+        )
+    )
+
+    check_metadata(loaded, False)
+    check_data(loaded)
+
+
 if __name__ == "__main__":
     dirpath = Path(__file__).parent.resolve() / "fixtures"
     dirpath.mkdir(exist_ok=True)
+    (dirpath / "tfd").mkdir(exist_ok=True)
 
     dp = create_datapackage(
         fs=OSFS(str(dirpath / "tfd")), name="test-fixture", id_="fixture-42"
@@ -368,7 +409,7 @@ if __name__ == "__main__":
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        fs=ZipFS(str(dirpath / "test-fixture.zip")),
+        fs=ZipFS(str(dirpath / "test-fixture.zip"), write=True),
         name="test-fixture",
         id_="fixture-42",
     )

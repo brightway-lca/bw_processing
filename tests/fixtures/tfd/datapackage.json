@@ -14,25 +14,27 @@
       "profile": "data-resource",
       "format": "npy",
       "mediatype": "application/octet-stream",
-      "name": "sa-data-vector-from-dict.data",
-      "matrix": "sa_matrix",
-      "kind": "data",
-      "path": "sa-data-vector-from-dict.data.npy",
-      "group": "sa-data-vector-from-dict",
-      "category": "vector",
-      "foo": "bar"
-    },
-    {
-      "profile": "data-resource",
-      "format": "npy",
-      "mediatype": "application/octet-stream",
       "name": "sa-data-vector-from-dict.indices",
       "matrix": "sa_matrix",
       "kind": "indices",
       "path": "sa-data-vector-from-dict.indices.npy",
       "group": "sa-data-vector-from-dict",
-      "category": "vector",
-      "foo": "bar"
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector-from-dict.data",
+      "matrix": "sa_matrix",
+      "kind": "data",
+      "path": "sa-data-vector-from-dict.data.npy",
+      "group": "sa-data-vector-from-dict",
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
     },
     {
       "profile": "data-resource",
@@ -43,8 +45,9 @@
       "kind": "distributions",
       "path": "sa-data-vector-from-dict.distributions.npy",
       "group": "sa-data-vector-from-dict",
-      "category": "vector",
-      "foo": "bar"
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
     },
     {
       "profile": "data-resource",
@@ -55,18 +58,8 @@
       "kind": "flip",
       "path": "sa-data-vector-from-dict.flip.npy",
       "group": "sa-data-vector-from-dict",
-      "category": "vector",
-      "foo": "bar"
-    },
-    {
-      "profile": "data-resource",
-      "format": "npy",
-      "mediatype": "application/octet-stream",
-      "name": "sa-data-vector.data",
-      "matrix": "sa_matrix",
-      "kind": "data",
-      "path": "sa-data-vector.data.npy",
-      "group": "sa-data-vector",
+      "nrows": 2,
+      "foo": "bar",
       "category": "vector"
     },
     {
@@ -78,6 +71,19 @@
       "kind": "indices",
       "path": "sa-data-vector.indices.npy",
       "group": "sa-data-vector",
+      "nrows": 3,
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector.data",
+      "matrix": "sa_matrix",
+      "kind": "data",
+      "path": "sa-data-vector.data.npy",
+      "group": "sa-data-vector",
+      "nrows": 3,
       "category": "vector"
     },
     {
@@ -89,6 +95,7 @@
       "kind": "flip",
       "path": "sa-data-vector.flip.npy",
       "group": "sa-data-vector",
+      "nrows": 3,
       "category": "vector"
     },
     {
@@ -100,7 +107,8 @@
       "kind": "data",
       "path": "sa-data-array.data.npy",
       "group": "sa-data-array",
-      "category": "array"
+      "category": "array",
+      "nrows": 3
     },
     {
       "profile": "data-resource",
@@ -111,7 +119,8 @@
       "kind": "indices",
       "path": "sa-data-array.indices.npy",
       "group": "sa-data-array",
-      "category": "array"
+      "category": "array",
+      "nrows": 3
     },
     {
       "profile": "data-resource",
@@ -122,7 +131,8 @@
       "kind": "flip",
       "path": "sa-data-array.flip.npy",
       "group": "sa-data-array",
-      "category": "array"
+      "category": "array",
+      "nrows": 3
     },
     {
       "profile": "data-resource",
@@ -133,7 +143,8 @@
       "kind": "indices",
       "path": "sa-vector-interface.indices.npy",
       "group": "sa-vector-interface",
-      "category": "vector"
+      "category": "vector",
+      "nrows": 3
     },
     {
       "profile": "data-resource",
@@ -144,7 +155,8 @@
       "kind": "indices",
       "path": "sa-array-interface.indices.npy",
       "group": "sa-array-interface",
-      "category": "array"
+      "category": "array",
+      "nrows": 3
     },
     {
       "profile": "data-resource",
@@ -173,5 +185,9 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2020-10-15T13:31:23.296761Z"
+  "created": "2021-01-29T18:54:46.431529Z",
+  "combinatorial": false,
+  "sequential": false,
+  "seed": null,
+  "duplicates": "substitute"
 }
