@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 
-def generic_directory_filesystem(*, dirpath: Path = None):
+def generic_directory_filesystem(*, dirpath: Path) -> OSFS:
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         if not dirpath.parent.is_dir():
@@ -23,8 +23,8 @@ def generic_directory_filesystem(*, dirpath: Path = None):
 
 
 def generic_zipfile_filesystem(
-    *, dirpath: Path = None, filename: str = None, write: bool = True
-):
+    *, dirpath: Path, filename: str, write: bool = True
+) -> ZipFS:
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         raise ValueError("Destination directory `{}` doesn't exist".format(dirpath))
@@ -33,13 +33,13 @@ def generic_zipfile_filesystem(
 
 def file_reader(
     *,
-    fs: FS = None,
-    resource: str = None,
-    mimetype: str = None,
+    fs: FS,
+    resource: str,
+    mimetype: str,
     proxy: bool = False,
     mmap_mode: Union[str, None] = None,
     **kwargs
-):
+) -> Any:
     if mimetype is None and resource.endswith(".npy"):
         mimetype = "application/octet-stream"
     elif mimetype is None:
@@ -72,14 +72,7 @@ def file_reader(
         return func(**kwargs)
 
 
-def file_writer(
-    *,
-    data: Any = None,
-    fs: FS = None,
-    resource: str = None,
-    mimetype: str = None,
-    **kwargs
-):
+def file_writer(*, data: Any, fs: FS, resource: str, mimetype: str, **kwargs) -> None:
     if isinstance(resource, Path):
         resource = str(resource)
 

@@ -26,16 +26,16 @@ class DatapackageBase:
     def __init__(self):
         self._finalized = False
 
-    def __get_resources(self):
+    def __get_resources(self) -> list:
         return self.metadata["resources"]
 
-    def __set_resources(self, dct: dict):
+    def __set_resources(self, dct: dict) -> None:
         self.metadata["resources"] = dct
 
     resources = property(__get_resources, __set_resources)
 
     @property
-    def groups(self):
+    def groups(self) -> dict:
         return {
             label: self.filter_by_attribute("group", label)
             for label in sorted(
@@ -112,7 +112,7 @@ class DatapackageBase:
 
         return self.data[index], self.resources[index]
 
-    def filter_by_attribute(self, key, value):
+    def filter_by_attribute(self, key: str, value: Any) -> "FilteredDatapackage":
         """"""
         fdp = FilteredDatapackage()
         fdp.metadata = deepcopy(self.metadata)
@@ -416,7 +416,9 @@ class Datapackage(DatapackageBase):
                 **kwargs,
             )
 
-    def _add_array_resource(self, array, name, matrix_label, kind, **kwargs):
+    def _add_array_resource(
+        self, *, array: np.ndarray, name: str, matrix_label: str, kind: str, **kwargs
+    ) -> None:
         filename = check_suffix(name, ".npy")
 
         file_writer(
@@ -534,7 +536,7 @@ class Datapackage(DatapackageBase):
         name: Union[str, None] = None,
         flip_array: Union[None, np.ndarray] = None,  # Not interface
         **kwargs,
-    ):
+    ) -> None:
         self._prepare_modifications()
 
         kwargs.update(
@@ -572,7 +574,7 @@ class Datapackage(DatapackageBase):
         name: Union[str, None] = None,
         flip_array: Union[None, np.ndarray] = None,
         **kwargs,
-    ):
+    ) -> None:
         """`interface` must support the presamples API."""
         self._prepare_modifications()
 
