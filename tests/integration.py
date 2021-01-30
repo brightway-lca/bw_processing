@@ -355,7 +355,7 @@ def test_integration_test_s3():
         )
 
 
-@pytest.mark.skipif(_windows, "Permission errors on Windows CI")
+@pytest.mark.skipif(_windows, reason="Permission errors on Windows CI")
 def test_integration_test_fs_temp_directory():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(fs=OSFS(td), name="test-fixture", id_="fixture-42")
@@ -373,7 +373,7 @@ def test_integration_test_fs_temp_directory():
         loaded.fs.close()
 
 
-@pytest.mark.skipif(_windows, "Permission errors on Windows CI")
+@pytest.mark.skipif(_windows, reason="Permission errors on Windows CI")
 def test_integration_test_new_zipfile():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(
