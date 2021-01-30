@@ -6,10 +6,11 @@ from bw_processing.utils import (
     NoneSorter,
 )
 from bw_processing.errors import InvalidName
+from io import BytesIO
 from pathlib import Path
 import numpy as np
+import os
 import pytest
-from io import BytesIO
 
 
 def test_load_bytes():
@@ -91,7 +92,7 @@ def test_check_suffix():
     assert check_suffix("foo.bar.baz", "baz") == "foo.bar.baz"
     assert check_suffix("foo.bar.baz", ".baz") == "foo.bar.baz"
     assert check_suffix("foo.bar", ".baz") == "foo.bar.baz"
-    assert check_suffix(Path("foo") / "bar", "baz") == "foo/bar.baz"
+    assert check_suffix(Path("foo") / "bar", "baz") == os.path.join("foo", "bar.baz")
 
 
 def test_none_sorter():

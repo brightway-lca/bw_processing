@@ -8,8 +8,12 @@ from fs.zipfs import ZipFS
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import platform
 import pytest
 import tempfile
+
+
+_windows = platform.system() == "Windows"
 
 
 class Dummy:
@@ -351,6 +355,7 @@ def test_integration_test_s3():
         )
 
 
+@pytest.mark.skipif(_windows, "Permission errors on Windows CI")
 def test_integration_test_fs_temp_directory():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(fs=OSFS(td), name="test-fixture", id_="fixture-42")
@@ -368,6 +373,7 @@ def test_integration_test_fs_temp_directory():
         loaded.fs.close()
 
 
+@pytest.mark.skipif(_windows, "Permission errors on Windows CI")
 def test_integration_test_new_zipfile():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(
