@@ -365,6 +365,8 @@ def test_integration_test_fs_temp_directory():
         check_metadata(loaded, False)
         check_data(loaded)
 
+        loaded.close()
+
 
 def test_integration_test_new_zipfile():
     with tempfile.TemporaryDirectory() as td:
