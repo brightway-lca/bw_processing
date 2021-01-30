@@ -5,10 +5,11 @@ from functools import total_ordering
 from io import BytesIO
 from numpy.lib.recfunctions import repack_fields
 from pathlib import Path
+from typing import Any, Union
 import numpy as np
 
 
-def load_bytes(obj):
+def load_bytes(obj: Any) -> Any:
     if isinstance(obj, BytesIO):
         try:
             # Go to the beginning of content
@@ -19,14 +20,14 @@ def load_bytes(obj):
     return obj
 
 
-def check_name(name):
+def check_name(name: str) -> None:
     if name is not None and not NAME_RE.match(name):
         raise InvalidName(
             "Provided name violates datapackage spec (https://frictionlessdata.io/specs/data-package/)"
         )
 
 
-def check_suffix(path, suffix):
+def check_suffix(path: Union[str, Path], suffix=str) -> str:
     """Add ``suffix``, if not already in ``path``."""
     path = Path(path)
     if not suffix.startswith("."):
@@ -36,7 +37,7 @@ def check_suffix(path, suffix):
     return str(path)
 
 
-def as_uncertainty_type(row):
+def as_uncertainty_type(row: dict) -> int:
     if "uncertainty_type" in row:
         return row["uncertainty_type"]
     elif "uncertainty type" in row:
@@ -45,7 +46,7 @@ def as_uncertainty_type(row):
         return 0
 
 
-def dictionary_formatter(row):
+def dictionary_formatter(row: dict) -> tuple:
     """Format processed array row from dictionary input"""
 
     return (
@@ -64,7 +65,7 @@ def dictionary_formatter(row):
     )
 
 
-def resolve_dict_iterator(iterator, nrows=None):
+def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     sort_fields = ["row", "col", "amount", "uncertainty_type"]
     data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(

@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from pathlib import Path
+from typing import Union
 import hashlib
 import re
 import unicodedata
@@ -8,14 +9,16 @@ SUBSTITUTION_RE = re.compile(r"[^\w\-\.]")
 MULTI_RE = re.compile(r"_{2,}")
 
 
-def clean_datapackage_name(name):
+def clean_datapackage_name(name: str) -> str:
     """Clean string ``name`` of characters not allowed in data package names.
 
     Replaces with underscores, and drops multiple underscores."""
     return re.sub(MULTI_RE, "_", re.sub(SUBSTITUTION_RE, "_", name).strip("_")).strip()
 
 
-def safe_filename(string, add_hash=True, full=False):
+def safe_filename(
+    string: Union[str, bytes], add_hash: bool = True, full: bool = False
+) -> str:
     """Convert arbitrary strings to make them safe for filenames. Substitutes strange characters, and uses unicode normalization.
 
     if `add_hash`, appends hash of `string` to avoid name collisions.
@@ -36,7 +39,7 @@ def safe_filename(string, add_hash=True, full=False):
     return safe
 
 
-def md5(filepath, blocksize=65536):
+def md5(filepath: Union[str, Path], blocksize: int = 65536) -> str:
     """Generate MD5 hash for file at `filepath`"""
     hasher = hashlib.md5()
     fo = open(filepath, "rb")
