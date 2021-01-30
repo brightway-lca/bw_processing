@@ -1,7 +1,7 @@
 from .constants import DEFAULT_LICENSES
 from .errors import Closed, LengthMismatch, NonUnique, InvalidMimetype
 from .filesystem import clean_datapackage_name
-from .io_classes import file_writer, file_reader
+from .io_helpers import file_writer, file_reader
 from .proxies import UndefinedInterface
 from .utils import (
     check_name,
