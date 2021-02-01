@@ -119,11 +119,11 @@ Note that if `combinatorial` is `True`, `sequential` is ignored; instead, the co
 
 Please make sure you understand how `combinatorial` and `sequential` interact! There are three possibilities:
 
-* `combinatorial` and `sequential` are both `False`. Columns are returned completely randomly:
+* `combinatorial` and `sequential` are both `False`. Columns are returned completely randomly.
 
-* `combinatorial` is `False`, `sequential` is `True`. Columns are returned in order without any interaction between the arrays:
+* `combinatorial` is `False`, `sequential` is `True`. Columns are returned in increasing numberical order without any interaction between the arrays.
 
-* `combinatorial` is `True`, `sequential` is ignored:
+* `combinatorial` is `True`, `sequential` is ignored: Columns are returned in increasing order, such that all combinations of the different array resources are provided. `StopIteration` is raised if you try to consume additional column indices.
 
 **sum_duplicates** (default `False`): If more than one data point for a given matrix element is given in the data package (not necessarily in the same data resource), sum these values. If `sum_duplicates` is `False`, the last value provided *in the data package* will be used.
 
