@@ -185,9 +185,10 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2021-01-29T18:54:46.431529Z",
+  "created": "2021-02-01T10:25:36.147145Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
-  "duplicates": "substitute"
+  "sum_duplicates": false,
+  "substitute": true
 }

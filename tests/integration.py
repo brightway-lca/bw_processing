@@ -305,9 +305,17 @@ def check_metadata(dp, as_tuples=True):
         assert dp.metadata["resources"] == expected_as_list
     assert dp.metadata["created"].endswith("Z")
     assert isinstance(dp.metadata["licenses"], list)
-    assert dp.metadata["profile"] == "data-package"
-    assert dp.metadata["name"] == "test-fixture"
-    assert dp.metadata["id"] == "fixture-42"
+    expected = {
+        "profile": "data-package",
+        "name": "test-fixture",
+        "id": "fixture-42",
+        "combinatorial": False,
+        "sequential": False,
+        "seed": None,
+        "sum_duplicates": False,
+    }
+    for k, v in expected.items():
+        assert dp.metadata[k] == v
 
 
 def test_integration_test_in_memory():
