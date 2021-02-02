@@ -25,6 +25,7 @@ import uuid
 class DatapackageBase:
     def __init__(self):
         self._finalized = False
+        self._cache = {}
 
     def __get_resources(self) -> list:
         return self.metadata["resources"]
@@ -104,13 +105,17 @@ class DatapackageBase:
         Returns:
             Metadata dict
         """
-        index = self._get_index(name_or_index)
+        try:
+            self._cache[name_or_index]
+        except KeyError:
+            index = self._get_index(name_or_index)
 
-        if isinstance(self.data[index], partial):
-            obj = self.data[index]()
-            self.data[index] = obj
+            if isinstance(self.data[index], partial):
+                obj = self.data[index]()
+                self.data[index] = obj
 
-        return self.data[index], self.resources[index]
+            self._cache[name_or_index] = self.data[index], self.resources[index]
+        return self._cache[name_or_index]
 
     def filter_by_attribute(self, key: str, value: Any) -> "FilteredDatapackage":
         """"""
