@@ -153,6 +153,13 @@ class Datapackage(DatapackageBase):
     #     self.io_obj.delete_all()
     #     self.io_obj = self.resources = self.data = None
 
+    # To allow these packages to be used as Python keys
+    def __hash__(self):
+        return hash((self.fs, self.metadata))
+
+    def __eq__(self, other):
+        return (self.fs, self.metadata) == (other.fs, other.metadata)
+
     def _check_length_consistency(self) -> None:
         if len(self.resources) != len(self.data):
             raise LengthMismatch(
