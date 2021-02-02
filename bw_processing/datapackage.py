@@ -116,14 +116,16 @@ class DatapackageBase:
         """"""
         fdp = FilteredDatapackage()
         fdp.metadata = deepcopy(self.metadata)
-        fdp.data = [
-            array
-            for array, resource in zip(self.data, self.resources)
-            if resource.get(key) == value
-        ]
-        fdp.resources = [
-            resource for resource in self.resources if resource.get(key) == value
-        ]
+        intermediate = list(
+            zip(
+                *[
+                    (array, resource)
+                    for array, resource in zip(self.data, self.resources)
+                    if resource.get(key) == value
+                ]
+            )
+        )
+        fdp.data, fdp.resources = list(intermediate[0]), list(intermediate[1])
         return fdp
 
 
