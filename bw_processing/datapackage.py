@@ -293,7 +293,7 @@ class Datapackage(DatapackageBase):
     def add_persistent_vector_from_iterator(
         self,
         *,  # Forces use of keyword arguments
-        matrix_label: str = None,
+        matrix: str = None,
         name: Union[str, None] = None,
         dict_iterator: Any = None,
         nrows: Union[int, None] = None,
@@ -307,7 +307,7 @@ class Datapackage(DatapackageBase):
             flip_array,
         ) = resolve_dict_iterator(dict_iterator, nrows)
         self.add_persistent_vector(
-            matrix_label=matrix_label,
+            matrix=matrix,
             name=name,
             nrows=len(data_array),
             data_array=data_array,
@@ -320,7 +320,7 @@ class Datapackage(DatapackageBase):
     def add_persistent_vector(
         self,
         *,  # Forces use of keyword arguments
-        matrix_label: str,
+        matrix: str,
         indices_array: np.ndarray,
         name: Union[str, None] = None,
         data_array: Union[np.ndarray, None] = None,
@@ -334,11 +334,7 @@ class Datapackage(DatapackageBase):
         # Check lengths
 
         kwargs.update(
-            {
-                "matrix_label": matrix_label,
-                "category": "vector",
-                "nrows": len(indices_array),
-            }
+            {"matrix": matrix, "category": "vector", "nrows": len(indices_array)}
         )
         name = name or uuid.uuid4().hex
 
@@ -381,7 +377,7 @@ class Datapackage(DatapackageBase):
     def add_persistent_array(
         self,
         *,  # Forces use of keyword arguments
-        matrix_label: str,
+        matrix: str,
         data_array: np.ndarray,
         indices_array: np.ndarray,
         name: Union[str, None] = None,
@@ -392,11 +388,7 @@ class Datapackage(DatapackageBase):
         self._prepare_modifications()
 
         kwargs.update(
-            {
-                "matrix_label": matrix_label,
-                "category": "array",
-                "nrows": len(indices_array),
-            }
+            {"matrix": matrix, "category": "array", "nrows": len(indices_array)}
         )
         name = name or uuid.uuid4().hex
 
@@ -424,7 +416,7 @@ class Datapackage(DatapackageBase):
             )
 
     def _add_array_resource(
-        self, *, array: np.ndarray, name: str, matrix_label: str, kind: str, **kwargs
+        self, *, array: np.ndarray, name: str, matrix: str, kind: str, **kwargs
     ) -> None:
         filename = check_suffix(name, ".npy")
 
@@ -451,7 +443,7 @@ class Datapackage(DatapackageBase):
             "mediatype": "application/octet-stream",
             "name": name,
             # Brightway specific
-            "matrix": matrix_label,
+            "matrix": matrix,
             "kind": kind,
             "path": str(filename),
         }
@@ -461,7 +453,7 @@ class Datapackage(DatapackageBase):
     # def add_structured_array(
     #     self,
     #     iterable_data_source: Any,
-    #     matrix_label: str,
+    #     matrix: str,
     #     name: Union[str, None] = None,
     #     nrows: Union[int, None] = None,
     #     dtype: Any = None,
@@ -492,7 +484,7 @@ class Datapackage(DatapackageBase):
     #     Args:
 
     #         * iterable_data_source: See discussion above
-    #         * matrix_label: The label of the matrix to be constructed
+    #         * matrix: The label of the matrix to be constructed
     #         * name (optional): The name of this resource. Names must be unique in a given data package
     #         * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
     #         * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
@@ -526,7 +518,7 @@ class Datapackage(DatapackageBase):
     #         "mediatype": "application/octet-stream",
     #         "name": name,
     #         # Brightway specific
-    #         "matrix": matrix_label,
+    #         "matrix": matrix,
     #         "kind": "processed array",
     #     }
     #     if not is_interface:
@@ -537,7 +529,7 @@ class Datapackage(DatapackageBase):
     def add_dynamic_vector(
         self,
         *,
-        matrix_label: str,
+        matrix: str,
         interface: Any,
         indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
@@ -547,11 +539,7 @@ class Datapackage(DatapackageBase):
         self._prepare_modifications()
 
         kwargs.update(
-            {
-                "matrix_label": matrix_label,
-                "category": "vector",
-                "nrows": len(indices_array),
-            }
+            {"matrix": matrix, "category": "vector", "nrows": len(indices_array)}
         )
         name = name or uuid.uuid4().hex
 
@@ -576,7 +564,7 @@ class Datapackage(DatapackageBase):
     def add_dynamic_array(
         self,
         *,
-        matrix_label: str,
+        matrix: str,
         interface: Any,
         indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
@@ -590,11 +578,7 @@ class Datapackage(DatapackageBase):
             flip_array = None
 
         kwargs.update(
-            {
-                "matrix_label": matrix_label,
-                "category": "array",
-                "nrows": len(indices_array),
-            }
+            {"matrix": matrix, "category": "array", "nrows": len(indices_array)}
         )
         name = name or uuid.uuid4().hex
 
@@ -750,7 +734,7 @@ class Datapackage(DatapackageBase):
 
     #     Args:
 
-    #         * iterable_data_source: See discussion above matrix_label: The label of the matrix to be constructed
+    #         * iterable_data_source: See discussion above matrix: The label of the matrix to be constructed
     #         * name (optional): The name of this resource. Names must be unique in a given data package
     #         * nrows (optional): Number of rows in array. You gain a bit of speed and memory if this is specified ahead of time.
     #         * dtype (optional, default is COMMON_DTYPE): Numpy dtype of created array
@@ -793,7 +777,7 @@ class Datapackage(DatapackageBase):
     # def add_presamples_data_array(
     #     self,
     #     iterable_data_source: Any,
-    #     matrix_label: str,
+    #     matrix: str,
     #     name: Union[None, str] = None,
     #     nrows: Union[None, int] = None,
     #     dtype: Any = np.float32,
@@ -819,7 +803,7 @@ class Datapackage(DatapackageBase):
     #         "mediatype": "application/octet-stream",
     #         "name": name,
     #         # Brightway specific
-    #         "matrix": matrix_label,
+    #         "matrix": matrix,
     #         "kind": "presamples",
     #     }
     #     if not is_interface:

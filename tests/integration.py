@@ -42,7 +42,7 @@ def add_data(dp):
         },
     ]
     dp.add_persistent_vector_from_iterator(
-        matrix_label="sa_matrix",
+        matrix="sa_matrix",
         name="sa-data-vector-from-dict",
         dict_iterator=from_dicts,
         foo="bar",
@@ -52,7 +52,7 @@ def add_data(dp):
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     flip_array = np.array([1, 0, 0], dtype=bool)
     dp.add_persistent_vector(
-        matrix_label="sa_matrix",
+        matrix="sa_matrix",
         data_array=data_array,
         name="sa-data-vector",
         indices_array=indices_array,
@@ -71,7 +71,7 @@ def add_data(dp):
     ).set_index(["id"])
 
     dp.add_persistent_array(
-        matrix_label="sa_matrix",
+        matrix="sa_matrix",
         data_array=np.arange(12).reshape((3, 4)),
         indices_array=indices_array,
         name="sa-data-array",
@@ -81,13 +81,13 @@ def add_data(dp):
     dp.add_dynamic_vector(
         interface=Dummy(),
         indices_array=indices_array,
-        matrix_label="sa_matrix",
+        matrix="sa_matrix",
         name="sa-vector-interface",
     )
 
     dp.add_dynamic_array(
         interface=Dummy(),
-        matrix_label="sa_matrix",
+        matrix="sa_matrix",
         name="sa-array-interface",
         indices_array=indices_array,
     )
