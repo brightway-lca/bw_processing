@@ -299,6 +299,7 @@ class Datapackage(DatapackageBase):
         nrows: Union[int, None] = None,
         **kwargs,
     ) -> None:
+        name = name or uuid.uuid4().hex
         (
             data_array,
             indices_array,
@@ -339,6 +340,7 @@ class Datapackage(DatapackageBase):
                 "nrows": len(indices_array),
             }
         )
+        name = name or uuid.uuid4().hex
 
         self._add_array_resource(
             array=load_bytes(indices_array),
@@ -396,6 +398,7 @@ class Datapackage(DatapackageBase):
                 "nrows": len(indices_array),
             }
         )
+        name = name or uuid.uuid4().hex
 
         self._add_array_resource(
             array=load_bytes(data_array),
@@ -550,6 +553,7 @@ class Datapackage(DatapackageBase):
                 "nrows": len(indices_array),
             }
         )
+        name = name or uuid.uuid4().hex
 
         # Do something with dynamic vector
 
@@ -592,6 +596,7 @@ class Datapackage(DatapackageBase):
                 "nrows": len(indices_array),
             }
         )
+        name = name or uuid.uuid4().hex
 
         # Do something with dynamic vector
 
@@ -648,6 +653,7 @@ class Datapackage(DatapackageBase):
 
         assert all(x in self.groups for x, y in valid_for)
 
+        name = name or uuid.uuid4().hex
         self._prepare_modifications()
 
         filename = check_suffix(name, ".csv")
