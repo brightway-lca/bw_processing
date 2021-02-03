@@ -197,7 +197,7 @@ class Datapackage(DatapackageBase):
                         mmap_mode=mmap_mode,
                     )
                 )
-            except InvalidMimetype:
+            except (InvalidMimetype, KeyError):
                 self.data.append(UndefinedInterface())
 
     def _create(
