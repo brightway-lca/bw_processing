@@ -350,7 +350,7 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
-        self._add_array_resource(
+        self._add_numpy_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
             group=name,
@@ -358,7 +358,7 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if data_array is not None:
-            self._add_array_resource(
+            self._add_numpy_array_resource(
                 array=load_bytes(data_array),
                 group=name,
                 name=name + ".data",
@@ -370,7 +370,7 @@ class Datapackage(DatapackageBase):
             if (distributions_array["uncertainty_type"] < 2).sum() < len(
                 distributions_array
             ):
-                self._add_array_resource(
+                self._add_numpy_array_resource(
                     array=load_bytes(distributions_array),
                     name=name + ".distributions",
                     group=name,
@@ -378,7 +378,7 @@ class Datapackage(DatapackageBase):
                     **kwargs,
                 )
         if flip_array is not None and flip_array.sum():
-            self._add_array_resource(
+            self._add_numpy_array_resource(
                 array=load_bytes(flip_array),
                 group=name,
                 name=name + ".flip",
@@ -404,14 +404,14 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
-        self._add_array_resource(
+        self._add_numpy_array_resource(
             array=load_bytes(data_array),
             name=name + ".data",
             group=name,
             kind="data",
             **kwargs,
         )
-        self._add_array_resource(
+        self._add_numpy_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
             kind="indices",
@@ -419,7 +419,7 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if flip_array is not None and flip_array.sum():
-            self._add_array_resource(
+            self._add_numpy_array_resource(
                 array=load_bytes(flip_array),
                 group=name,
                 name=name + ".flip",
@@ -427,7 +427,7 @@ class Datapackage(DatapackageBase):
                 **kwargs,
             )
 
-    def _add_array_resource(
+    def _add_numpy_array_resource(
         self, *, array: np.ndarray, name: str, matrix: str, kind: str, **kwargs
     ) -> None:
         filename = check_suffix(name, ".npy")
@@ -557,7 +557,7 @@ class Datapackage(DatapackageBase):
 
         # Do something with dynamic vector
 
-        self._add_array_resource(
+        self._add_numpy_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
             group=name,
@@ -565,7 +565,7 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if flip_array is not None and flip_array.sum():
-            self._add_array_resource(
+            self._add_numpy_array_resource(
                 array=load_bytes(flip_array),
                 group=name,
                 name=name + ".flip",
@@ -606,7 +606,7 @@ class Datapackage(DatapackageBase):
 
         # Do something with dynamic vector
 
-        self._add_array_resource(
+        self._add_numpy_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
             group=name,
@@ -614,7 +614,7 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if flip_array is not None:
-            self._add_array_resource(
+            self._add_numpy_array_resource(
                 array=load_bytes(flip_array),
                 group=name,
                 name=name + ".flip",
