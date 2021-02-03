@@ -340,7 +340,6 @@ def test_integration_test_in_memory():
     dp = create_datapackage(fs=None, name="test-fixture", id_="fixture-42")
     assert isinstance(dp.fs, MemoryFS)
     add_data(dp)
-    dp.finalize_serialization()
 
     check_metadata(dp)
     check_data(dp)

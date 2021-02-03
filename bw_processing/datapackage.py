@@ -221,9 +221,7 @@ class Datapackage(DatapackageBase):
         name = clean_datapackage_name(name or uuid.uuid4().hex)
         check_name(name)
 
-        if fs is None:
-            fs = MemoryFS()
-        self.fs = fs
+        self.fs = fs or MemoryFS()
 
         # if dirpath is None:
         #     self.io_obj = InMemoryIO()
@@ -269,6 +267,8 @@ class Datapackage(DatapackageBase):
     def finalize_serialization(self) -> None:
         if self._finalized:
             raise Closed("Datapackage already finalized")
+        elif isinstance(self.fs, MemoryFS):
+            raise ValueError("In-memory file systems can't be serialized")
 
         self._substitute_interfaces()
         self._check_length_consistency()
@@ -338,6 +338,7 @@ class Datapackage(DatapackageBase):
         data_array: Union[np.ndarray, None] = None,
         flip_array: Union[np.ndarray, None] = None,
         distributions_array: Union[np.ndarray, None] = None,
+        keep_proxy: bool = False,
         **kwargs,
     ) -> None:
         """"""
@@ -355,6 +356,7 @@ class Datapackage(DatapackageBase):
             name=name + ".indices",
             group=name,
             kind="indices",
+            keep_proxy=keep_proxy,
             **kwargs,
         )
         if data_array is not None:
@@ -363,6 +365,7 @@ class Datapackage(DatapackageBase):
                 group=name,
                 name=name + ".data",
                 kind="data",
+                keep_proxy=keep_proxy,
                 **kwargs,
             )
         if distributions_array is not None:
@@ -375,6 +378,7 @@ class Datapackage(DatapackageBase):
                     name=name + ".distributions",
                     group=name,
                     kind="distributions",
+                    keep_proxy=keep_proxy,
                     **kwargs,
                 )
         if flip_array is not None and flip_array.sum():
@@ -383,6 +387,7 @@ class Datapackage(DatapackageBase):
                 group=name,
                 name=name + ".flip",
                 kind="flip",
+                keep_proxy=keep_proxy,
                 **kwargs,
             )
 
@@ -394,6 +399,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,
         name: Union[str, None] = None,
         flip_array: Union[None, np.ndarray] = None,
+        keep_proxy: bool = False,
         **kwargs,
     ) -> None:
         """"""
@@ -409,6 +415,7 @@ class Datapackage(DatapackageBase):
             name=name + ".data",
             group=name,
             kind="data",
+            keep_proxy=keep_proxy,
             **kwargs,
         )
         self._add_numpy_array_resource(
@@ -416,6 +423,7 @@ class Datapackage(DatapackageBase):
             name=name + ".indices",
             kind="indices",
             group=name,
+            keep_proxy=keep_proxy,
             **kwargs,
         )
         if flip_array is not None and flip_array.sum():
@@ -424,29 +432,42 @@ class Datapackage(DatapackageBase):
                 group=name,
                 name=name + ".flip",
                 kind="flip",
+                keep_proxy=keep_proxy,
                 **kwargs,
             )
 
     def _add_numpy_array_resource(
-        self, *, array: np.ndarray, name: str, matrix: str, kind: str, **kwargs
+        self,
+        *,
+        array: np.ndarray,
+        name: str,
+        matrix: str,
+        kind: str,
+        keep_proxy: bool = False,
+        **kwargs,
     ) -> None:
         filename = check_suffix(name, ".npy")
 
-        file_writer(
-            data=array,
-            fs=self.fs,
-            resource=filename,
-            mimetype="application/octet-stream",
-        )
-        self.data.append(
-            file_reader(
+        if not isinstance(self.fs, MemoryFS):
+            file_writer(
+                data=array,
                 fs=self.fs,
                 resource=filename,
                 mimetype="application/octet-stream",
-                proxy=True,
-                **kwargs,
             )
-        )
+
+        if keep_proxy:
+            self.data.append(
+                file_reader(
+                    fs=self.fs,
+                    resource=filename,
+                    mimetype="application/octet-stream",
+                    proxy=True,
+                    **kwargs,
+                )
+            )
+        else:
+            self.data.append(array)
 
         resource = {
             # Datapackage generic
@@ -546,6 +567,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
         flip_array: Union[None, np.ndarray] = None,  # Not interface
+        keep_proxy: bool = False,
         **kwargs,
     ) -> None:
         self._prepare_modifications()
@@ -562,6 +584,7 @@ class Datapackage(DatapackageBase):
             name=name + ".indices",
             group=name,
             kind="indices",
+            keep_proxy=keep_proxy,
             **kwargs,
         )
         if flip_array is not None and flip_array.sum():
@@ -570,6 +593,7 @@ class Datapackage(DatapackageBase):
                 group=name,
                 name=name + ".flip",
                 kind="flip",
+                keep_proxy=keep_proxy,
                 **kwargs,
             )
 
@@ -591,6 +615,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Union[str, None] = None,
         flip_array: Union[None, np.ndarray] = None,
+        keep_proxy: bool = False,
         **kwargs,
     ) -> None:
         """`interface` must support the presamples API."""
@@ -609,6 +634,7 @@ class Datapackage(DatapackageBase):
             name=name + ".indices",
             group=name,
             kind="indices",
+            keep_proxy=keep_proxy,
             **kwargs,
         )
         if flip_array is not None:
@@ -617,6 +643,7 @@ class Datapackage(DatapackageBase):
                 group=name,
                 name=name + ".flip",
                 kind="flip",
+                keep_proxy=keep_proxy,
                 **kwargs,
             )
 
