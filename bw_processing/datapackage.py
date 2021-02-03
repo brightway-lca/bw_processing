@@ -832,7 +832,7 @@ def create_datapackage(
     combinatorial: bool = False,
     sequential: bool = False,
     seed: Union[int, None] = None,
-    sum_duplicates: bool = False,
+    sum_duplicates: bool = True,
     substitute: bool = True,
 ) -> Datapackage:
     obj = Datapackage()
