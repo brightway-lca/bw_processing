@@ -114,7 +114,7 @@ class DatapackageBase:
                 obj = self.data[index]()
                 self.data[index] = obj
 
-            self._cache[name_or_index] = self.data[index], self.resources[index]
+            self._cache[name_or_index] = (self.data[index], self.resources[index])
         return self._cache[name_or_index]
 
     def filter_by_attribute(self, key: str, value: Any) -> "FilteredDatapackage":
@@ -604,8 +604,6 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
-        # Do something with dynamic vector
-
         self._add_numpy_array_resource(
             array=load_bytes(indices_array),
             name=name + ".indices",
@@ -621,6 +619,16 @@ class Datapackage(DatapackageBase):
                 kind="flip",
                 **kwargs,
             )
+
+        self.data.append(interface)
+        resource = {
+            "profile": "interface",
+            "name": name + ".data",
+            "group": name,
+            "kind": "data",
+        }
+        resource.update(**kwargs)
+        self.resources.append(resource)
 
     def add_csv_metadata(
         self, *, dataframe: pd.DataFrame, valid_for: list, name: str = None, **kwargs

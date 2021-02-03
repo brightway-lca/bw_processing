@@ -107,7 +107,7 @@ def add_data(dp):
 
 
 def check_data(dp):
-    assert len(dp.resources) == len(dp.data) == 16
+    assert len(dp.resources) == len(dp.data) == 17
     d, _ = dp.get_resource("sa-data-array-json-parameters")
     assert d == ["a", "foo"]
 
@@ -285,6 +285,15 @@ def check_metadata(dp, as_tuples=True):
             "group": "sa-array-interface",
         },
         {
+            "category": "array",
+            "group": "sa-array-interface",
+            "kind": "data",
+            "matrix": "sa_matrix",
+            "name": "sa-array-interface.data",
+            "nrows": 3,
+            "profile": "interface",
+        },
+        {
             "profile": "data-resource",
             "mediatype": "text/csv",
             "path": "sa-data-vector-csv-metadata.csv",
@@ -307,7 +316,7 @@ def check_metadata(dp, as_tuples=True):
         },
     ]
     expected_as_list = deepcopy(expected)
-    expected_as_list[13]["valid_for"][0] = list(expected_as_list[13]["valid_for"][0])
+    expected_as_list[14]["valid_for"][0] = list(expected_as_list[14]["valid_for"][0])
     if as_tuples:
         assert dp.metadata["resources"] == expected
     else:

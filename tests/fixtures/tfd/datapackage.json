@@ -168,6 +168,15 @@
       "nrows": 3
     },
     {
+      "profile": "interface",
+      "name": "sa-array-interface.data",
+      "group": "sa-array-interface",
+      "kind": "data",
+      "matrix": "sa_matrix",
+      "category": "array",
+      "nrows": 3
+    },
+    {
       "profile": "data-resource",
       "mediatype": "text/csv",
       "path": "sa-data-vector-csv-metadata.csv",
@@ -194,7 +203,7 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2021-02-03T12:36:32.895174Z",
+  "created": "2021-02-03T13:03:15.461858Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
