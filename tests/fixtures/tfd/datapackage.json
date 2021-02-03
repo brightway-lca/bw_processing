@@ -147,6 +147,15 @@
       "nrows": 3
     },
     {
+      "profile": "interface",
+      "name": "sa-vector-interface.data",
+      "group": "sa-vector-interface",
+      "kind": "data",
+      "matrix": "sa_matrix",
+      "category": "vector",
+      "nrows": 3
+    },
+    {
       "profile": "data-resource",
       "format": "npy",
       "mediatype": "application/octet-stream",
@@ -185,10 +194,10 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2021-02-02T07:14:03.093626Z",
+  "created": "2021-02-03T12:36:32.895174Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
-  "sum_duplicates": false,
+  "sum_duplicates": true,
   "substitute": true
 }

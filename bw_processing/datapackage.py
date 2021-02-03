@@ -264,7 +264,7 @@ class Datapackage(DatapackageBase):
         ]
 
         for index in interface_indices:
-            self.resources[index] = UndefinedInterface()
+            self.data[index] = UndefinedInterface()
 
     def finalize_serialization(self) -> None:
         if self._finalized:
@@ -572,6 +572,16 @@ class Datapackage(DatapackageBase):
                 kind="flip",
                 **kwargs,
             )
+
+        self.data.append(interface)
+        resource = {
+            "profile": "interface",
+            "name": name + ".data",
+            "group": name,
+            "kind": "data",
+        }
+        resource.update(**kwargs)
+        self.resources.append(resource)
 
     def add_dynamic_array(
         self,
