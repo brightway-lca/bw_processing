@@ -72,7 +72,7 @@ class DatapackageBase:
                     indices.append(i)
 
             if not indices:
-                raise ValueError("Name {} not found in metadata".format(name_or_index))
+                raise KeyError("Name {} not found in metadata".format(name_or_index))
             elif len(indices) > 1:
                 raise NonUnique("This name present at indices: {}".format(indices))
             else:
