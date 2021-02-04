@@ -330,7 +330,8 @@ def check_metadata(dp, as_tuples=True):
         "combinatorial": False,
         "sequential": False,
         "seed": None,
-        "sum_duplicates": True,
+        "sum_intra_duplicates": True,
+        "sum_inter_duplicates": True,
     }
     for k, v in expected.items():
         assert dp.metadata[k] == v

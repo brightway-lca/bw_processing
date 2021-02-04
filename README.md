@@ -91,9 +91,9 @@ Data package policies define how the data should be used. Policies apply to the 
 
 There are two policies that apply to all data resources:
 
-**sum_duplicates** (default `False`): What to do if more than one data point for a given matrix element is given in each *vector or array resource*. If true, sum these values; otherwise, the last value provided is used.
+**sum_intra_duplicates** (default `False`): What to do if more than one data point for a given matrix element is given in each *vector or array resource*. If true, sum these values; otherwise, the last value provided is used.
 
-**substitute** (default: `True`): What to do if data from a given resource overlaps data already present in the matrix. If true, the existing values will be overwritten; otherwise, add the given value to the existing value.
+**sum_inter_duplicates** (default: `True`): What to do if data from a given resource overlaps data already present in the matrix. If true, the existing values will be overwritten; otherwise, add the given value to the existing value.
 
 There are three policies that apply only to array data resources, where a different column from the array is used in matrix construction each time the array is iterated over:
 

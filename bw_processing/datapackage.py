@@ -212,8 +212,8 @@ class Datapackage(DatapackageBase):
         combinatorial: bool = False,
         sequential: bool = False,
         seed: Union[int, None] = None,
-        sum_duplicates: bool = False,
-        substitute: bool = True,
+        sum_intra_duplicates: bool = False,
+        sum_inter_duplicates: bool = True,
     ) -> None:
         """Start a new data package.
 
@@ -247,8 +247,8 @@ class Datapackage(DatapackageBase):
             "combinatorial": combinatorial,
             "sequential": sequential,
             "seed": seed,
-            "sum_duplicates": sum_duplicates,
-            "substitute": substitute,
+            "sum_intra_duplicates": sum_intra_duplicates,
+            "sum_inter_duplicates": sum_inter_duplicates,
         }
         for k, v in (metadata or {}).items():
             if k not in self.metadata:
@@ -880,8 +880,8 @@ def create_datapackage(
     combinatorial: bool = False,
     sequential: bool = False,
     seed: Union[int, None] = None,
-    sum_duplicates: bool = True,
-    substitute: bool = True,
+    sum_intra_duplicates: bool = True,
+    sum_inter_duplicates: bool = True,
 ) -> Datapackage:
     obj = Datapackage()
     obj._create(
@@ -892,8 +892,8 @@ def create_datapackage(
         sequential=sequential,
         combinatorial=combinatorial,
         seed=seed,
-        sum_duplicates=sum_duplicates,
-        substitute=substitute,
+        sum_intra_duplicates=sum_intra_duplicates,
+        sum_inter_duplicates=sum_inter_duplicates,
     )
     return obj
 
