@@ -130,7 +130,10 @@ class DatapackageBase:
                 ]
             )
         )
-        fdp.data, fdp.resources = list(intermediate[0]), list(intermediate[1])
+        if intermediate:
+            fdp.data, fdp.resources = list(intermediate[0]), list(intermediate[1])
+        else:
+            fdp.data, fdp.resources = [], []
         return fdp
 
 
