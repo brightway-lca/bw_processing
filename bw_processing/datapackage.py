@@ -212,8 +212,8 @@ class Datapackage(DatapackageBase):
         combinatorial: bool = False,
         sequential: bool = False,
         seed: Union[int, None] = None,
-        sum_intra_duplicates: bool = False,
-        sum_inter_duplicates: bool = True,
+        sum_intra_duplicates: bool = True,
+        sum_inter_duplicates: bool = False,
     ) -> None:
         """Start a new data package.
 
@@ -881,7 +881,7 @@ def create_datapackage(
     sequential: bool = False,
     seed: Union[int, None] = None,
     sum_intra_duplicates: bool = True,
-    sum_inter_duplicates: bool = True,
+    sum_inter_duplicates: bool = False,
 ) -> Datapackage:
     obj = Datapackage()
     obj._create(

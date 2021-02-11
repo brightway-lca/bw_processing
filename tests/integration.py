@@ -331,7 +331,7 @@ def check_metadata(dp, as_tuples=True):
         "sequential": False,
         "seed": None,
         "sum_intra_duplicates": True,
-        "sum_inter_duplicates": True,
+        "sum_inter_duplicates": False,
     }
     for k, v in expected.items():
         assert dp.metadata[k] == v

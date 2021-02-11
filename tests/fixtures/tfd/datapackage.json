@@ -203,10 +203,10 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2021-02-04T15:37:54.967754Z",
+  "created": "2021-02-11T09:06:42.348367Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
   "sum_intra_duplicates": true,
-  "sum_inter_duplicates": true
+  "sum_inter_duplicates": false
 }
