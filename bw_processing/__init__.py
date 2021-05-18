@@ -14,6 +14,8 @@ __all__ = (
     "INDICES_DTYPE",
     "load_datapackage",
     "md5",
+    "reindex",
+    "reset_index",
     "safe_filename",
     "UNCERTAINTY_DTYPE",
     "UndefinedInterface",
@@ -34,3 +36,4 @@ from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
 from .array_creation import create_array, create_structured_array
 from .proxies import UndefinedInterface
 from .examples import examples_dir
+from .indexing import reindex, reset_index

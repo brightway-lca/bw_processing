@@ -2,6 +2,7 @@
 
 ## [0.2.DEV]
 
+* Add functions to reindex and reset indices using CSV metadata
 * New utility function `load_package`
 * Improved documentation and continuous integration tests
 * Changed filename handling; `safe_filename` no longer applied by default

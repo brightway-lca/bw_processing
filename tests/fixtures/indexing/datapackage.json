@@ -1,0 +1,160 @@
+{
+  "profile": "data-package",
+  "name": "indexing-fixture",
+  "id": "fixture-i",
+  "licenses": [
+    {
+      "name": "ODC-PDDL-1.0",
+      "path": "http://opendatacommons.org/licenses/pddl/",
+      "title": "Open Data Commons Public Domain Dedication and License v1.0"
+    }
+  ],
+  "resources": [
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "vector.indices",
+      "matrix": "sa_matrix",
+      "kind": "indices",
+      "path": "vector.indices.npy",
+      "group": "vector",
+      "nrows": 3,
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "vector.data",
+      "matrix": "sa_matrix",
+      "kind": "data",
+      "path": "vector.data.npy",
+      "group": "vector",
+      "nrows": 3,
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "vector.flip",
+      "matrix": "sa_matrix",
+      "kind": "flip",
+      "path": "vector.flip.npy",
+      "group": "vector",
+      "nrows": 3,
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "array.data",
+      "matrix": "sa_matrix",
+      "kind": "data",
+      "path": "array.data.npy",
+      "group": "array",
+      "category": "array",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "array.indices",
+      "matrix": "sa_matrix",
+      "kind": "indices",
+      "path": "array.indices.npy",
+      "group": "array",
+      "category": "array",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "npy",
+      "mediatype": "application/octet-stream",
+      "name": "array.flip",
+      "matrix": "sa_matrix",
+      "kind": "flip",
+      "path": "array.flip.npy",
+      "group": "array",
+      "category": "array",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "vector-csv-rows.csv",
+      "name": "vector-csv-rows",
+      "valid_for": [
+        [
+          "vector",
+          "row"
+        ]
+      ]
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "vector-csv-cols.csv",
+      "name": "vector-csv-cols",
+      "valid_for": [
+        [
+          "vector",
+          "col"
+        ]
+      ]
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "vector-csv-both.csv",
+      "name": "vector-csv-both",
+      "valid_for": [
+        [
+          "vector",
+          "row"
+        ],
+        [
+          "vector",
+          "col"
+        ]
+      ]
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "array-csv-rows.csv",
+      "name": "array-csv-rows",
+      "valid_for": [
+        [
+          "array",
+          "row"
+        ]
+      ]
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "array-csv-both.csv",
+      "name": "array-csv-both",
+      "valid_for": [
+        [
+          "array",
+          "row"
+        ],
+        [
+          "array",
+          "col"
+        ]
+      ]
+    }
+  ],
+  "created": "2021-05-18T10:56:52.972751Z",
+  "combinatorial": false,
+  "sequential": false,
+  "seed": null,
+  "sum_intra_duplicates": true,
+  "sum_inter_duplicates": false
+}
