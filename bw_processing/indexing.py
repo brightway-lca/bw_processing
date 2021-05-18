@@ -9,7 +9,7 @@ import pandas as pd
 
 def _get_csv_data(
     datapackage: Union[Datapackage, Path, str], metadata_name: str
-) -> (Datapackage, pd.DataFrame, dict, List[np.ndarray]):
+) -> (Datapackage, pd.DataFrame, dict, List[np.ndarray], List[int]):
     """Utility function to get CSV data from datapackage.
 
     Args:
@@ -26,17 +26,20 @@ def _get_csv_data(
         pandas DataFrame with CSV data
         metadata (dict) stored with dataframe
         list of indices arrays reference by CSV data
+        indices of arrays
 
     """
+
     dp = load_datapackage(datapackage)
     df, metadata = dp.get_resource(metadata_name)
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Given metadata is not a CSV file")
-    indices = [
+    resources = [
         dp.get_resource(key + ".indices")[0][label]
         for key, label in metadata["valid_for"]
     ]
-    return dp, df, metadata, indices
+    indices = [dp._get_index(key + ".indices") for key, _ in metadata["valid_for"]]
+    return dp, df, metadata, resources, indices
 
 
 def reset_index(
@@ -54,15 +57,18 @@ def reset_index(
         Datapackage instance with modified data
 
     """
-    dp, df, metadata, indices = _get_csv_data(datapackage, metadata_name)
-    unique_indices = np.unique(np.hstack(indices))
+    dp, df, metadata, arrays, indices = _get_csv_data(datapackage, metadata_name)
+    dp._prepare_modifications()
+    unique_indices = np.unique(np.hstack(arrays))
     mapper = {k: v for k, v in zip(unique_indices, np.arange(len(unique_indices)))}
 
-    for array in indices:
+    for array in arrays:
         new = np.zeros_like(array)
         for x, y in enumerate(array):
             new[x] = mapper[y]
         array[:] = new
+
+    dp._modified.update(indices)
 
     return dp
 

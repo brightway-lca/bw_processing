@@ -133,6 +133,26 @@ def test_reset_index_multiple_resources_referenced():
     original_unchanged()
 
 
+def test_reset_index_modified():
+    fixture = load_datapackage(
+        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+    )
+    assert not fixture._modified
+
+    reset_index(fixture, "vector-csv-rows")
+    assert fixture._modified == set([fixture._get_index("vector.indices")])
+
+    fixture = load_datapackage(
+        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+    )
+    assert not fixture._modified
+
+    reset_index(fixture, "csv-multiple")
+    assert fixture._modified == set(
+        [fixture._get_index("vector.indices"), fixture._get_index("array.indices")]
+    )
+
+
 def test_reset_index_both_row_col():
     original_unchanged()
     fixture = load_datapackage(
