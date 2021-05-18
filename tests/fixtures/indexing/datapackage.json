@@ -149,9 +149,25 @@
           "col"
         ]
       ]
+    },
+    {
+      "profile": "data-resource",
+      "mediatype": "text/csv",
+      "path": "csv-multiple.csv",
+      "name": "csv-multiple",
+      "valid_for": [
+        [
+          "array",
+          "row"
+        ],
+        [
+          "vector",
+          "col"
+        ]
+      ]
     }
   ],
-  "created": "2021-05-18T10:56:52.972751Z",
+  "created": "2021-05-18T13:12:19.590666Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
