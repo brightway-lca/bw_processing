@@ -23,6 +23,8 @@ import uuid
 
 
 class DatapackageBase:
+    """Base class for datapackages. You should use either `Datapackage` or `FilteredDatapackage`."""
+
     def __init__(self):
         self._finalized = False
         self._cache = {}
@@ -103,7 +105,7 @@ class DatapackageBase:
             NonUnique: String name present in two resource metadata sections
 
         Returns:
-            Metadata dict
+            (data object, metadata dict)
         """
         try:
             self._cache[name_or_index]
@@ -138,6 +140,10 @@ class DatapackageBase:
 
 
 class FilteredDatapackage(DatapackageBase):
+    """A part of a datapackage. Used in matrix construction or other data manipulation operations.
+
+    Should be treated as read-only."""
+
     pass
 
 
@@ -226,17 +232,6 @@ class Datapackage(DatapackageBase):
 
         self.fs = fs or MemoryFS()
 
-        # if dirpath is None:
-        #     self.io_obj = InMemoryIO()
-        # elif compress:
-        #     self.io_obj = TemporaryDirectoryIO(
-        #         dest_dirpath=dirpath,
-        #         dest_filename=check_suffix(name, ".zip"),
-        #         overwrite=overwrite,
-        #     )
-        # else:
-        #     self.io_obj = DirectoryIO(dirpath=dirpath, overwrite=overwrite)
-
         self.metadata = {
             "profile": "data-package",
             "name": name,
@@ -314,6 +309,7 @@ class Datapackage(DatapackageBase):
         nrows: Union[int, None] = None,
         **kwargs,
     ) -> None:
+        """Note that this function will sort the arrays produced."""
         name = self._prepare_name(name)
         (
             data_array,
