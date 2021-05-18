@@ -60,6 +60,11 @@ def add_data(dp):
         valid_for=[("array", "row"), ("array", "col")],
         name="array-csv-both",
     )
+    dp.add_csv_metadata(
+        dataframe=df,
+        valid_for=[("array", "row"), ("vector", "col")],
+        name="csv-multiple",
+    )
 
 
 def original_unchanged():
@@ -78,7 +83,7 @@ def original_unchanged():
     assert np.allclose(array["col"], np.array([14, 15, 15]))
 
 
-def test_reset_index_multiple():
+def test_reset_index_multiple_calls():
     original_unchanged()
     fixture = load_datapackage(
         OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
@@ -98,6 +103,33 @@ def test_reset_index_multiple():
     array, _ = fixture.get_resource("vector.indices")
     assert np.allclose(array["row"], np.array([0, 0, 1]))
     assert np.allclose(array["col"], np.array([0, 1, 1]))
+    original_unchanged()
+
+
+def test_reset_index_multiple_resources_referenced():
+    original_unchanged()
+    fixture = load_datapackage(
+        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+    )
+
+    array, _ = fixture.get_resource("vector.indices")
+    assert np.allclose(array["row"], np.array([11, 11, 13]))
+    assert np.allclose(array["col"], np.array([14, 15, 15]))
+
+    array, _ = fixture.get_resource("array.indices")
+    assert np.allclose(array["row"], np.array([11, 11, 13]))
+    assert np.allclose(array["col"], np.array([14, 15, 15]))
+
+    reset_index(fixture, "csv-multiple")
+
+    array, _ = fixture.get_resource("array.indices")
+    assert np.allclose(array["row"], np.array([0, 0, 1]))
+    assert np.allclose(array["col"], np.array([14, 15, 15]))
+
+    array, _ = fixture.get_resource("vector.indices")
+    assert np.allclose(array["row"], np.array([11, 11, 13]))
+    assert np.allclose(array["col"], np.array([2, 3, 3]))
+
     original_unchanged()
 
 
