@@ -1,5 +1,11 @@
 from .constants import DEFAULT_LICENSES
-from .errors import Closed, LengthMismatch, NonUnique, InvalidMimetype
+from .errors import (
+    Closed,
+    LengthMismatch,
+    NonUnique,
+    InvalidMimetype,
+    PotentialInconsistency,
+)
 from .filesystem import clean_datapackage_name
 from .io_helpers import file_writer, file_reader
 from .proxies import UndefinedInterface
@@ -23,11 +29,12 @@ import uuid
 
 
 class DatapackageBase:
-    """Base class for datapackages. You should use either `Datapackage` or `FilteredDatapackage`."""
+    """Base class for datapackages. Not for normal use - you should use either `Datapackage` or `FilteredDatapackage`."""
 
     def __init__(self):
         self._finalized = False
         self._cache = {}
+        self._modified = set()
 
     def __get_resources(self) -> list:
         return self.metadata["resources"]
@@ -82,6 +89,11 @@ class DatapackageBase:
 
     def del_resource(self, name_or_index: Union[str, int]) -> None:
         """Remove a resource, and delete its data file, if any."""
+        if self._modified:
+            raise PotentialInconsistency(
+                "Datapackage is modified; save modifications or reload"
+            )
+
         index = self._get_index(name_or_index)
 
         try:
@@ -434,6 +446,18 @@ class Datapackage(DatapackageBase):
                 keep_proxy=keep_proxy,
                 **kwargs,
             )
+
+    def write_modified(self):
+        """Write the data in modified files to the filesystem (if allowed)."""
+        for index in self._modified:
+            file_writer(
+                data=self.data[index],
+                fs=self.fs,
+                resource=self.metadata[index]["path"],
+                mimetype=self.metadata[index]["mediatype"],
+            )
+
+        self._modified = set()
 
     def _add_numpy_array_resource(
         self,

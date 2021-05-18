@@ -44,3 +44,9 @@ class InvalidMimetype(BrightwayProcessingError):
     """Provided mimetype missing or not understood"""
 
     pass
+
+
+class PotentialInconsistency(BrightwayProcessingError):
+    """Given operation could cause inconsistent data"""
+
+    pass
