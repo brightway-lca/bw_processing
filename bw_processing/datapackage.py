@@ -118,6 +118,7 @@ class DatapackageBase:
             * name_or_index: Name (str) or index (int) of a resource in the existing metadata.
 
         Raises:
+
             * IndexError: Integer index out of range of given metadata
             * ValueError: String name not present in metadata
             * NonUnique: String name present in two resource metadata sections

@@ -2,13 +2,7 @@
 
 ## [0.2.DEV]
 
-* Add functions to reindex and reset indices using CSV metadata
-* New utility function `load_package`
-* Improved documentation and continuous integration tests
-* Changed filename handling; `safe_filename` no longer applied by default
-* Accept label `uncertainty type` in `dictionary_formatter` for backwards compatibility
-* Handle zero-length input arrays gracefully
-* Added `clean_datapackage_name` utility function
+Nearly complete reconceptualization of the package structure and logic, based around the use of [PyFilesystem2](https://docs.pyfilesystem.org/en/latest/). Much more complete package, with better testing and documentation.
 
 ### [0.1.2] - 2020-04-15
 
