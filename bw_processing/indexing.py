@@ -81,7 +81,8 @@ def reindex(
     metadata_name: str,
     data_iterable: Iterable,
     fields: List[str] = None,
-    id_field: str = "id",
+    id_field_datapackage: str = "id",
+    id_field_destination: str = "id",
 ) -> None:
     """Use the metadata to set the integer indices in ``datapackage`` to those used in ``data_iterable``.
 
@@ -93,19 +94,21 @@ def reindex(
 
         * datapackage: datapackage of `Filesystem`. Input to `load_datapackage` function.
         * metadata_name: Name identifying a CSV metadata resource in ``datapackage``
-        * data_iterable: Iterable which returns objects with ``id`` values and support ``.get()``.
+        * data_iterable: Iterable which returns objects that support ``.get()``.
         * fields: Optional list of fields to use while matching
-        * id_field: String identifying the column providing an integer id
+        * id_field_datapackage: String identifying the column providing an integer id in the datapackage
+        * id_field_destination: String identifying the column providing an integer id in ``data_iterable``
 
     Raises:
 
+        * KeyError: ``data_iterable`` is missing ``id_field_destination`` field
+        * KeyError: ``metadata_name`` is missing ``id_field_datapackage`` field
         * NonUnique: Multiple objects found in ``data_iterable`` which matches fields in ``datapackage``
-        * ValueError: No object found in ``data_iterable`` which matches fields in ``datapackage``
         * KeyError: ``metadata_name`` is not in ``datapackage``
+        * KeyError: No object found in ``data_iterable`` which matches fields in ``datapackage``
         * ValueError: ``metadata_name`` is not CSV metadata.
         * ValueError: The resources given for ``metadata_name`` are not present in this ``datapackage``
-        * KeyError: ``data_iterable`` is missing ``id_field`` field
-        * ValueError: ``data_iterable`` is not an iterable, or doesn't support field retrieval using ``.get()``.
+        * AttributeError: ``data_iterable`` doesn't support field retrieval using ``.get()``.
 
     Returns:
 
@@ -114,20 +117,20 @@ def reindex(
     """
     dp, df, metadata, arrays, indices = _get_csv_data(datapackage, metadata_name)
 
-    if id_field not in df.columns:
+    if id_field_datapackage not in df.columns:
         raise KeyError(
-            f"Given resource {metadata_name} is missing id column {id_field}"
+            f"Given resource {metadata_name} is missing id column {id_field_datapackage}"
         )
 
     if fields is None:
-        fields = sorted([x for x in df.columns if x != id_field])
+        fields = sorted([x for x in df.columns if x != id_field_datapackage])
 
     dest_mapper = {}
     mapper = {}
 
     for row in data_iterable:
         key = tuple([row.get(field) for field in fields])
-        index = row[id_field]
+        index = row[id_field_destination]
 
         if key in dest_mapper:
             dest_mapper[key] = NonUnique
@@ -136,10 +139,10 @@ def reindex(
 
     for i in range(len(df)):
         key = tuple([df[field][i] for field in fields])
-        index = df[id_field][i]
+        index = df[id_field_datapackage][i]
 
         if key not in dest_mapper:
-            raise ValueError(f"Can't find match in `data_iterable` for {key}")
+            raise KeyError(f"Can't find match in `data_iterable` for {key}")
         elif dest_mapper[key] is NonUnique:
             raise NonUnique(f"No unique match in `data_iterable` for {key}")
         else:
@@ -149,6 +152,8 @@ def reindex(
         for i in range(len(array)):
             array[i] = mapper[array[i]]
 
-    dp._modified.update(indices)
+    df[id_field_datapackage] = df[id_field_datapackage].map(mapper)
+
+    dp._modified.update(indices + [dp._get_index(metadata_name)])
 
     return dp
