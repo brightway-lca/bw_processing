@@ -16,7 +16,7 @@ UNCERTAINTY_DTYPE = [
     ("shape", np.float32),
     ("minimum", np.float32),
     ("maximum", np.float32),
-    ("negative", np.bool),
+    ("negative", bool),
 ]
 INDICES_DTYPE = [("row", np.int32), ("col", np.int32)]
 
