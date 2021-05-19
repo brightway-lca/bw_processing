@@ -63,7 +63,7 @@ class DatapackageBase:
         """Get index of a resource by name or index.
 
         Returning the same number is a bit silly, but makes the other code simpler :)
-s
+
         Raises:
 
             * IndexError: ``name_or_index`` was too big
@@ -352,7 +352,7 @@ class Datapackage(DatapackageBase):
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
-        """"""
+        """ """
         self._prepare_modifications()
 
         # Check lengths
@@ -413,7 +413,7 @@ class Datapackage(DatapackageBase):
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
-        """"""
+        """ """
         self._prepare_modifications()
 
         kwargs.update(
@@ -453,8 +453,8 @@ class Datapackage(DatapackageBase):
             file_writer(
                 data=self.data[index],
                 fs=self.fs,
-                resource=self.metadata[index]["path"],
-                mimetype=self.metadata[index]["mediatype"],
+                resource=self.resources[index]["path"],
+                mimetype=self.resources[index]["mediatype"],
             )
 
         self._modified = set()

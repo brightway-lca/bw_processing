@@ -74,6 +74,24 @@ def copy_fixture(fixture_name, dest):
         shutil.copy(fp, dest / fp.name)
 
 
+def test_save_modifications(tmp_path):
+    copy_fixture("tfd", tmp_path)
+    dp = load_datapackage(OSFS(str(tmp_path)))
+
+    assert dp.resources[1]["name"] == "sa-data-vector-from-dict.data"
+    assert np.allclose(dp.data[1], [3.3, 8.3])
+
+    dp.data[1][:] = 42
+    dp._modified = [1]
+    dp.write_modified()
+
+    assert np.allclose(dp.data[1], 42)
+    assert not dp._modified
+
+    dp = load_datapackage(OSFS(str(tmp_path)))
+    assert np.allclose(dp.data[1], 42)
+
+
 def test_del_resource_filesystem(tmp_path):
     copy_fixture("tfd", tmp_path)
     dp = load_datapackage(OSFS(str(tmp_path)))
