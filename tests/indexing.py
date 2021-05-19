@@ -1,13 +1,14 @@
 from bw_processing import load_datapackage, create_datapackage
 from bw_processing.errors import NonUnique
 from bw_processing.indexing import reset_index, reindex
-from fs.zipfs import ZipFS
 from fs.osfs import OSFS
 from pathlib import Path
 import pytest
 import numpy as np
 from bw_processing.constants import INDICES_DTYPE
 import pandas as pd
+
+### Fixture
 
 
 def add_data(dp):
@@ -65,6 +66,9 @@ def add_data(dp):
         valid_for=[("array", "row"), ("vector", "col")],
         name="csv-multiple",
     )
+
+
+### reset_index
 
 
 def original_unchanged():
@@ -241,8 +245,8 @@ def test_reset_index_metadata_name_error():
     with pytest.raises(ValueError):
         reset_index(fixture, "vector.indices")
 
-    # expected = {0: 1, 1: 2}
-    # assert _get_mapping_dictionary(fixture, "vector-csv-metadata") == expected
+
+### reindex
 
 
 if __name__ == "__main__":
@@ -255,11 +259,3 @@ if __name__ == "__main__":
     )
     add_data(dp)
     dp.finalize_serialization()
-
-    # dp = create_datapackage(
-    #     fs=ZipFS(str(dirpath / "indexing" / "test-fixture.zip"), write=True),
-    #     name="test-fixture",
-    #     id_="fixture-42",
-    # )
-    # add_data(dp)
-    # dp.finalize_serialization()

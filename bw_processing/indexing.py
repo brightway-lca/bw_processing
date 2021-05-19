@@ -1,32 +1,35 @@
 from .datapackage import Datapackage, load_datapackage
 from .errors import NonUnique
 from collections.abc import Iterable
-from pathlib import Path
+from fs.base import FS
 from typing import Union, List
 import numpy as np
 import pandas as pd
 
 
 def _get_csv_data(
-    datapackage: Union[Datapackage, Path, str], metadata_name: str
+    datapackage: Union[Datapackage, FS], metadata_name: str
 ) -> (Datapackage, pd.DataFrame, dict, List[np.ndarray], List[int]):
     """Utility function to get CSV data from datapackage.
 
     Args:
-        datapackage: datapackage, or location of one. Input to `load_datapackage` function.
-        metadata_name: Name identifying a CSV metadata resource in ``datapackage``
+
+        * datapackage: datapackage or `Filesystem`. Input to `load_datapackage` function.
+        * metadata_name: Name identifying a CSV metadata resource in ``datapackage``
 
     Raises:
-        KeyError: ``metadata_name`` is not in ``datapackage``
-        ValueError: ``metadata_name`` is not CSV metadata.
-        KeyError: Resource referenced by CSV ``valid_for`` not in ``datapackage``
+
+        * KeyError: ``metadata_name`` is not in ``datapackage``
+        * ValueError: ``metadata_name`` is not CSV metadata.
+        * KeyError: Resource referenced by CSV ``valid_for`` not in ``datapackage``
 
     Returns:
-        datapackage object
-        pandas DataFrame with CSV data
-        metadata (dict) stored with dataframe
-        list of indices arrays reference by CSV data
-        indices of arrays
+
+        * datapackage object
+        * pandas DataFrame with CSV data
+        * metadata (dict) stored with dataframe
+        * list of indices arrays reference by CSV data
+        * indices of arrays
 
     """
 
@@ -42,18 +45,18 @@ def _get_csv_data(
     return dp, df, metadata, resources, indices
 
 
-def reset_index(
-    datapackage: Union[Datapackage, Path, str], metadata_name: str
-) -> Datapackage:
+def reset_index(datapackage: Union[Datapackage, FS], metadata_name: str) -> Datapackage:
     """Reset the numerical indices in ``datapackage`` to sequential integers starting from zero.
 
     Updates the datapackage in place.
 
     Args:
-        datapackage: datapackage, or location of one. Input to `load_datapackage` function.
-        metadata_name: Name identifying a CSV metadata resource in ``datapackage``
+
+        * datapackage: datapackage or `Filesystem`. Input to `load_datapackage` function.
+        * metadata_name: Name identifying a CSV metadata resource in ``datapackage``
 
     Returns:
+
         Datapackage instance with modified data
 
     """
@@ -74,10 +77,11 @@ def reset_index(
 
 
 def reindex(
-    datapackage: Union[Datapackage, Path, str],
+    datapackage: Union[Datapackage, FS],
     metadata_name: str,
     data_iterable: Iterable,
     fields: List[str] = None,
+    id_field: str = "id",
 ) -> None:
     """Use the metadata to set the integer indices in ``datapackage`` to those used in ``data_iterable``.
 
@@ -86,21 +90,26 @@ def reindex(
     Updates the datapackage in place.
 
     Args:
-        datapackage: datapackage, or location of one. Input to `load_datapackage` function.
-        metadata_name: Name identifying a CSV metadata resource in ``datapackage``
-        data_iterable: Iterable which returns objects with ``id`` values and support ``.get()``.
-        fields: Optional list of fields to use while matching
+
+        * datapackage: datapackage of `Filesystem`. Input to `load_datapackage` function.
+        * metadata_name: Name identifying a CSV metadata resource in ``datapackage``
+        * data_iterable: Iterable which returns objects with ``id`` values and support ``.get()``.
+        * fields: Optional list of fields to use while matching
+        * id_field: String identifying the column providing an integer id
 
     Raises:
-        NonUnique: Multiple objects found in ``data_iterable`` which matches fields in ``datapackage``
-        ValueError: No object found in ``data_iterable`` which matches fields in ``datapackage``
-        KeyError: ``metadata_name`` is not in ``datapackage``
-        ValueError: ``metadata_name`` is not CSV metadata.
-        ValueError: The resources given for ``metadata_name`` are not present in this ``datapackage``
-        ValueError: ``data_iterable`` is not an iterable, or doesn't support field retrieval using ``.get()``.
+
+        * NonUnique: Multiple objects found in ``data_iterable`` which matches fields in ``datapackage``
+        * ValueError: No object found in ``data_iterable`` which matches fields in ``datapackage``
+        * KeyError: ``metadata_name`` is not in ``datapackage``
+        * ValueError: ``metadata_name`` is not CSV metadata.
+        * ValueError: The resources given for ``metadata_name`` are not present in this ``datapackage``
+        * KeyError: ``data_iterable`` is missing ``id_field`` field
+        * ValueError: ``data_iterable`` is not an iterable, or doesn't support field retrieval using ``.get()``.
 
     Returns:
-        None
+
+        Datapackage instance with modified data
 
     """
     dp, df, metadata, arrays, indices = _get_csv_data(datapackage, metadata_name)
