@@ -70,10 +70,7 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(
         data,
-        INDICES_DTYPE
-        + [("amount", np.float32)]
-        + UNCERTAINTY_DTYPE
-        + [("flip", np.bool)],
+        INDICES_DTYPE + [("amount", np.float32)] + UNCERTAINTY_DTYPE + [("flip", bool)],
         nrows=nrows,
         sort=True,
         sort_fields=sort_fields,
