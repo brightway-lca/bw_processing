@@ -103,4 +103,43 @@ def reindex(
         None
 
     """
-    pass
+    dp, df, metadata, arrays, indices = _get_csv_data(datapackage, metadata_name)
+
+    if id_field not in df.columns:
+        raise KeyError(
+            f"Given resource {metadata_name} is missing id column {id_field}"
+        )
+
+    if fields is None:
+        fields = sorted([x for x in df.columns if x != id_field])
+
+    dest_mapper = {}
+    mapper = {}
+
+    for row in data_iterable:
+        key = tuple([row.get(field) for field in fields])
+        index = row[id_field]
+
+        if key in dest_mapper:
+            dest_mapper[key] = NonUnique
+        else:
+            dest_mapper[key] = index
+
+    for i in range(len(df)):
+        key = tuple([df[field][i] for field in fields])
+        index = df[id_field][i]
+
+        if key not in dest_mapper:
+            raise ValueError(f"Can't find match in `data_iterable` for {key}")
+        elif dest_mapper[key] is NonUnique:
+            raise NonUnique(f"No unique match in `data_iterable` for {key}")
+        else:
+            mapper[index] = dest_mapper[key]
+
+    for array in arrays:
+        for i in range(len(array)):
+            array[i] = mapper[array[i]]
+
+    dp._modified.update(indices)
+
+    return dp

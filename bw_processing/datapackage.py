@@ -65,12 +65,12 @@ class DatapackageBase:
         """Get index of a resource by name or index.
 
         Returning the same number is a bit silly, but makes the other code simpler :)
-
+s
         Raises:
 
-        * IndexError: ``name_or_index`` was too big
-        * ValueError: Name ``name_or_index`` not found
-        * NonUnique: Name ``name_or_index`` not unique in given resources
+            * IndexError: ``name_or_index`` was too big
+            * ValueError: Name ``name_or_index`` not found
+            * NonUnique: Name ``name_or_index`` not unique in given resources
 
         """
         if isinstance(name_or_index, int):
@@ -116,15 +116,18 @@ class DatapackageBase:
         """Return data and metadata for ``name_or_index``.
 
         Args:
-            name_or_index: Name (str) or index (int) of a resource in the existing metadata.
+
+            * name_or_index: Name (str) or index (int) of a resource in the existing metadata.
 
         Raises:
-            IndexError: Integer index out of range of given metadata
-            ValueError: String name not present in metadata
-            NonUnique: String name present in two resource metadata sections
+            * IndexError: Integer index out of range of given metadata
+            * ValueError: String name not present in metadata
+            * NonUnique: String name present in two resource metadata sections
 
         Returns:
+
             (data object, metadata dict)
+
         """
         try:
             self._cache[name_or_index]
@@ -139,7 +142,11 @@ class DatapackageBase:
         return self._cache[name_or_index]
 
     def filter_by_attribute(self, key: str, value: Any) -> "FilteredDatapackage":
-        """"""
+        """Create a new ``FilteredDatapackage`` which satisfies the filter ``resource[key] == value``.
+
+        All included objects are the same as in the original data package, i.e. no copies are made. No checks are made to ensure consistency with modifications to the original datapackage after the creation of this filtered datapackage.
+
+        This method was introduced to allow for the efficient constuction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
         fdp = FilteredDatapackage()
         fdp.metadata = deepcopy(self.metadata)
         intermediate = list(
@@ -159,7 +166,7 @@ class DatapackageBase:
 
 
 class FilteredDatapackage(DatapackageBase):
-    """A part of a datapackage. Used in matrix construction or other data manipulation operations.
+    """A subset of a datapackage. Used in matrix construction or other data manipulation operations.
 
     Should be treated as read-only."""
 
@@ -905,6 +912,31 @@ def create_datapackage(
     sum_intra_duplicates: bool = True,
     sum_inter_duplicates: bool = False,
 ) -> Datapackage:
+    """Create a new data package.
+
+    All arguments are optional; if a `PyFilesystem2 <https://docs.pyfilesystem.org/en/latest/>`__ filesystem is not provided, a `MemoryFS <https://docs.pyfilesystem.org/en/latest/reference/memoryfs.html>`__ will be used.
+
+    All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
+
+    Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
+
+    Args:
+
+        * fs: A `Filesystem`, optional. A new `MemoryFS` is used if not provided.
+        * name: `str`, optional. A new uuid is used if not provided.
+        * id_. `str`, optional. A new uuid is used if not provided.
+        * metadata. `dict`, optional. Metadata dictionary following datapackage specification; see above.
+        * combinatorial. `bool`, default `False.: Policy on how to sample columns across multiple data arrays; see readme.
+        * sequential. `bool`, default `False.: Policy on how to sample columns in data arrays; see readme.
+        * seed. `int`, optional. Seed to use in random number generator.
+        * sum_intra_duplicates. `bool`, default `True`. Should duplicate elements in a single data resource be summed together, or should the last value replace previous values.
+        * sum_inter_duplicates. `bool`, default `False`. Should duplicate elements in across data resources be summed together, or should the last value replace previous values. Order of data resources is given by the order they are added to the data package.
+
+    Returns:
+
+        A `Datapackage` instance.
+
+    """
     obj = Datapackage()
     obj._create(
         fs=fs,
@@ -921,10 +953,27 @@ def create_datapackage(
 
 
 def load_datapackage(
-    fs_or_obj: Union[DatapackageBase, Path, str],
+    fs_or_obj: Union[DatapackageBase, FS],
     mmap_mode: Union[None, str] = None,
     proxy: bool = False,
 ) -> Datapackage:
+    """Load an existing datapackage.
+
+    Can load proxies to data instead of the data itself, which can be useful when interacting with large arrays or large packages where only a subset of the data will be accessed.
+
+    Proxies just use `functools.partial` to create a callable function instead of returning the raw data. datapackage access methods (i.e. `.get_resource`) will automatically resolve proxies when needed.
+
+    Args:
+
+        * fs_or_obj. A `Filesystem` or an instance of `DatapackageBase`.
+        * mmap_mode. `str`, optional. Define memory mapping mode to use when loading Numpy arrays.
+        * proxy. bool, default `False`. Load proxies instead of complete Numpy arrays; see above.
+
+    Returns:
+
+        A `Datapackage` instance.
+
+    """
     if isinstance(fs_or_obj, DatapackageBase):
         obj = fs_or_obj
     else:
