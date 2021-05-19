@@ -18,6 +18,7 @@ from .utils import (
 )
 from copy import deepcopy
 from fs.base import FS
+from fs.errors import ResourceNotFound
 from fs.memoryfs import MemoryFS
 from functools import partial
 from pathlib import Path
@@ -103,12 +104,12 @@ class DatapackageBase:
         index = self._get_index(name_or_index)
 
         try:
-            self.fs.remove(self.resources["path"])
-        except KeyError:
+            self.fs.remove(self.resources[index]["path"])
+        except (KeyError, ResourceNotFound):
             # Interface has no path
             pass
 
-        del self.metadata["resources"][index]
+        del self.resources[index]
         del self.data[index]
 
     def get_resource(self, name_or_index: Union[str, int]) -> (Any, dict):
@@ -179,11 +180,6 @@ class Datapackage(DatapackageBase):
     * Resources that are interfaces to external data sources (either in Python or other) can't be saved, but must be recreated each time a data package is used.
 
     """
-
-    # def del_package(self):
-    #     """Delete this data package, including any saved data. Frees up any memory used by data resources."""
-    #     self.io_obj.delete_all()
-    #     self.io_obj = self.resources = self.data = None
 
     # To allow these packages to be used as Python keys
     def __hash__(self):
