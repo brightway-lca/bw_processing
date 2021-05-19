@@ -11,6 +11,8 @@ __all__ = (
     "DEFAULT_LICENSES",
     "examples_dir",
     "FilteredDatapackage",
+    "generic_directory_filesystem",
+    "generic_zipfile_filesystem",
     "INDICES_DTYPE",
     "load_datapackage",
     "md5",
@@ -37,3 +39,4 @@ from .array_creation import create_array, create_structured_array
 from .proxies import UndefinedInterface
 from .examples import examples_dir
 from .indexing import reindex, reset_index
+from .io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
