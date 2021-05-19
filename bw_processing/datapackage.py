@@ -16,12 +16,10 @@ from .utils import (
     resolve_dict_iterator,
     NoneSorter,
 )
-from copy import deepcopy
 from fs.base import FS
 from fs.errors import ResourceNotFound
 from fs.memoryfs import MemoryFS
 from functools import partial
-from pathlib import Path
 from typing import Union, Any
 import datetime
 import numpy as np
@@ -148,20 +146,13 @@ s
 
         This method was introduced to allow for the efficient constuction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
         fdp = FilteredDatapackage()
-        fdp.metadata = deepcopy(self.metadata)
-        intermediate = list(
-            zip(
-                *[
-                    (array, resource)
-                    for array, resource in zip(self.data, self.resources)
-                    if resource.get(key) == value
-                ]
-            )
-        )
-        if intermediate:
-            fdp.data, fdp.resources = list(intermediate[0]), list(intermediate[1])
-        else:
-            fdp.data, fdp.resources = [], []
+        fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
+        fdp.metadata["resources"] = []
+        to_include = [
+            i for i, resource in enumerate(self.resources) if resource.get(key) == value
+        ]
+        fdp.data = [o for i, o in enumerate(self.data) if i in to_include]
+        fdp.resources = [o for i, o in enumerate(self.resources) if i in to_include]
         return fdp
 
 
