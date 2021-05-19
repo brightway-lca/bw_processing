@@ -42,6 +42,12 @@ class DatapackageBase:
     def __set_resources(self, dct: dict) -> None:
         self.metadata["resources"] = dct
 
+    def __len__(self):
+        return len(self.data)
+
+    def __contains__(self, key):
+        return key in {o["name"] for o in self.resources} or key in self.groups
+
     resources = property(__get_resources, __set_resources)
 
     @property
