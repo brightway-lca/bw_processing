@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.1.DEV]
+
+* Keep package indexers when creating a `FilteredDatapackage`.
+
 ## [0.3] - 2021-05-19
 
 Nearly complete reconceptualization of the package structure and logic, based around the use of [PyFilesystem2](https://docs.pyfilesystem.org/en/latest/). Much more complete package, with better testing and documentation.

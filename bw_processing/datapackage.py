@@ -154,6 +154,8 @@ class DatapackageBase:
         ]
         fdp.data = [o for i, o in enumerate(self.data) if i in to_include]
         fdp.resources = [o for i, o in enumerate(self.resources) if i in to_include]
+        if hasattr(self, "indexer"):
+            fdp.indexer = self.indexer
         return fdp
 
 
