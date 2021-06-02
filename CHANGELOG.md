@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.1.DEV]
+## [0.3.1] - 2021-06-02
 
 * Keep package indexers when creating a `FilteredDatapackage`.
 
