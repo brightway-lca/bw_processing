@@ -134,7 +134,8 @@ class DatapackageBase:
             index = self._get_index(name_or_index)
 
             if isinstance(self.data[index], partial):
-                obj = self.data[index]()
+                func = self.data[index]
+                obj = func()
                 self.data[index] = obj
 
             self._cache[name_or_index] = (self.data[index], self.resources[index])
