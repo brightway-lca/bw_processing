@@ -66,6 +66,7 @@ def dictionary_formatter(row: dict) -> tuple:
 
 
 def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
+    """Note that this function produces sorted arrays."""
     sort_fields = ["row", "col", "amount", "uncertainty_type"]
     data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(

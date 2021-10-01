@@ -325,7 +325,9 @@ class Datapackage(DatapackageBase):
         nrows: Union[int, None] = None,
         **kwargs,
     ) -> None:
-        """Note that this function will sort the arrays produced."""
+        """Create a persistant vector from an iterator. Uses the utility function ``resolve_dict_iterator``.
+
+        This is the **only array creation method which produces sorted arrays**."""
         name = self._prepare_name(name)
         (
             data_array,
