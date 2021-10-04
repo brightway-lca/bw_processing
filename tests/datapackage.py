@@ -177,4 +177,4 @@ def test_del_resource_group_error_modifications(tmp_path):
     dp = load_datapackage(OSFS(str(tmp_path)))
     dp._modified = [1]
     with pytest.raises(PotentialInconsistency):
-        dp.del_resource_group("sa-vector-interface.indices")
+        dp.del_resource_group("sa-vector-interface")
