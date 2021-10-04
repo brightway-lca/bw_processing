@@ -1,4 +1,9 @@
-from bw_processing import load_datapackage
+from bw_processing import (
+    create_datapackage,
+    load_datapackage,
+    INDICES_DTYPE,
+    UNCERTAINTY_DTYPE,
+)
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
 from pathlib import Path
@@ -83,3 +88,63 @@ def test_fdp_can_load_proxy_first():
 
     assert "sa-data-array.data" not in fdp._cache
     arr2, _ = fdp.get_resource("sa-data-array.data")
+
+
+@pytest.fixture
+def erg():
+    dp = create_datapackage(
+        fs=None, name="frg-fixture", id_="something something danger zone"
+    )
+
+    data_array = np.arange(3)
+    indices_array = np.array([(0, 1), (2, 3), (4, 5)], dtype=INDICES_DTYPE)
+    flip_array = np.array([1, 0, 1], dtype=bool)
+    distributions_array = np.array(
+        [
+            (5, 1, 2, 3, 4, 5, False),
+            (4, 1, 2, 3, 4, 5, False),
+            (0, 1, 2, 3, 4, 5, False),
+        ],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp.add_persistent_vector(
+        matrix="one",
+        data_array=data_array,
+        name="first",
+        indices_array=indices_array,
+        distributions_array=distributions_array,
+        nrows=3,
+        flip_array=flip_array,
+    )
+    dp.add_persistent_array(
+        matrix="two",
+        data_array=np.arange(12).reshape((3, 4)),
+        indices_array=indices_array,
+        name="second",
+    )
+    return dp
+
+
+def test_exclude_resource_group(erg):
+    assert len(erg.resources) == 6
+    result = erg.exclude_resource_group("first")
+    assert len(result.resources) == 2
+    assert {obj["name"] for obj in result.resources} == {
+        "second.data",
+        "second.indices",
+    }
+
+
+def test_exclude_resource_group_kind(erg):
+    assert len(erg.resources) == 6
+    result = erg.exclude_resource_group_kind("first", "distributions")
+    assert len(result.resources) == 5
+    assert {obj["name"] for obj in result.resources} == {
+        "second.data",
+        "second.indices",
+        "first.data",
+        "first.indices",
+        "first.flip",
+    }
+    assert not any(obj.dtype == UNCERTAINTY_DTYPE for obj in result.data)
