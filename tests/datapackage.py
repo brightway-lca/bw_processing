@@ -111,7 +111,6 @@ def test_del_resource_in_memory():
     assert isinstance(dp.fs, MemoryFS)
 
     reference_length = len(dp)
-    print(dp.resources)
     assert "sa-vector-interface.indices" in [o["name"] for o in dp.resources]
     dp.del_resource("sa-vector-interface.indices")
     assert "sa-vector-interface.indices" not in [o["name"] for o in dp.resources]
@@ -127,3 +126,40 @@ def test_del_resource_error_modifications(tmp_path):
     dp._modified = [1]
     with pytest.raises(PotentialInconsistency):
         dp.del_resource(1)
+
+
+def test_del_resource_group_filesystem(tmp_path):
+    copy_fixture("tfd", tmp_path)
+    dp = load_datapackage(OSFS(str(tmp_path)))
+
+    reference_length = len(dp)
+    assert "sa-data-vector.indices.npy" in [o.name for o in tmp_path.iterdir()]
+    dp.del_resource_group("sa-data-vector")
+    assert "sa-data-vector.indices.npy" not in [o.name for o in tmp_path.iterdir()]
+    assert len(dp) == reference_length - 3
+    assert len(dp.data) == reference_length - 3
+    assert len(dp.metadata["resources"]) == reference_length - 3
+    assert len(dp.resources) == reference_length - 3
+
+
+def test_del_resource_group_in_memory():
+    dp = create_datapackage()
+    add_data(dp)
+    assert isinstance(dp.fs, MemoryFS)
+
+    reference_length = len(dp)
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    dp.del_resource_group("sa-data-vector")
+    assert "sa-data-vector.indices" not in [o["name"] for o in dp.resources]
+    assert len(dp) == reference_length - 3
+    assert len(dp.data) == reference_length - 3
+    assert len(dp.metadata["resources"]) == reference_length - 3
+    assert len(dp.resources) == reference_length - 3
+
+
+def test_del_resource_group_error_modifications(tmp_path):
+    copy_fixture("tfd", tmp_path)
+    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp._modified = [1]
+    with pytest.raises(PotentialInconsistency):
+        dp.del_resource_group("sa-vector-interface.indices")

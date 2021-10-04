@@ -110,6 +110,31 @@ class DatapackageBase:
         del self.resources[index]
         del self.data[index]
 
+    def del_resource_group(self, name: str) -> None:
+        """Remove a resource group, and delete its data files, if any."""
+        if self._modified:
+            raise PotentialInconsistency(
+                "Datapackage is modified; save modifications or reload"
+            )
+
+        indices = [
+            i
+            for i, resource in enumerate(self.resources)
+            if resource.get("group") == name
+        ]
+
+        for obj in (obj for i, obj in enumerate(self.resources) if i in indices):
+            try:
+                self.fs.remove(obj["path"])
+            except (KeyError, ResourceNotFound):
+                # Interface has no path
+                pass
+
+        self.resources = [
+            obj for i, obj in enumerate(self.resources) if i not in indices
+        ]
+        self.data = [obj for i, obj in enumerate(self.data) if i not in indices]
+
     def get_resource(self, name_or_index: Union[str, int]) -> (Any, dict):
         """Return data and metadata for ``name_or_index``.
 
