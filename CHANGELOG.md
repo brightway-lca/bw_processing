@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4] - 2021-10-04
+
+* Fix [#6 - `del_resource` should support resource groups](https://github.com/brightway-lca/bw_processing/issues/6)
+* Fix [#7 - Error out when adding existing resource to package](https://github.com/brightway-lca/bw_processing/issues/7)
+* Fix [#9 - Multiple readings of same proxied data resource in FilteredDataPackage causes errors](https://github.com/brightway-lca/bw_processing/issues/9)
+* Fix [#10 - Add function for filtering resource groups](https://github.com/brightway-lca/bw_processing/issues/10)
+
 ## [0.3.1] - 2021-06-02
 
 * Keep package indexers when creating a `FilteredDatapackage`.
