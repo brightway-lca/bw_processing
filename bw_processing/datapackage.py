@@ -8,7 +8,7 @@ from .errors import (
 )
 from .filesystem import clean_datapackage_name
 from .io_helpers import file_writer, file_reader
-from .proxies import UndefinedInterface
+from .proxies import UndefinedInterface, Proxy
 from .utils import (
     check_name,
     check_suffix,
@@ -158,10 +158,8 @@ class DatapackageBase:
         except KeyError:
             index = self._get_index(name_or_index)
 
-            if isinstance(self.data[index], partial):
-                func = self.data[index]
-                obj = func()
-                self.data[index] = obj
+            if isinstance(self.data[index], (Proxy, partial)):
+                self.data[index] = self.data[index]()
 
             self._cache[name_or_index] = (self.data[index], self.resources[index])
         return self._cache[name_or_index]
@@ -810,7 +808,7 @@ def load_datapackage(
 
     Can load proxies to data instead of the data itself, which can be useful when interacting with large arrays or large packages where only a subset of the data will be accessed.
 
-    Proxies just use `functools.partial` to create a callable function instead of returning the raw data. datapackage access methods (i.e. `.get_resource`) will automatically resolve proxies when needed.
+    Proxies use something similar to `functools.partial` to create a callable class instead of returning the raw data (see https://github.com/brightway-lca/bw_processing/issues/9 for why we can't just use `partial`). datapackage access methods (i.e. `.get_resource`) will automatically resolve proxies when needed.
 
     Args:
 

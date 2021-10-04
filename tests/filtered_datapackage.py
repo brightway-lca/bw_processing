@@ -41,8 +41,7 @@ def test_data_is_the_same_object_when_not_proxy():
     assert np.shares_memory(arr1, arr2)
 
 
-@pytest.mark.skip(reason="https://github.com/brightway-lca/bw_processing/issues/9")
-def test_data_is_not_the_same_object_when_proxy_zipfs():
+def test_data_is_readable_multiple_times_when_proxy_zipfs():
     dp = load_datapackage(
         fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")), proxy=True
     )
@@ -52,16 +51,15 @@ def test_data_is_not_the_same_object_when_proxy_zipfs():
 
     assert "sa-data-array.data" not in fdp._cache
     arr2, _ = fdp.get_resource("sa-data-array.data")
+    assert "sa-data-array.data" in fdp._cache
 
     assert np.allclose(arr1, arr2)
-    assert arr1 is arr2
     assert arr1.base is not arr2
     assert arr2.base is not arr1
     assert not np.shares_memory(arr1, arr2)
 
 
-@pytest.mark.skip(reason="https://github.com/brightway-lca/bw_processing/issues/9")
-def test_data_is_not_the_same_object_when_proxy_directory():
+def test_data_is_readable_multiple_times_when_proxy_directory():
     dp = load_datapackage(fs_or_obj=OSFS(str(dirpath / "tfd")), proxy=True)
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
@@ -69,9 +67,9 @@ def test_data_is_not_the_same_object_when_proxy_directory():
 
     assert "sa-data-array.data" not in fdp._cache
     arr2, _ = fdp.get_resource("sa-data-array.data")
+    assert "sa-data-array.data" in fdp._cache
 
     assert np.allclose(arr1, arr2)
-    assert arr1 is arr2
     assert arr1.base is not arr2
     assert arr2.base is not arr1
     assert not np.shares_memory(arr1, arr2)

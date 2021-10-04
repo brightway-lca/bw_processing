@@ -1,4 +1,5 @@
 from .errors import InvalidMimetype
+from .proxies import Proxy
 from fs.base import FS
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
@@ -51,23 +52,32 @@ def file_reader(
     mapping = {
         "application/octet-stream": (
             np.load,
+            "file",
             {
                 "file": fs.open(resource, mode="rb"),
                 "mmap_mode": mmap_mode,
                 "allow_pickle": False,
             },
         ),
-        "application/json": (json.load, {"fp": fs.open(resource, encoding="utf-8")}),
-        "text/csv": (pd.read_csv, {"filepath_or_buffer": fs.open(resource)}),
+        "application/json": (
+            json.load,
+            "fp",
+            {"fp": fs.open(resource, encoding="utf-8")},
+        ),
+        "text/csv": (
+            pd.read_csv,
+            "filepath_or_buffer",
+            {"filepath_or_buffer": fs.open(resource)},
+        ),
     }
 
     try:
-        func, kwargs = mapping[mimetype]
+        func, label, kwargs = mapping[mimetype]
     except KeyError:
         raise InvalidMimetype("Mimetype '{}' not understoof".format(mimetype))
 
     if proxy:
-        return partial(func, **kwargs)
+        return Proxy(func, label, kwargs)
     else:
         return func(**kwargs)
 
