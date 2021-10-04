@@ -1,5 +1,4 @@
-from bw_processing import create_datapackage, load_datapackage
-from bw_processing.constants import INDICES_DTYPE
+from bw_processing import create_datapackage, load_datapackage, INDICES_DTYPE
 from copy import deepcopy
 from fs import open_fs
 from fs.memoryfs import MemoryFS
@@ -56,7 +55,7 @@ def add_data(dp):
         data_array=data_array,
         name="sa-data-vector",
         indices_array=indices_array,
-        nrows=2,
+        nrows=2,  # Should be 3 - fixed automatically
         flip_array=flip_array,
     )
 
@@ -432,6 +431,8 @@ def test_integration_test_fixture_zipfile():
 
 
 if __name__ == "__main__":
+    # Create the test fixtures
+
     dirpath = Path(__file__).parent.resolve() / "fixtures"
     dirpath.mkdir(exist_ok=True)
     (dirpath / "tfd").mkdir(exist_ok=True)
