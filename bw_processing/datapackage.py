@@ -146,7 +146,7 @@ class DatapackageBase:
 
         All included objects are the same as in the original data package, i.e. no copies are made. No checks are made to ensure consistency with modifications to the original datapackage after the creation of this filtered datapackage.
 
-        This method was introduced to allow for the efficient constuction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
+        This method was introduced to allow for the efficient construction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
         fdp = FilteredDatapackage()
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
         fdp.metadata["resources"] = []
