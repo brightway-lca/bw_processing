@@ -1,6 +1,6 @@
 from bw_processing import load_datapackage, create_datapackage
 from bw_processing.constants import INDICES_DTYPE
-from bw_processing.errors import PotentialInconsistency
+from bw_processing.errors import PotentialInconsistency, NonUnique
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -72,6 +72,21 @@ def copy_fixture(fixture_name, dest):
     source = Path(__file__).parent.resolve() / "fixtures" / fixture_name
     for fp in source.iterdir():
         shutil.copy(fp, dest / fp.name)
+
+
+def test_add_resource_with_same_name():
+    dp = create_datapackage()
+    add_data(dp)
+
+    data_array = np.array([(2, 7, 12)])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(NonUnique):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+        )
 
 
 def test_save_modifications(tmp_path):
