@@ -334,8 +334,11 @@ class Datapackage(DatapackageBase):
         name = name or uuid.uuid4().hex
 
         existing_names = {o["name"] for o in self.resources}
+        existing_groups = {o["group"] for o in self.resources if o.get("group")}
         if name in existing_names:
             raise NonUnique("This name already used")
+        if name in existing_groups:
+            raise NonUnique("This group name already used")
 
         return name
 
