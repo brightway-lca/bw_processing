@@ -1,15 +1,17 @@
-from .errors import InvalidMimetype
-from .proxies import Proxy
-from fs.base import FS
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+import json
 from functools import partial
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Union, Any
-import json
+from typing import Any, Union
+
 import numpy as np
 import pandas as pd
+from fs.base import FS
+from fs.osfs import OSFS
+from fs.zipfs import ZipFS
+
+from .errors import InvalidMimetype
+from .proxies import Proxy
 
 
 def generic_directory_filesystem(*, dirpath: Path) -> OSFS:

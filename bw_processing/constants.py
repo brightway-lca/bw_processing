@@ -1,5 +1,6 @@
-import numpy as np
 import re
+
+import numpy as np
 
 MAX_SIGNED_32BIT_INT = 2147483647
 

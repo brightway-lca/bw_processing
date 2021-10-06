@@ -1,12 +1,14 @@
-from .array_creation import create_structured_array
-from .constants import NAME_RE, UNCERTAINTY_DTYPE, INDICES_DTYPE
-from .errors import InvalidName
 from functools import total_ordering
 from io import BytesIO
-from numpy.lib.recfunctions import repack_fields
 from pathlib import Path
 from typing import Any, Union
+
 import numpy as np
+from numpy.lib.recfunctions import repack_fields
+
+from .array_creation import create_structured_array
+from .constants import INDICES_DTYPE, NAME_RE, UNCERTAINTY_DTYPE
+from .errors import InvalidName
 
 
 def load_bytes(obj: Any) -> Any:

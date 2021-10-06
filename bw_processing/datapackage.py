@@ -1,30 +1,32 @@
+import datetime
+import uuid
+from functools import partial
+from typing import Any, Union
+
+import numpy as np
+import pandas as pd
+from fs.base import FS
+from fs.errors import ResourceNotFound
+from fs.memoryfs import MemoryFS
+
 from .constants import DEFAULT_LICENSES
 from .errors import (
     Closed,
+    InvalidMimetype,
     LengthMismatch,
     NonUnique,
-    InvalidMimetype,
     PotentialInconsistency,
 )
 from .filesystem import clean_datapackage_name
-from .io_helpers import file_writer, file_reader
-from .proxies import UndefinedInterface, Proxy
+from .io_helpers import file_reader, file_writer
+from .proxies import Proxy, UndefinedInterface
 from .utils import (
+    NoneSorter,
     check_name,
     check_suffix,
     load_bytes,
     resolve_dict_iterator,
-    NoneSorter,
 )
-from fs.base import FS
-from fs.errors import ResourceNotFound
-from fs.memoryfs import MemoryFS
-from functools import partial
-from typing import Union, Any
-import datetime
-import numpy as np
-import pandas as pd
-import uuid
 
 
 class DatapackageBase:

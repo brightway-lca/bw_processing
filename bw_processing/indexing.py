@@ -1,10 +1,12 @@
-from .datapackage import Datapackage, load_datapackage
-from .errors import NonUnique
 from collections.abc import Iterable
-from fs.base import FS
-from typing import Union, List
+from typing import List, Union
+
 import numpy as np
 import pandas as pd
+from fs.base import FS
+
+from .datapackage import Datapackage, load_datapackage
+from .errors import NonUnique
 
 
 def _get_csv_data(

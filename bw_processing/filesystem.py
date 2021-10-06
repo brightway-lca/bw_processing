@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import Union
 import hashlib
 import re
 import unicodedata
+from pathlib import Path
+from typing import Union
 
 re_slugify = re.compile(r"[^\w\s-]", re.UNICODE)
 SUBSTITUTION_RE = re.compile(r"[^\w\-\.]")

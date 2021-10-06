@@ -23,8 +23,8 @@ __all__ = (
     "UndefinedInterface",
 )
 
-from .version import version as __version__
-
+from .array_creation import create_array, create_structured_array
+from .constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE
 from .datapackage import (
     Datapackage,
     DatapackageBase,
@@ -32,11 +32,10 @@ from .datapackage import (
     create_datapackage,
     load_datapackage,
 )
-from .constants import INDICES_DTYPE, UNCERTAINTY_DTYPE, DEFAULT_LICENSES
-from .filesystem import md5, safe_filename, clean_datapackage_name
-from .unique_fields import as_unique_attributes_dataframe, as_unique_attributes
-from .array_creation import create_array, create_structured_array
-from .proxies import UndefinedInterface
 from .examples import examples_dir
+from .filesystem import clean_datapackage_name, md5, safe_filename
 from .indexing import reindex, reset_index
 from .io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
+from .proxies import UndefinedInterface
+from .unique_fields import as_unique_attributes, as_unique_attributes_dataframe
+from .version import version as __version__
