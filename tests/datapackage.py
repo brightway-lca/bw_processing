@@ -1,13 +1,15 @@
-from bw_processing import load_datapackage, create_datapackage
-from bw_processing.constants import INDICES_DTYPE
-from bw_processing.errors import PotentialInconsistency, NonUnique
+import shutil
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import shutil
-from fs.osfs import OSFS
 from fs.memoryfs import MemoryFS
+from fs.osfs import OSFS
+
+from bw_processing import create_datapackage, load_datapackage
+from bw_processing.constants import INDICES_DTYPE
+from bw_processing.errors import NonUnique, PotentialInconsistency, WrongDatatype
 
 
 class Dummy:
@@ -15,7 +17,7 @@ class Dummy:
 
 
 def add_data(dp):
-    data_array = np.array([(2, 7, 12)])
+    data_array = np.array([2, 7, 12])
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     flip_array = np.array([1, 0, 0], dtype=bool)
     dp.add_persistent_vector(
@@ -28,7 +30,6 @@ def add_data(dp):
     )
 
     json_data = [{"a": "b"}, 1, True]
-    json_parameters = ["a", "foo"]
     df = pd.DataFrame(
         [
             {"id": 1, "a": 1, "c": 3, "d": 11},
@@ -78,7 +79,7 @@ def test_add_resource_with_same_name():
     dp = create_datapackage()
     add_data(dp)
 
-    data_array = np.array([(2, 7, 12)])
+    data_array = np.array([2, 7, 12])
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     with pytest.raises(NonUnique):
         dp.add_persistent_vector(
@@ -178,3 +179,65 @@ def test_del_resource_group_error_modifications(tmp_path):
     dp._modified = [1]
     with pytest.raises(PotentialInconsistency):
         dp.del_resource_group("sa-vector-interface")
+
+
+def test_wrong_dtype_flip_array():
+    pass
+
+
+def test_add_vector_as_array():
+    pass
+
+
+def test_add_array_as_vector():
+    return
+    data_array = np.array([(2, 7, 12)])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    flip_array = np.array([1, 0, 0], dtype=bool)
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        nrows=2,
+        flip_array=flip_array,
+    )
+
+    json_data = [{"a": "b"}, 1, True]
+    df = pd.DataFrame(
+        [
+            {"id": 1, "a": 1, "c": 3, "d": 11},
+            {"id": 2, "a": 2, "c": 4, "d": 11},
+            {"id": 3, "a": 1, "c": 4, "d": 11},
+        ]
+    ).set_index(["id"])
+
+    dp.add_persistent_array(
+        matrix="sa_matrix",
+        data_array=np.arange(12).reshape((3, 4)),
+        indices_array=indices_array,
+        name="sa-data-array",
+        flip_array=flip_array,
+    )
+
+    dp.add_dynamic_vector(
+        interface=Dummy(),
+        indices_array=indices_array,
+        matrix="sa_matrix",
+        name="sa-vector-interface",
+    )
+
+    dp.add_dynamic_array(
+        interface=Dummy(),
+        matrix="sa_matrix",
+        name="sa-array-interface",
+        indices_array=indices_array,
+    )
+    dp.add_csv_metadata(
+        dataframe=df,
+        valid_for=[("sa-data-vector", "rows")],
+        name="sa-data-vector-csv-metadata",
+    )
+    dp.add_json_metadata(
+        data=json_data, valid_for="sa-data-array", name="sa-data-array-json-metadata"
+    )

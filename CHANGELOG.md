@@ -1,5 +1,9 @@
 # Changelog
 
+## DEV
+
+* Add tests for resource dtypes and shapes in add_X functions. Fixes [#11](https://github.com/brightway-lca/bw_processing/issues/11).
+
 ## [0.4] - 2021-10-04
 
 * Fix [#6 - `del_resource` should support resource groups](https://github.com/brightway-lca/bw_processing/issues/6)
