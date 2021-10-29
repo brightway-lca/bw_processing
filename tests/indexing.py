@@ -1,18 +1,20 @@
-from bw_processing import load_datapackage, create_datapackage
-from bw_processing.constants import INDICES_DTYPE
-from bw_processing.errors import NonUnique
-from bw_processing.indexing import reset_index, reindex
-from fs.osfs import OSFS
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
+from fs.osfs import OSFS
+
+from bw_processing import create_datapackage, load_datapackage
+from bw_processing.constants import INDICES_DTYPE
+from bw_processing.errors import NonUnique
+from bw_processing.indexing import reindex, reset_index
 
 ### Fixture
 
 
 def add_data(dp, id_field="id"):
-    data_array = np.array([(2, 7, 12)])
+    data_array = np.array([2, 7, 12])
     indices_array = np.array([(11, 14), (11, 15), (13, 15)], dtype=INDICES_DTYPE)
     flip_array = np.array([1, 0, 0], dtype=bool)
     dp.add_persistent_vector(

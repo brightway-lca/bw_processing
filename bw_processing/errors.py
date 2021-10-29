@@ -14,6 +14,18 @@ class NonUnique(BrightwayProcessingError):
     pass
 
 
+class WrongDatatype(BrightwayProcessingError):
+    """Wrong type of data written to a resource"""
+
+    pass
+
+
+class ShapeMismatch(BrightwayProcessingError):
+    """Array shapes in a resource group are not consistent"""
+
+    pass
+
+
 class InvalidName(BrightwayProcessingError):
     """Name fails datapackage requirements:
 

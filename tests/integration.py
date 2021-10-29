@@ -1,16 +1,17 @@
-from bw_processing import create_datapackage, load_datapackage, INDICES_DTYPE
+import platform
+import tempfile
 from copy import deepcopy
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
 from fs import open_fs
 from fs.memoryfs import MemoryFS
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import platform
-import pytest
-import tempfile
 
+from bw_processing import INDICES_DTYPE, create_datapackage, load_datapackage
 
 _windows = platform.system() == "Windows"
 
@@ -47,7 +48,7 @@ def add_data(dp):
         foo="bar",
     )
 
-    data_array = np.array([(2, 7, 12)])
+    data_array = np.array([2, 7, 12])
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     flip_array = np.array([1, 0, 0], dtype=bool)
     dp.add_persistent_vector(
@@ -219,11 +220,11 @@ def check_metadata(dp, as_tuples=True):
             "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
-            "name": "sa-data-array.data",
+            "name": "sa-data-array.indices",
             "matrix": "sa_matrix",
-            "kind": "data",
+            "kind": "indices",
             "nrows": 3,
-            "path": "sa-data-array.data.npy",
+            "path": "sa-data-array.indices.npy",
             "group": "sa-data-array",
         },
         {
@@ -231,11 +232,11 @@ def check_metadata(dp, as_tuples=True):
             "profile": "data-resource",
             "format": "npy",
             "mediatype": "application/octet-stream",
-            "name": "sa-data-array.indices",
+            "name": "sa-data-array.data",
             "matrix": "sa_matrix",
-            "kind": "indices",
+            "kind": "data",
             "nrows": 3,
-            "path": "sa-data-array.indices.npy",
+            "path": "sa-data-array.data.npy",
             "group": "sa-data-array",
         },
         {

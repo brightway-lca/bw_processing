@@ -102,10 +102,10 @@
       "profile": "data-resource",
       "format": "npy",
       "mediatype": "application/octet-stream",
-      "name": "sa-data-array.data",
+      "name": "sa-data-array.indices",
       "matrix": "sa_matrix",
-      "kind": "data",
-      "path": "sa-data-array.data.npy",
+      "kind": "indices",
+      "path": "sa-data-array.indices.npy",
       "group": "sa-data-array",
       "category": "array",
       "nrows": 3
@@ -114,10 +114,10 @@
       "profile": "data-resource",
       "format": "npy",
       "mediatype": "application/octet-stream",
-      "name": "sa-data-array.indices",
+      "name": "sa-data-array.data",
       "matrix": "sa_matrix",
-      "kind": "indices",
-      "path": "sa-data-array.indices.npy",
+      "kind": "data",
+      "path": "sa-data-array.data.npy",
       "group": "sa-data-array",
       "category": "array",
       "nrows": 3
@@ -203,7 +203,7 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2021-02-11T09:06:42.348367Z",
+  "created": "2021-10-29T21:46:22.583269Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,

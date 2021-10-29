@@ -16,6 +16,8 @@ from .errors import (
     LengthMismatch,
     NonUnique,
     PotentialInconsistency,
+    ShapeMismatch,
+    WrongDatatype,
 )
 from .filesystem import clean_datapackage_name
 from .io_helpers import file_reader, file_writer
@@ -444,8 +446,9 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
+        indices_array = load_bytes(indices_array)
         self._add_numpy_array_resource(
-            array=load_bytes(indices_array),
+            array=indices_array,
             name=name + ".indices",
             group=name,
             kind="indices",
@@ -453,8 +456,21 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if data_array is not None:
+            data_array = load_bytes(data_array)
+            if len(data_array.shape) > 1:
+                raise ShapeMismatch(
+                    "Passed {}-d array to 1-d function `add_persistent_vector`".format(
+                        len(data_array.shape)
+                    )
+                )
+            elif data_array.shape != indices_array.shape:
+                raise ShapeMismatch(
+                    "`data_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                        data_array.shape, indices_array.shape
+                    )
+                )
             self._add_numpy_array_resource(
-                array=load_bytes(data_array),
+                array=data_array,
                 group=name,
                 name=name + ".data",
                 kind="data",
@@ -462,27 +478,49 @@ class Datapackage(DatapackageBase):
                 **kwargs,
             )
         if distributions_array is not None:
+            distributions_array = load_bytes(distributions_array)
             # If no uncertainty, don't need to store it
             if (distributions_array["uncertainty_type"] < 2).sum() < len(
                 distributions_array
             ):
+                if distributions_array.shape != indices_array.shape:
+                    raise ShapeMismatch(
+                        "`distributions_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                            distributions_array.shape, indices_array.shape
+                        )
+                    )
                 self._add_numpy_array_resource(
-                    array=load_bytes(distributions_array),
+                    array=distributions_array,
                     name=name + ".distributions",
                     group=name,
                     kind="distributions",
                     keep_proxy=keep_proxy,
                     **kwargs,
                 )
-        if flip_array is not None and flip_array.sum():
-            self._add_numpy_array_resource(
-                array=load_bytes(flip_array),
-                group=name,
-                name=name + ".flip",
-                kind="flip",
-                keep_proxy=keep_proxy,
-                **kwargs,
-            )
+        if flip_array is not None:
+            flip_array = load_bytes(flip_array)
+            # If no flips, don't need to store it
+            if flip_array.sum():
+                if flip_array.dtype != bool:
+                    raise WrongDatatype(
+                        "`flip_array` dtype is {}, but must be `bool`".format(
+                            flip_array.dtype
+                        )
+                    )
+                elif flip_array.shape != indices_array.shape:
+                    raise ShapeMismatch(
+                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                            flip_array.shape, indices_array.shape
+                        )
+                    )
+                self._add_numpy_array_resource(
+                    array=flip_array,
+                    group=name,
+                    name=name + ".flip",
+                    kind="flip",
+                    keep_proxy=keep_proxy,
+                    **kwargs,
+                )
 
     def add_persistent_array(
         self,
@@ -503,31 +541,60 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
+        indices_array = load_bytes(indices_array)
         self._add_numpy_array_resource(
-            array=load_bytes(data_array),
-            name=name + ".data",
-            group=name,
-            kind="data",
-            keep_proxy=keep_proxy,
-            **kwargs,
-        )
-        self._add_numpy_array_resource(
-            array=load_bytes(indices_array),
+            array=indices_array,
             name=name + ".indices",
             kind="indices",
             group=name,
             keep_proxy=keep_proxy,
             **kwargs,
         )
-        if flip_array is not None and flip_array.sum():
-            self._add_numpy_array_resource(
-                array=load_bytes(flip_array),
-                group=name,
-                name=name + ".flip",
-                kind="flip",
-                keep_proxy=keep_proxy,
-                **kwargs,
+
+        data_array = load_bytes(data_array)
+        if len(data_array.shape) != 2:
+            raise ShapeMismatch(
+                "Passed {}-d array to 2-d function `add_persistent_array`".format(
+                    len(data_array.shape)
+                )
             )
+        elif data_array.shape[0] != indices_array.shape[0]:
+            raise ShapeMismatch(
+                "`data_array` row number ({}) doesn't match `indices_array` ({}).".format(
+                    data_array.shape, indices_array.shape
+                )
+            )
+        self._add_numpy_array_resource(
+            array=data_array,
+            name=name + ".data",
+            group=name,
+            kind="data",
+            keep_proxy=keep_proxy,
+            **kwargs,
+        )
+        if flip_array is not None:
+            flip_array = load_bytes(flip_array)
+            if flip_array.sum():
+                if flip_array.dtype != bool:
+                    raise WrongDatatype(
+                        "`flip_array` dtype is {}, but must be `bool`".format(
+                            flip_array.dtype
+                        )
+                    )
+                elif flip_array.shape != indices_array.shape:
+                    raise ShapeMismatch(
+                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                            flip_array.shape, indices_array.shape
+                        )
+                    )
+                self._add_numpy_array_resource(
+                    array=flip_array,
+                    group=name,
+                    name=name + ".flip",
+                    kind="flip",
+                    keep_proxy=keep_proxy,
+                    **kwargs,
+                )
 
     def write_modified(self):
         """Write the data in modified files to the filesystem (if allowed)."""
@@ -606,25 +673,38 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
-        # Do something with dynamic vector
-
+        indices_array = load_bytes(indices_array)
         self._add_numpy_array_resource(
-            array=load_bytes(indices_array),
+            array=indices_array,
             name=name + ".indices",
             group=name,
             kind="indices",
             keep_proxy=keep_proxy,
             **kwargs,
         )
-        if flip_array is not None and flip_array.sum():
-            self._add_numpy_array_resource(
-                array=load_bytes(flip_array),
-                group=name,
-                name=name + ".flip",
-                kind="flip",
-                keep_proxy=keep_proxy,
-                **kwargs,
-            )
+        if flip_array is not None:
+            flip_array = load_bytes(flip_array)
+            if flip_array.sum():
+                if flip_array.dtype != bool:
+                    raise WrongDatatype(
+                        "`flip_array` dtype is {}, but must be `bool`".format(
+                            flip_array.dtype
+                        )
+                    )
+                elif flip_array.shape != indices_array.shape:
+                    raise ShapeMismatch(
+                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                            flip_array.shape, indices_array.shape
+                        )
+                    )
+                self._add_numpy_array_resource(
+                    array=flip_array,
+                    group=name,
+                    name=name + ".flip",
+                    kind="flip",
+                    keep_proxy=keep_proxy,
+                    **kwargs,
+                )
 
         self.data.append(interface)
         resource = {
@@ -658,8 +738,9 @@ class Datapackage(DatapackageBase):
         )
         name = self._prepare_name(name)
 
+        indices_array = load_bytes(indices_array)
         self._add_numpy_array_resource(
-            array=load_bytes(indices_array),
+            array=indices_array,
             name=name + ".indices",
             group=name,
             kind="indices",
@@ -667,14 +748,28 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
         if flip_array is not None:
-            self._add_numpy_array_resource(
-                array=load_bytes(flip_array),
-                group=name,
-                name=name + ".flip",
-                kind="flip",
-                keep_proxy=keep_proxy,
-                **kwargs,
-            )
+            flip_array = load_bytes(flip_array)
+            if flip_array.sum():
+                if flip_array.dtype != bool:
+                    raise WrongDatatype(
+                        "`flip_array` dtype is {}, but must be `bool`".format(
+                            flip_array.dtype
+                        )
+                    )
+                elif flip_array.shape != indices_array.shape:
+                    raise ShapeMismatch(
+                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                            flip_array.shape, indices_array.shape
+                        )
+                    )
+                self._add_numpy_array_resource(
+                    array=flip_array,
+                    group=name,
+                    name=name + ".flip",
+                    kind="flip",
+                    keep_proxy=keep_proxy,
+                    **kwargs,
+                )
 
         self.data.append(interface)
         resource = {
