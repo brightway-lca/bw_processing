@@ -115,7 +115,9 @@ class DatapackageBase:
         del self.data[index]
 
     def del_resource_group(self, name: str) -> None:
-        """Remove a resource group, and delete its data files, if any."""
+        """Remove a resource group, and delete its data files, if any.
+
+        Use ``exclude_resource_group`` if you want to keep the underlying resource in the filesystem."""
         if self._modified:
             raise PotentialInconsistency(
                 "Datapackage is modified; save modifications or reload"
