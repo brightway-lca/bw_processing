@@ -1,14 +1,16 @@
-from bw_processing import (
-    create_datapackage,
-    load_datapackage,
-    INDICES_DTYPE,
-    UNCERTAINTY_DTYPE,
-)
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
 from pathlib import Path
+
 import numpy as np
 import pytest
+from fs.osfs import OSFS
+from fs.zipfs import ZipFS
+
+from bw_processing import (
+    INDICES_DTYPE,
+    UNCERTAINTY_DTYPE,
+    create_datapackage,
+    load_datapackage,
+)
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
@@ -128,7 +130,7 @@ def erg():
 
 def test_exclude_resource_group(erg):
     assert len(erg.resources) == 6
-    result = erg.exclude_resource_group("first")
+    result = erg.exclude({"group": "first"})
     assert len(result.resources) == 2
     assert {obj["name"] for obj in result.resources} == {
         "second.data",
@@ -138,7 +140,7 @@ def test_exclude_resource_group(erg):
 
 def test_exclude_resource_group_kind(erg):
     assert len(erg.resources) == 6
-    result = erg.exclude_resource_group_kind("first", "distributions")
+    result = erg.exclude({"group": "first", "kind": "distributions"})
     assert len(result.resources) == 5
     assert {obj["name"] for obj in result.resources} == {
         "second.data",

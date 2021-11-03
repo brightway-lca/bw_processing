@@ -186,6 +186,70 @@ def test_del_resource_group_error_modifications(tmp_path):
         dp.del_resource_group("sa-vector-interface")
 
 
+def test_exclude_basic():
+    dp = create_datapackage()
+    add_data(dp)
+    assert isinstance(dp.fs, MemoryFS)
+
+    reference_length = len(dp)
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    ndp = dp.exclude({"group": "sa-data-vector"})
+    assert ndp is not dp
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    assert "sa-data-vector.indices" not in [o["name"] for o in ndp.resources]
+    assert len(ndp) == reference_length - 3
+    assert len(ndp.data) == reference_length - 3
+    assert len(ndp.metadata["resources"]) == reference_length - 3
+    assert len(ndp.resources) == reference_length - 3
+
+
+def test_exclude_no_match():
+    dp = create_datapackage()
+    add_data(dp)
+    assert isinstance(dp.fs, MemoryFS)
+
+    reference_length = len(dp)
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    ndp = dp.exclude({"foo": "bar"})
+    assert ndp is not dp
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    assert "sa-data-vector.indices" in [o["name"] for o in ndp.resources]
+    assert len(ndp) == reference_length
+
+
+def test_exclude_multiple_filters():
+    dp = create_datapackage()
+    add_data(dp)
+    assert isinstance(dp.fs, MemoryFS)
+
+    reference_length = len(dp)
+    assert "sa-array-interface.indices" in [o["name"] for o in dp.resources]
+    ndp = dp.exclude({"group": "sa-array-interface", "matrix": "sa_matrix"})
+    assert ndp is not dp
+    assert "sa-array-interface.indices" in [o["name"] for o in dp.resources]
+    assert "sa-array-interface.indices" not in [o["name"] for o in ndp.resources]
+    assert len(ndp) == reference_length - 2
+    assert len(ndp.data) == reference_length - 2
+    assert len(ndp.metadata["resources"]) == reference_length - 2
+    assert len(ndp.resources) == reference_length - 2
+
+
+def test_exclude_multiple_matrix():
+    dp = create_datapackage()
+    add_data(dp)
+    assert isinstance(dp.fs, MemoryFS)
+
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    ndp = dp.exclude({"matrix": "sa_matrix"})
+    assert ndp is not dp
+    assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
+    assert "sa-data-vector.indices" not in [o["name"] for o in ndp.resources]
+    assert len(ndp) == 2
+    assert len(ndp.data) == 2
+    assert len(ndp.metadata["resources"]) == 2
+    assert len(ndp.resources) == 2
+
+
 def test_add_persistent_vector_data_shapemismatch_ndimensions():
     dp = create_datapackage()
     data_array = np.array([[2, 7, 12], [4, 5, 15]])

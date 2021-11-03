@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from functools import partial
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -188,36 +188,18 @@ class DatapackageBase:
             fdp.indexer = self.indexer
         return fdp
 
-    def exclude_resource_group(self, group: str) -> "FilteredDatapackage":
-        """Filter a datapackage to exclude a resource group by group name.
+    def exclude(self, filters: Dict[str, str]) -> "FilteredDatapackage":
+        """Filter a datapackage to exclude resources matching a filter.
 
-        Use ``filter_by_attribute("group", "group_name")`` to get only this resource group.
+        Usage cases:
 
-        """
-        fdp = FilteredDatapackage()
-        fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
-        fdp.metadata["resources"] = []
+        Filter out a given resource:
 
-        if hasattr(self, "indexer"):
-            fdp.indexer = self.indexer
+            exclude_generic({"matrix': "some_label"})
 
-        to_include = [
-            i
-            for i, resource in enumerate(self.resources)
-            if resource.get("group") != group
-        ]
-        fdp.data = [o for i, o in enumerate(self.data) if i in to_include]
-        fdp.resources = [o for i, o in enumerate(self.resources) if i in to_include]
-        return fdp
+        Filter out a resource group with a given kind:
 
-    def exclude_resource_group_kind(
-        self, group: str, kind: str
-    ) -> "FilteredDatapackage":
-        """Filter a datapackage to exclude a certain kinds of resources in a given resource group.
-
-        The intended use case is to do complicated calculation setups, like distributions from one resource group but just the static array from a different resource group in the same datapackage.
-
-        ``group`` and ``kind`` are the group and kind labels of the resource to exclude.
+            exclude_generic({"group': "some_group", "kind": "some_kind"})
 
         """
         fdp = FilteredDatapackage()
@@ -227,13 +209,15 @@ class DatapackageBase:
         if hasattr(self, "indexer"):
             fdp.indexer = self.indexer
 
-        to_exclude = [
+        indices_to_include = [
             i
             for i, resource in enumerate(self.resources)
-            if resource.get("group") == group and resource.get("kind") == kind
+            if any(resource.get(key) != value for key, value in filters.items())
         ]
-        fdp.data = [o for i, o in enumerate(self.data) if i not in to_exclude]
-        fdp.resources = [o for i, o in enumerate(self.resources) if i not in to_exclude]
+        fdp.data = [o for i, o in enumerate(self.data) if i in indices_to_include]
+        fdp.resources = [
+            o for i, o in enumerate(self.resources) if i in indices_to_include
+        ]
         return fdp
 
 
