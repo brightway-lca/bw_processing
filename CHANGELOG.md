@@ -1,8 +1,9 @@
 # Changelog
 
-## DEV
+## [0.5] - 2021-11-03
 
 * Add tests for resource dtypes and shapes in add_X functions. Fixes [#11](https://github.com/brightway-lca/bw_processing/issues/11).
+* Combined  `exclude_resource_group` and `exclude_resource_group_kind` into `exclude`
 
 ## [0.4] - 2021-10-04
 
