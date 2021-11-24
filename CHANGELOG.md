@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.6.1] - 2021-11-24
+## [0.7] - 2021-11-24
+
+* **Backwards incompatible**: `Datapackage.groups` no longer sorts group labels. Sorting breaks implied ordering for matrix construction.
+
+### [0.6.1] - 2021-11-24
 
 * Moved dehydration and rehydration to `DatapackageBase` so they are available to `FilteredDatapackage` as well.
 
