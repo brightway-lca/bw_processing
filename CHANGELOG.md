@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6] - DEV
+
+* Removed the cache from `Datapackage.get_resource`. It was counterproductive.
+
 ## [0.5] - 2021-11-03
 
 * Add tests for resource dtypes and shapes in add_X functions. Fixes [#11](https://github.com/brightway-lca/bw_processing/issues/11).

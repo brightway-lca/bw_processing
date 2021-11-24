@@ -36,7 +36,6 @@ class DatapackageBase:
 
     def __init__(self):
         self._finalized = False
-        self._cache = {}
         self._modified = set()
 
     def __get_resources(self) -> list:
@@ -159,16 +158,12 @@ class DatapackageBase:
             (data object, metadata dict)
 
         """
-        try:
-            self._cache[name_or_index]
-        except KeyError:
-            index = self._get_index(name_or_index)
+        index = self._get_index(name_or_index)
 
-            if isinstance(self.data[index], (Proxy, partial)):
-                self.data[index] = self.data[index]()
+        if isinstance(self.data[index], (Proxy, partial)):
+            self.data[index] = self.data[index]()
 
-            self._cache[name_or_index] = (self.data[index], self.resources[index])
-        return self._cache[name_or_index]
+        return self.data[index], self.resources[index]
 
     def filter_by_attribute(self, key: str, value: Any) -> "FilteredDatapackage":
         """Create a new ``FilteredDatapackage`` which satisfies the filter ``resource[key] == value``.
