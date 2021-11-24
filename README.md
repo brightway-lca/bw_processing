@@ -97,6 +97,8 @@ my_dp = load_datapackage(ZipFS("some-path.zip"))
 my_dp.rehydrate_interface("some-resource-name", ExampleVectorInterface())
 ```
 
+You can list the dehydrated interfaces present with `.dehydrated_interfaces()`.
+
 You can store useful information for the interface object initialization under the resource key `config`. This can be used in instantiating an interface if you pass `initialize_with_config`:
 
 ```python
