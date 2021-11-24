@@ -1,18 +1,9 @@
-import shutil
 from pathlib import Path
 
-import numpy as np
 import pytest
 from fs.zipfs import ZipFS
 
 from bw_processing import load_datapackage
-from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
-from bw_processing.errors import (
-    NonUnique,
-    PotentialInconsistency,
-    ShapeMismatch,
-    WrongDatatype,
-)
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
