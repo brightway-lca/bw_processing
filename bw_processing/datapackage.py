@@ -22,13 +22,7 @@ from .errors import (
 from .filesystem import clean_datapackage_name
 from .io_helpers import file_reader, file_writer
 from .proxies import Proxy, UndefinedInterface
-from .utils import (
-    NoneSorter,
-    check_name,
-    check_suffix,
-    load_bytes,
-    resolve_dict_iterator,
-)
+from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator
 
 
 class DatapackageBase:
@@ -54,13 +48,18 @@ class DatapackageBase:
 
     @property
     def groups(self) -> dict:
-        return {
-            label: self.filter_by_attribute("group", label)
-            for label in sorted(
-                {x.get("group") for x in self.resources},
-                key=lambda x: NoneSorter() if x is None else x,
-            )
-        }
+        """Return a dictionary of ``{group label: filtered datapackage}`` in the same order as the group labels are first encountered in the datapackage metadata.
+
+        Ignores resources which don't have group labels.
+        """
+        labels = []
+        for resource in self.resources:
+            if not resource.get("group"):
+                continue
+            elif resource["group"] not in labels:
+                labels.append(resource["group"])
+
+        return {label: self.filter_by_attribute("group", label) for label in labels}
 
     def _get_index(self, name_or_index: Union[str, int]) -> int:
         """Get index of a resource by name or index.

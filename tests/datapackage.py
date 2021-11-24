@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 from fs.memoryfs import MemoryFS
 from fs.osfs import OSFS
+from fs.zipfs import ZipFS
 
 from bw_processing import create_datapackage, load_datapackage
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
@@ -15,6 +16,8 @@ from bw_processing.errors import (
     ShapeMismatch,
     WrongDatatype,
 )
+
+dirpath = Path(__file__).parent.resolve() / "fixtures"
 
 
 class Dummy:
@@ -78,6 +81,17 @@ def copy_fixture(fixture_name, dest):
     source = Path(__file__).parent.resolve() / "fixtures" / fixture_name
     for fp in source.iterdir():
         shutil.copy(fp, dest / fp.name)
+
+
+def test_group_ordering_consistent():
+    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    assert list(dp.groups) == [
+        "sa-data-vector-from-dict",
+        "sa-data-vector",
+        "sa-data-array",
+        "sa-vector-interface",
+        "sa-array-interface",
+    ]
 
 
 def test_add_resource_with_same_name():

@@ -7,7 +7,6 @@ import pytest
 
 from bw_processing.errors import InvalidName
 from bw_processing.utils import (
-    NoneSorter,
     check_name,
     check_suffix,
     dictionary_formatter,
@@ -95,15 +94,6 @@ def test_check_suffix():
     assert check_suffix("foo.bar.baz", ".baz") == "foo.bar.baz"
     assert check_suffix("foo.bar", ".baz") == "foo.bar.baz"
     assert check_suffix(Path("foo") / "bar", "baz") == os.path.join("foo", "bar.baz")
-
-
-def test_none_sorter():
-    a = ["1", "bbb", None, "a"]
-    with pytest.raises(TypeError):
-        a.sort()
-    a.sort(key=lambda x: NoneSorter() if x is None else x)
-    expected = ["1", "a", "bbb", None]
-    assert a == expected
 
 
 # def test_create_array():

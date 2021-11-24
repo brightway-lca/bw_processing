@@ -99,12 +99,3 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
         ),
         array["flip"],
     )
-
-
-@total_ordering
-class NoneSorter:
-    def __gt__(self, other):
-        return True
-
-    def __eq__(self, other):
-        return self is other
