@@ -2,6 +2,7 @@
 
 ## [0.6] - DEV
 
+* Define, document, and test interface dehydration and hydration. `Datapackage.define_interface_resource` changed to `Datapackage.rehydrate_interface`.
 * Removed the cache from `Datapackage.get_resource`. It was counterproductive.
 
 ## [0.5] - 2021-11-03
