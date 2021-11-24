@@ -120,6 +120,7 @@ print(resource_metadata['config'])
 >>> {"url": "example.com"}
 
 my_dp.rehydrate_interface("some-interface", MyInterface, initialize_with_config=True)
+# interface is substituted, need to retrieve it again
 data_obj, resource_metadata = my_dp.get_resource("some-interface")
 print(data_obj.url)
 >>> "example.com"
