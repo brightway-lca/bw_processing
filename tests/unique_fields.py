@@ -1,11 +1,12 @@
+import pandas as pd
+import pytest
+
 from bw_processing.errors import NonUnique
 from bw_processing.unique_fields import (
     as_unique_attributes,
     as_unique_attributes_dataframe,
     greedy_set_cover,
 )
-import pandas as pd
-import pytest
 
 
 def test_greedy_set():

@@ -1,7 +1,9 @@
-from bw_processing.filesystem import safe_filename, md5, clean_datapackage_name
-from pathlib import Path
 import platform
+from pathlib import Path
+
 import pytest
+
+from bw_processing.filesystem import clean_datapackage_name, md5, safe_filename
 
 fixtures_dir = Path(__file__, "..").resolve() / "fixtures"
 _windows = platform.system() == "Windows"

@@ -1,16 +1,18 @@
+import os
+from io import BytesIO
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from bw_processing.errors import InvalidName
 from bw_processing.utils import (
+    NoneSorter,
     check_name,
     check_suffix,
     dictionary_formatter,
     load_bytes,
-    NoneSorter,
 )
-from bw_processing.errors import InvalidName
-from io import BytesIO
-from pathlib import Path
-import numpy as np
-import os
-import pytest
 
 
 def test_load_bytes():

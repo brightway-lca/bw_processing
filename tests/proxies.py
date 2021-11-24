@@ -1,8 +1,9 @@
-from bw_processing.proxies import Proxy
-from pathlib import Path
-import numpy as np
 import io
+from pathlib import Path
 
+import numpy as np
+
+from bw_processing.proxies import Proxy
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
