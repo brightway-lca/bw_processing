@@ -1,8 +1,12 @@
 # Changelog
 
+## [0.6.1] - 2021-11-24
+
+* Moved dehydration and rehydration to `DatapackageBase` so they are available to `FilteredDatapackage` as well.
+
 ## [0.6] - 2021-11-24
 
-* Define, document, and test interface dehydration and hydration. `Datapackage.define_interface_resource` changed to `Datapackage.rehydrate_interface`.
+* Define, document, and test interface dehydration and rehydration. `Datapackage.define_interface_resource` changed to `Datapackage.rehydrate_interface`.
 * Removed the cache from `Datapackage.get_resource`. It was counterproductive.
 
 ## [0.5] - 2021-11-03

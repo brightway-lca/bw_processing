@@ -215,6 +215,48 @@ class DatapackageBase:
         ]
         return fdp
 
+    def _dehydrate_interfaces(self) -> None:
+        """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
+        interface_indices = [
+            index
+            for index, obj in enumerate(self.resources)
+            if obj["profile"] == "interface"
+        ]
+
+        for index in interface_indices:
+            self.data[index] = UndefinedInterface()
+
+    def dehydrated_interfaces(self) -> List[str]:
+        """Return a list of the resource groups which have dehydrated interfaces"""
+        return [
+            obj["group"]
+            for index, obj in enumerate(self.resources)
+            if isinstance(self.data[index], UndefinedInterface)
+        ]
+
+    def rehydrate_interface(
+        self,
+        name_or_index: Union[str, int],
+        resource: Any,
+        initialize_with_config: bool = False,
+    ) -> None:
+        """Substitute the undefined interface in this datapackage with the actual interface resource ``resource``. Loading a datapackage with an interface loads an instance of ``UndefinedInterface``, which should be substituted (rehydrated) with an actual interface instance.
+
+        If ``initialize_with_config`` is true, the ``resource`` is initialized (i.e. ``resource(**config_data)``) with the resource data under the key ``config``. If ``config`` is missing, a ``KeyError`` is raised.
+
+        ``name_or_index`` should be the data source name. If this value is a string and doesn't end with ``.data``, ``.data`` is automatically added.
+
+        """
+        if isinstance(name_or_index, str) and not name_or_index.endswith(".data"):
+            name_or_index += ".data"
+
+        index = self._get_index(name_or_index)
+
+        if initialize_with_config:
+            resource = resource(**self.resources[index]["config"])
+
+        self.data[index] = resource
+
 
 class FilteredDatapackage(DatapackageBase):
     """A subset of a datapackage. Used in matrix construction or other data manipulation operations.
@@ -322,48 +364,6 @@ class Datapackage(DatapackageBase):
                 self.metadata[k] = v
 
         self.data = []
-
-    def _dehydrate_interfaces(self) -> None:
-        """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
-        interface_indices = [
-            index
-            for index, obj in enumerate(self.resources)
-            if obj["profile"] == "interface"
-        ]
-
-        for index in interface_indices:
-            self.data[index] = UndefinedInterface()
-
-    def dehydrated_interfaces(self) -> List[str]:
-        """Return a list of the resource groups which have dehydrated interfaces"""
-        return [
-            obj["group"]
-            for index, obj in enumerate(self.resources)
-            if isinstance(self.data[index], UndefinedInterface)
-        ]
-
-    def rehydrate_interface(
-        self,
-        name_or_index: Union[str, int],
-        resource: Any,
-        initialize_with_config: bool = False,
-    ) -> None:
-        """Substitute the undefined interface in this datapackage with the actual interface resource ``resource``. Loading a datapackage with an interface loads an instance of ``UndefinedInterface``, which should be substituted (rehydrated) with an actual interface instance.
-
-        If ``initialize_with_config`` is true, the ``resource`` is initialized (i.e. ``resource(**config_data)``) with the resource data under the key ``config``. If ``config`` is missing, a ``KeyError`` is raised.
-
-        ``name_or_index`` should be the data source name. If this value is a string and doesn't end with ``.data``, ``.data`` is automatically added.
-
-        """
-        if isinstance(name_or_index, str) and not name_or_index.endswith(".data"):
-            name_or_index += ".data"
-
-        index = self._get_index(name_or_index)
-
-        if initialize_with_config:
-            resource = resource(**self.resources[index]["config"])
-
-        self.data[index] = resource
 
     def finalize_serialization(self) -> None:
         if self._finalized:
