@@ -27,6 +27,13 @@ def test_metadata_is_the_same_object():
         assert any(obj for obj in dp.resources if obj is resource)
 
 
+def test_fs_is_the_same_object():
+    dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
+    fdp = dp.filter_by_attribute("matrix", "sa_matrix")
+
+    assert fdp.fs is dp.fs
+
+
 def test_indexer_is_the_same_object():
     dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
     dp.indexer = lambda x: False
@@ -122,6 +129,11 @@ def erg():
         name="second",
     )
     return dp
+
+
+def test_exclude_is_same_fs(erg):
+    result = erg.exclude({"group": "first"})
+    assert erg.fs is result.fs
 
 
 def test_exclude_resource_group(erg):

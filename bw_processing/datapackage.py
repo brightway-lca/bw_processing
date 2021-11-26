@@ -171,6 +171,7 @@ class DatapackageBase:
 
         This method was introduced to allow for the efficient construction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
         fdp = FilteredDatapackage()
+        fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
         fdp.metadata["resources"] = []
         to_include = [
@@ -197,6 +198,7 @@ class DatapackageBase:
 
         """
         fdp = FilteredDatapackage()
+        fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
         fdp.metadata["resources"] = []
 
