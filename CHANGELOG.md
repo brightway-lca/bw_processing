@@ -1,5 +1,9 @@
 # Changelog
 
+### [0.7.1] - 2021-11-26
+
+* Filtered data packages now have the same `.fs` attribute as their parent package
+
 ## [0.7] - 2021-11-24
 
 * **Backwards incompatible**: `Datapackage.groups` no longer sorts group labels. Sorting breaks implied ordering for matrix construction.
