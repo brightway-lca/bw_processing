@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8] - 2022-04-11
+
+* Add `merge_datapacakges_with_mask` function
+
 ### [0.7.1] - 2021-11-26
 
 * Filtered data packages now have the same `.fs` attribute as their parent package
