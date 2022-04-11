@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from functools import partial
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -298,7 +298,7 @@ class Datapackage(DatapackageBase):
             )
 
     def _load(
-        self, fs: FS, mmap_mode: Union[None, str] = None, proxy: bool = False
+        self, fs: FS, mmap_mode: Optional[str] = None, proxy: bool = False
     ) -> None:
         self.fs = fs
         self.metadata = file_reader(
@@ -307,9 +307,7 @@ class Datapackage(DatapackageBase):
         self.data = []
         self._load_all(mmap_mode=mmap_mode, proxy=proxy)
 
-    def _load_all(
-        self, mmap_mode: Union[None, str] = None, proxy: bool = False
-    ) -> None:
+    def _load_all(self, mmap_mode: Optional[str] = None, proxy: bool = False) -> None:
         for resource in self.resources:
             try:
                 self.data.append(
@@ -326,13 +324,13 @@ class Datapackage(DatapackageBase):
 
     def _create(
         self,
-        fs: Union[FS, None],
-        name: Union[str, None],
-        id_: Union[str, None],
-        metadata: Union[dict, None],
+        fs: Optional[FS],
+        name: Optional[str],
+        id_: Optional[str],
+        metadata: Optional[dict],
         combinatorial: bool = False,
         sequential: bool = False,
-        seed: Union[int, None] = None,
+        seed: Optional[int] = None,
         sum_intra_duplicates: bool = True,
         sum_inter_duplicates: bool = False,
     ) -> None:
@@ -405,9 +403,9 @@ class Datapackage(DatapackageBase):
         self,
         *,  # Forces use of keyword arguments
         matrix: str = None,
-        name: Union[str, None] = None,
+        name: Optional[str] = None,
         dict_iterator: Any = None,
-        nrows: Union[int, None] = None,
+        nrows: Optional[int] = None,
         **kwargs,
     ) -> None:
         """Create a persistant vector from an iterator. Uses the utility function ``resolve_dict_iterator``.
@@ -436,10 +434,10 @@ class Datapackage(DatapackageBase):
         *,  # Forces use of keyword arguments
         matrix: str,
         indices_array: np.ndarray,
-        name: Union[str, None] = None,
-        data_array: Union[np.ndarray, None] = None,
-        flip_array: Union[np.ndarray, None] = None,
-        distributions_array: Union[np.ndarray, None] = None,
+        name: Optional[str] = None,
+        data_array: Optional[np.ndarray] = None,
+        flip_array: Optional[np.ndarray] = None,
+        distributions_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
@@ -535,8 +533,8 @@ class Datapackage(DatapackageBase):
         matrix: str,
         data_array: np.ndarray,
         indices_array: np.ndarray,
-        name: Union[str, None] = None,
-        flip_array: Union[None, np.ndarray] = None,
+        name: Optional[str] = None,
+        flip_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
@@ -668,8 +666,8 @@ class Datapackage(DatapackageBase):
         matrix: str,
         interface: Any,
         indices_array: np.ndarray,  # Not interface
-        name: Union[str, None] = None,
-        flip_array: Union[None, np.ndarray] = None,  # Not interface
+        name: Optional[str] = None,
+        flip_array: Optional[np.ndarray] = None,  # Not interface
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
@@ -729,8 +727,8 @@ class Datapackage(DatapackageBase):
         matrix: str,
         interface: Any,
         indices_array: np.ndarray,  # Not interface
-        name: Union[str, None] = None,
-        flip_array: Union[None, np.ndarray] = None,
+        name: Optional[str] = None,
+        flip_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
         **kwargs,
     ) -> None:
@@ -904,13 +902,13 @@ class Datapackage(DatapackageBase):
 
 
 def create_datapackage(
-    fs: Union[FS, None] = None,
-    name: Union[None, str] = None,
-    id_: Union[None, str] = None,
-    metadata: Union[dict, None] = None,
+    fs: Optional[FS] = None,
+    name: Optional[str] = None,
+    id_: Optional[str] = None,
+    metadata: Optional[dict] = None,
     combinatorial: bool = False,
     sequential: bool = False,
-    seed: Union[int, None] = None,
+    seed: Optional[int] = None,
     sum_intra_duplicates: bool = True,
     sum_inter_duplicates: bool = False,
 ) -> Datapackage:
@@ -956,7 +954,7 @@ def create_datapackage(
 
 def load_datapackage(
     fs_or_obj: Union[DatapackageBase, FS],
-    mmap_mode: Union[None, str] = None,
+    mmap_mode: Optional[str] = None,
     proxy: bool = False,
 ) -> Datapackage:
     """Load an existing datapackage.
