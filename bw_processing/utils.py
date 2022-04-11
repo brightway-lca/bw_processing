@@ -1,4 +1,3 @@
-from functools import total_ordering
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
