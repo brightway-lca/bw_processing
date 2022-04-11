@@ -16,6 +16,7 @@ __all__ = (
     "INDICES_DTYPE",
     "load_datapackage",
     "md5",
+    "merge_datapacakges_with_mask",
     "reindex",
     "reset_index",
     "safe_filename",
@@ -36,6 +37,7 @@ from .examples import examples_dir
 from .filesystem import clean_datapackage_name, md5, safe_filename
 from .indexing import reindex, reset_index
 from .io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
+from .merging import merge_datapacakges_with_mask
 from .proxies import UndefinedInterface
 from .unique_fields import as_unique_attributes, as_unique_attributes_dataframe
 from .version import version as __version__
