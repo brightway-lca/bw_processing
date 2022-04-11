@@ -26,7 +26,7 @@ jobs:
 
   - bash: |
       source activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy fs pandas pytest pytest-azurepipelines
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy fs pandas pytest pytest-azurepipelines">=1.0"
     displayName: Install Anaconda packages
 
   - bash: |
@@ -91,7 +91,7 @@ jobs:
 
   - bash: |
       source activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy fs pandas pytest pytest-azurepipelines
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=$PYTHON_VERSION numpy fs pandas pytest pytest-azurepipelines">=1.0"
     displayName: Install Anaconda packages
 
   - bash: |
@@ -148,7 +148,7 @@ jobs:
 
   - script: |
       call activate bw
-      conda install --yes --quiet -c defaults -c conda-forge --name bw python=%PYTHON_VERSION% numpy fs pandas pytest pytest-azurepipelines
+      conda install --yes --quiet -c defaults -c conda-forge --name bw python=%PYTHON_VERSION% numpy fs pandas pytest pytest-azurepipelines">=1.0"
     displayName: Install Anaconda packages
 
   - script: |
