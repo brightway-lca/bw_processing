@@ -50,8 +50,6 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
@@ -87,8 +85,6 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
@@ -153,8 +149,6 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
@@ -275,8 +269,6 @@ jobs:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
 
   timeoutInMinutes: 8
   steps:
