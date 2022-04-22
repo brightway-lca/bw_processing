@@ -74,7 +74,7 @@ def write_data_to_fs(resource: dict, data: Any, fs: FS) -> None:
     )
 
 
-def merge_datapacakges_with_mask(
+def merge_datapackages_with_mask(
     first_dp: DatapackageBase,
     first_resource_group_label: str,
     second_dp: DatapackageBase,

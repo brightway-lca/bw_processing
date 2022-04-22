@@ -12,7 +12,7 @@ from bw_processing import (
     DatapackageBase,
     create_datapackage,
     load_datapackage,
-    merge_datapacakges_with_mask,
+    merge_datapackages_with_mask,
 )
 from bw_processing.errors import LengthMismatch
 
@@ -24,7 +24,7 @@ def test_basic_merging_functionality():
     second = load_datapackage(
         ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
     )
-    result = merge_datapacakges_with_mask(
+    result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
         second_dp=second,
@@ -62,7 +62,7 @@ def test_write_new_datapackage():
     )
     with tempfile.TemporaryDirectory() as td:
         temp_fs = OSFS(td)
-        result = merge_datapacakges_with_mask(
+        result = merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="sa-data-vector",
             second_dp=second,
@@ -111,7 +111,7 @@ def test_add_suffix():
         ZipFS(str(fixture_dir / "merging" / "merging_same_2.zip"))
     )
     with pytest.warns(UserWarning):
-        result = merge_datapacakges_with_mask(
+        result = merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="same",
             second_dp=second,
@@ -157,7 +157,7 @@ def test_wrong_resource_group_name():
         ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
     )
     with pytest.raises(ValueError):
-        merge_datapacakges_with_mask(
+        merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="wrong",
             second_dp=second,
@@ -165,7 +165,7 @@ def test_wrong_resource_group_name():
             mask_array=np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0], dtype=bool),
         )
     with pytest.raises(ValueError):
-        merge_datapacakges_with_mask(
+        merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="sa-data-vector",
             second_dp=second,
@@ -199,7 +199,7 @@ def test_shape_mismatch_data():
         indices_array=indices_array,
     )
     with pytest.raises(LengthMismatch):
-        merge_datapacakges_with_mask(
+        merge_datapackages_with_mask(
             first_dp=dp1,
             first_resource_group_label="sa-data-vector",
             second_dp=dp2,
@@ -214,7 +214,7 @@ def test_shape_mismatch_mask():
         ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
     )
     with pytest.raises(LengthMismatch):
-        merge_datapacakges_with_mask(
+        merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="sa-data-vector",
             second_dp=second,
@@ -228,7 +228,7 @@ def test_new_metadata():
     second = load_datapackage(
         ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
     )
-    result = merge_datapacakges_with_mask(
+    result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
         second_dp=second,
@@ -257,7 +257,7 @@ def test_default_metadata():
     second = load_datapackage(
         ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
     )
-    result = merge_datapacakges_with_mask(
+    result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
         second_dp=second,
@@ -299,7 +299,7 @@ def test_interface_error():
         name="sa-vector-interface",
     )
     with pytest.raises(ValueError):
-        merge_datapacakges_with_mask(
+        merge_datapackages_with_mask(
             first_dp=dp1,
             first_resource_group_label="sa-data-vector",
             second_dp=dp2,
