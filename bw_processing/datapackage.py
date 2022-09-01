@@ -9,7 +9,7 @@ from fs.base import FS
 from fs.errors import ResourceNotFound
 from fs.memoryfs import MemoryFS
 
-from .constants import DEFAULT_LICENSES
+from .constants import DEFAULT_LICENSES, INDICES_DTYPE
 from .errors import (
     Closed,
     InvalidMimetype,
@@ -980,3 +980,35 @@ def load_datapackage(
         obj = Datapackage()
         obj._load(fs=fs_or_obj, mmap_mode=mmap_mode, proxy=proxy)
     return obj
+
+
+def simple_graph(data: dict, fs: Optional[FS]=None, **metadata):
+    """Easy creation of simple datapackages with only persistent vectors.
+
+    ``data`` is a dictionary with the form:
+
+    ..code-block:: python
+
+        matrix_name (str): [
+            (row id (int), col id (int), value (float), flip (bool, default False))
+        ]
+
+    ``fs`` is a filesystem.
+
+    ``metadata`` are passed as kwargs to ``create_datapackage()``.
+
+    Returns the datapackage."""
+    dp = create_datapackage(fs=fs, **metadata)
+    for key, value in data.items():
+        indices_array = np.array([row[:2] for row in value], dtype=INDICES_DTYPE)
+        data_array = np.array([row[2] for row in value])
+        flip_array = np.array([row[3] if len(row) > 3 else False for row in value], dtype=bool)
+        dp.add_persistent_vector(
+            matrix=key,
+            data_array=data_array,
+            name=f"{key}-data",
+            indices_array=indices_array,
+            nrows=len(value),
+            flip_array=flip_array,
+        )
+    return dp

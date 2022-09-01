@@ -8,7 +8,7 @@ from fs.memoryfs import MemoryFS
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
 
-from bw_processing import create_datapackage, load_datapackage
+from bw_processing import create_datapackage, load_datapackage, simple_graph
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
 from bw_processing.errors import (
     NonUnique,
@@ -449,3 +449,50 @@ def test_add_dynamic_vector_flip_shapemistmatch():
             flip_array=flip_array,
             indices_array=indices_array,
         )
+
+
+def test_simple_graph():
+    data = {
+        "some_matrix": [
+            (1, 2, 3.14),
+            (4, 5, 17, True),
+            (8, 9, 11.11, False)
+        ],
+        "a different life": [
+            (99, 100, 101.234, False, "ignored"),
+            (1001, 1002, 777, 1),
+        ]
+    }
+    expected_resource = {
+        "category": "vector",
+        "profile": "data-resource",
+        "format": "npy",
+        "mediatype": "application/octet-stream",
+        "name": "some_matrix-data.flip",
+        "matrix": "some_matrix",
+        "kind": "flip",
+        "nrows": 3,
+        "path": "some_matrix-data.flip.npy",
+        "group": "some_matrix-data",
+    }
+    dp = simple_graph(data, name="foo", sequential=True)
+    assert dp.metadata['name'] == 'foo'
+    assert dp.metadata['sequential']
+    assert len(dp.metadata["resources"]) == 6
+    assert expected_resource in dp.metadata["resources"]
+
+    d, _ = dp.get_resource("some_matrix-data.flip")
+    assert np.allclose(d, np.array([False, True, False]))
+    d, _ = dp.get_resource("some_matrix-data.indices")
+    assert d['row'].sum() == 13
+    assert d['col'].sum() == 16
+    d, _ = dp.get_resource("some_matrix-data.data")
+    assert np.allclose(d, np.array([3.14, 17, 11.11]))
+
+    d, _ = dp.get_resource("a different life-data.flip")
+    assert np.allclose(d, np.array([False, True]))
+    d, _ = dp.get_resource("a different life-data.indices")
+    assert d['row'].sum() == 1100
+    assert d['col'].sum() == 1102
+    d, _ = dp.get_resource("a different life-data.data")
+    assert np.allclose(d, np.array([101.234, 777]))

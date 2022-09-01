@@ -20,6 +20,7 @@ __all__ = (
     "reindex",
     "reset_index",
     "safe_filename",
+    "simple_graph",
     "UNCERTAINTY_DTYPE",
     "UndefinedInterface",
 )
@@ -32,6 +33,7 @@ from .datapackage import (
     FilteredDatapackage,
     create_datapackage,
     load_datapackage,
+    simple_graph,
 )
 from .examples import examples_dir
 from .filesystem import clean_datapackage_name, md5, safe_filename
