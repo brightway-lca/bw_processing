@@ -1,5 +1,9 @@
 # Changelog
 
+### [0.8.1] - 2022-09-01
+
+* Add `simple_graph` convenience function
+
 ## [0.8] - 2022-04-11
 
 * Add `merge_datapacakges_with_mask` function
