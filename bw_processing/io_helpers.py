@@ -99,4 +99,4 @@ def file_writer(*, data: Any, fs: FS, resource: str, mimetype: str, **kwargs) ->
         )
     elif mimetype == "text/csv":
         assert isinstance(data, pd.DataFrame)
-        data.to_csv(fs.open(resource, mode="w", encoding="utf-8"))
+        data.to_csv(fs.open(resource, mode="w", encoding="utf-8"), index=False)
