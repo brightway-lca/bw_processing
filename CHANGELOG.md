@@ -1,5 +1,9 @@
 # Changelog
 
+### [0.8.2] - 2022-09-15
+
+* Don't export DataFrame index columns
+
 ### [0.8.1] - 2022-09-01
 
 * Add `simple_graph` convenience function
