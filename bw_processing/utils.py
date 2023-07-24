@@ -1,6 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
+import importlib.metadata
 
 import numpy as np
 from numpy.lib.recfunctions import repack_fields
@@ -8,6 +9,23 @@ from numpy.lib.recfunctions import repack_fields
 from .array_creation import create_structured_array
 from .constants import INDICES_DTYPE, NAME_RE, UNCERTAINTY_DTYPE
 from .errors import InvalidName
+
+
+def get_version_tuple() -> tuple:
+    """Returns version as (major, minor, micro)."""
+
+    def as_integer(version_str: str) -> Union[int, str]:
+        try:
+            return int(version_str)
+        except ValueError:
+            return version_str
+
+    return tuple(
+        as_integer(v)
+        for v in importlib.metadata.version("bw_processing")
+        .strip()
+        .split(".")
+    )
 
 
 def load_bytes(obj: Any) -> Any:

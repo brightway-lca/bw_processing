@@ -1,8 +1,25 @@
-# bw_processing
+# bw-processing
 
 Library for storing numeric data for use in matrix-based calculations. Designed for use with the [Brightway life cycle assessment framework](https://brightway.dev/).
 
-[![Azure Status](https://dev.azure.com/mutel/Brightway%20CI/_apis/build/status/brightway-lca.bw_processing?branchName=master)](https://dev.azure.com/mutel/Brightway%20CI/_build/latest?definitionId=7&branchName=master) [![Travis Status](https://travis-ci.org/brightway-lca/bw_processing.svg?branch=master)](https://travis-ci.org/brightway-lca/bw_processing) [![Coverage Status](https://coveralls.io/repos/github/brightway-lca/bw_processing/badge.svg?branch=master)](https://coveralls.io/github/brightway-lca/bw_processing?branch=master) [![Documentation](https://readthedocs.org/projects/bw-processing/badge/?version=latest)](https://bw-processing.readthedocs.io/en/latest/)
+[![PyPI](https://img.shields.io/pypi/v/bw-processing.svg)][pypi status]
+[![Status](https://img.shields.io/pypi/status/bw-processing.svg)][pypi status]
+[![Python Version](https://img.shields.io/pypi/pyversions/bw-processing)][pypi status]
+[![License](https://img.shields.io/pypi/l/bw-processing)][license]
+
+[![Read the documentation at https://bw-processing.readthedocs.io/](https://img.shields.io/readthedocs/bw-processing/latest.svg?label=Read%20the%20Docs)][read the docs]
+[![Tests](https://github.com/brightway-lca/bw-processing/actions/workflows/python-test.yml/badge.svg)][tests]
+[![Codecov](https://codecov.io/gh/brightway-lca/bw-processing/branch/main/graph/badge.svg)][codecov]
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+
+[pypi status]: https://pypi.org/project/bw-processing/
+[read the docs]: https://bw-processing.readthedocs.io/
+[tests]: https://github.com/brightway-lca/bw-processing/actions?workflow=Tests
+[codecov]: https://app.codecov.io/gh/brightway-lca/bw-processing
+[pre-commit]: https://github.com/pre-commit/pre-commit
+[black]: https://github.com/psf/black
 
 ## Table of Contents
 
@@ -203,3 +220,10 @@ Please note we have a [code of conduct](https://github.com/brightway-lca/bw_proc
 ## License
 
 [BSD-3-Clause](https://github.com/brightway-lca/bw_processing/blob/master/LICENSE). Copyright 2020 Chris Mutel.
+
+<!-- github-only -->
+
+[command-line reference]: https://bw-processing.readthedocs.io/en/latest/usage.html
+[License]: https://github.com/brightway-lca/bw-processing/blob/main/LICENSE
+[Contributor Guide]: https://github.com/brightway-lca/bw-processing/blob/main/CONTRIBUTING.md
+[Issue Tracker]: https://github.com/brightway-lca/bw-processing/issues

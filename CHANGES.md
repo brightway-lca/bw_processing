@@ -1,5 +1,10 @@
 # processing Changelog
 
+### [0.8.3] - 2022-09-15
+
+* Change distribution name to fix Windows installation issues (`bw-processing` instead of `bw_processing`)
+* Change packaging to [our common standard](https://github.com/brightway-lca/cookiecutter-brightwaylib)
+
 ### [0.8.2] - 2022-09-15
 
 * Don't export DataFrame index columns
