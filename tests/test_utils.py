@@ -7,11 +7,16 @@ import pytest
 
 from bw_processing.errors import InvalidName
 from bw_processing.utils import (
+    get_version_tuple,
     check_name,
     check_suffix,
     dictionary_formatter,
     load_bytes,
 )
+
+
+def test_get_version_tuple():
+    assert isinstance(get_version_tuple(), tuple)
 
 
 def test_load_bytes():

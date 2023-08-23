@@ -22,7 +22,7 @@ def get_version_tuple() -> tuple:
 
     return tuple(
         as_integer(v)
-        for v in importlib.metadata.version("bw_processing")
+        for v in importlib.metadata.version("bw-processing")
         .strip()
         .split(".")
     )
