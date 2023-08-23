@@ -44,5 +44,3 @@ from .merging import merge_datapackages_with_mask
 from .proxies import UndefinedInterface
 from .unique_fields import as_unique_attributes, as_unique_attributes_dataframe
 
-from .utils import get_version_tuple
-__version__ = get_version_tuple()

@@ -11,23 +11,6 @@ from .constants import INDICES_DTYPE, NAME_RE, UNCERTAINTY_DTYPE
 from .errors import InvalidName
 
 
-def get_version_tuple() -> tuple:
-    """Returns version as (major, minor, micro)."""
-
-    def as_integer(version_str: str) -> Union[int, str]:
-        try:
-            return int(version_str)
-        except ValueError:
-            return version_str
-
-    return tuple(
-        as_integer(v)
-        for v in importlib.metadata.version("bw_processing")
-        .strip()
-        .split(".")
-    )
-
-
 def load_bytes(obj: Any) -> Any:
     if isinstance(obj, BytesIO):
         try:
