@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bw_processing import __version__
 from bw_processing.errors import InvalidName
 from bw_processing.utils import (
-    get_version_tuple,
     check_name,
     check_suffix,
     dictionary_formatter,
@@ -15,8 +15,8 @@ from bw_processing.utils import (
 )
 
 
-def test_get_version_tuple():
-    assert isinstance(get_version_tuple(), tuple)
+def test_version():
+    assert isinstance(__version__, str)
 
 
 def test_load_bytes():
