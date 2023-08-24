@@ -1,5 +1,9 @@
 # processing Changelog
 
+### [0.8.5] - 2023-08-24
+
+* Switch versioning scheme to help WASM packaging
+
 ### [0.8.4] - 2023-08-23
 
 * Packaging fixes
