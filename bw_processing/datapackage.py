@@ -380,6 +380,7 @@ class Datapackage(DatapackageBase):
             mimetype="application/json",
         )
         self.fs.close()
+        self._finalized = True
 
     def _prepare_modifications(self) -> None:
         self._check_length_consistency()

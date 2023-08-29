@@ -1,5 +1,13 @@
 # processing Changelog
 
+### [0.8.5] - 2023-08-24
+
+* Switch versioning scheme to help WASM packaging
+
+### [0.8.4] - 2023-08-23
+
+* Packaging fixes
+
 ### [0.8.3] - 2022-09-15
 
 * Change distribution name to fix Windows installation issues (`bw-processing` instead of `bw_processing`)
