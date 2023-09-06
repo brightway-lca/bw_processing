@@ -3,13 +3,23 @@ import uuid
 from functools import partial
 from typing import Any, Dict, List, Optional, Union
 
+from abc import ABC
+
 import numpy as np
 import pandas as pd
 from fs.base import FS
 from fs.errors import ResourceNotFound
 from fs.memoryfs import MemoryFS
 
-from .constants import DEFAULT_LICENSES, INDICES_DTYPE
+from .constants import (
+    DEFAULT_LICENSES,
+    INDICES_DTYPE,
+    MatrixSerializeFormat,
+    NUMPY_SERIALIZE_FORMAT_EXTENSION,
+    PARQUET_SERIALIZE_FORMAT_EXTENSION,
+    NUMPY_SERIALIZE_FORMAT_NAME,
+    PARQUET_SERIALIZE_FORMAT_NAME
+)
 from .errors import (
     Closed,
     InvalidMimetype,
@@ -25,10 +35,13 @@ from .proxies import Proxy, UndefinedInterface
 from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator
 
 
-class DatapackageBase:
+class DatapackageBase(ABC):
     """Base class for datapackages. Not for normal use - you should use either `Datapackage` or `FilteredDatapackage`."""
 
     def __init__(self):
+        # This is the global serialization format used for numpy.ndarray for the whole object.
+        # It can be overwritten locally for each numpy.ndarray introduced.
+        self._matrix_serialize_format_type = MatrixSerializeFormat.NUMPY
         self._finalized = False
         self._modified = set()
 
@@ -333,6 +346,7 @@ class Datapackage(DatapackageBase):
         seed: Optional[int] = None,
         sum_intra_duplicates: bool = True,
         sum_inter_duplicates: bool = False,
+        matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY
     ) -> None:
         """Start a new data package.
 
@@ -344,6 +358,9 @@ class Datapackage(DatapackageBase):
         check_name(name)
 
         self.fs = fs or MemoryFS()
+        if not isinstance(matrix_serialize_format_type, MatrixSerializeFormat):
+            raise TypeError(f"Matrix serialize format type ({matrix_serialize_format_type}) not recognized!")
+        self._matrix_serialize_format_type = matrix_serialize_format_type
 
         self.metadata = {
             "profile": "data-package",
@@ -357,6 +374,7 @@ class Datapackage(DatapackageBase):
             "seed": seed,
             "sum_intra_duplicates": sum_intra_duplicates,
             "sum_inter_duplicates": sum_inter_duplicates,
+            "matrix_serialize_format_type": matrix_serialize_format_type.value
         }
         for k, v in (metadata or {}).items():
             if k not in self.metadata:
@@ -407,6 +425,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         dict_iterator: Any = None,
         nrows: Optional[int] = None,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         """Create a persistant vector from an iterator. Uses the utility function ``resolve_dict_iterator``.
@@ -427,6 +446,7 @@ class Datapackage(DatapackageBase):
             indices_array=indices_array,
             flip_array=flip_array,
             distributions_array=distributions_array,
+            matrix_serialize_format_type=matrix_serialize_format_type,
             **kwargs,
         )
 
@@ -440,6 +460,7 @@ class Datapackage(DatapackageBase):
         flip_array: Optional[np.ndarray] = None,
         distributions_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         """ """
@@ -459,6 +480,9 @@ class Datapackage(DatapackageBase):
             group=name,
             kind="indices",
             keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="indices",
             **kwargs,
         )
         if data_array is not None:
@@ -481,6 +505,9 @@ class Datapackage(DatapackageBase):
                 name=name + ".data",
                 kind="data",
                 keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                meta_object="vector",
+                meta_type="generic",
                 **kwargs,
             )
         if distributions_array is not None:
@@ -501,6 +528,9 @@ class Datapackage(DatapackageBase):
                     group=name,
                     kind="distributions",
                     keep_proxy=keep_proxy,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object="vector",
+                    meta_type="distributions",
                     **kwargs,
                 )
         if flip_array is not None:
@@ -525,6 +555,9 @@ class Datapackage(DatapackageBase):
                     name=name + ".flip",
                     kind="flip",
                     keep_proxy=keep_proxy,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object="vector",
+                    meta_type="generic",
                     **kwargs,
                 )
 
@@ -537,6 +570,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         """ """
@@ -554,6 +588,9 @@ class Datapackage(DatapackageBase):
             kind="indices",
             group=name,
             keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="indices",
             **kwargs,
         )
 
@@ -576,6 +613,9 @@ class Datapackage(DatapackageBase):
             group=name,
             kind="data",
             keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="matrix",
+            meta_type="generic",
             **kwargs,
         )
         if flip_array is not None:
@@ -599,6 +639,9 @@ class Datapackage(DatapackageBase):
                     name=name + ".flip",
                     kind="flip",
                     keep_proxy=keep_proxy,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object="vector",
+                    meta_type="generic",
                     **kwargs,
                 )
 
@@ -622,9 +665,29 @@ class Datapackage(DatapackageBase):
         matrix: str,
         kind: str,
         keep_proxy: bool = False,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
+        meta_object: Optional[str] = None,
+        meta_type: Optional[str] = None,
         **kwargs,
     ) -> None:
-        filename = check_suffix(name, ".npy")
+        assert array.ndim <= 2, f"Numpy array should be of dim 2 or less!"
+
+        if matrix_serialize_format_type is None:
+            # use instance default serialization format
+            matrix_serialize_format_type = self._matrix_serialize_format_type
+        else:
+            assert isinstance(matrix_serialize_format_type, MatrixSerializeFormat), f"The matrix serialize format is not recognized!"
+
+        filename = None
+        format = None
+        if matrix_serialize_format_type == MatrixSerializeFormat.NUMPY:
+            filename = check_suffix(name, NUMPY_SERIALIZE_FORMAT_EXTENSION)
+            format = NUMPY_SERIALIZE_FORMAT_NAME
+        elif matrix_serialize_format_type == MatrixSerializeFormat.PARQUET:
+            filename = check_suffix(name, PARQUET_SERIALIZE_FORMAT_EXTENSION)
+            format = PARQUET_SERIALIZE_FORMAT_NAME
+        else:
+            raise TypeError(f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!")
 
         if not isinstance(self.fs, MemoryFS):
             file_writer(
@@ -670,6 +733,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,  # Not interface
         keep_proxy: bool = False,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         self._prepare_modifications()
@@ -686,6 +750,9 @@ class Datapackage(DatapackageBase):
             group=name,
             kind="indices",
             keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="indices",
             **kwargs,
         )
         if flip_array is not None:
@@ -709,6 +776,9 @@ class Datapackage(DatapackageBase):
                     name=name + ".flip",
                     kind="flip",
                     keep_proxy=keep_proxy,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object="vector",
+                    meta_type="generic",
                     **kwargs,
                 )
 
@@ -731,6 +801,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         """`interface` must support the presamples API."""
@@ -751,6 +822,9 @@ class Datapackage(DatapackageBase):
             group=name,
             kind="indices",
             keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="indices",
             **kwargs,
         )
         if flip_array is not None:
@@ -774,6 +848,9 @@ class Datapackage(DatapackageBase):
                     name=name + ".flip",
                     kind="flip",
                     keep_proxy=keep_proxy,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object="vector",
+                    meta_type="generic",
                     **kwargs,
                 )
 
@@ -912,6 +989,7 @@ def create_datapackage(
     seed: Optional[int] = None,
     sum_intra_duplicates: bool = True,
     sum_inter_duplicates: bool = False,
+    matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY
 ) -> Datapackage:
     """Create a new data package.
 
@@ -932,6 +1010,7 @@ def create_datapackage(
         * seed. `int`, optional. Seed to use in random number generator.
         * sum_intra_duplicates. `bool`, default `True`. Should duplicate elements in a single data resource be summed together, or should the last value replace previous values.
         * sum_inter_duplicates. `bool`, default `False`. Should duplicate elements in across data resources be summed together, or should the last value replace previous values. Order of data resources is given by the order they are added to the data package.
+        * matrix_serialize_format_type. `MatrixSerializeFormat`, default `MatrixSerializeFormat.NUMPY`. Matrix serialization format type.
 
     Returns:
 
@@ -949,6 +1028,7 @@ def create_datapackage(
         seed=seed,
         sum_intra_duplicates=sum_intra_duplicates,
         sum_inter_duplicates=sum_inter_duplicates,
+        matrix_serialize_format_type=matrix_serialize_format_type
     )
     return obj
 
