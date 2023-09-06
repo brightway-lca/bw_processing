@@ -695,6 +695,9 @@ class Datapackage(DatapackageBase):
                 fs=self.fs,
                 resource=filename,
                 mimetype="application/octet-stream",
+                matrix_serialize_format_type=matrix_serialize_format_type,  # NIKO
+                meta_object=meta_object,
+                meta_type=meta_type
             )
 
         if keep_proxy:
@@ -713,7 +716,7 @@ class Datapackage(DatapackageBase):
         resource = {
             # Datapackage generic
             "profile": "data-resource",
-            "format": "npy",
+            "format": format,
             "mediatype": "application/octet-stream",
             "name": name,
             # Brightway specific

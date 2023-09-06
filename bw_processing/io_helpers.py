@@ -107,8 +107,8 @@ def file_writer(
         *,
         data: Any,
         fs: FS,
-        resource:
-        str, mimetype: str,
+        resource: str,
+        mimetype: str,
         matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
         meta_object: Optional[str] = None,
         meta_type: Optional[str] = None,
