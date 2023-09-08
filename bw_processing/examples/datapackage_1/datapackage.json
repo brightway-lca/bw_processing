@@ -1,0 +1,121 @@
+{
+  "profile": "data-package",
+  "name": "ac5010ce6fee4160a59e2d0f3616067d",
+  "id": "bf24c6cd8a9340acbc1c6d3b18283bd0",
+  "licenses": [
+    {
+      "name": "ODC-PDDL-1.0",
+      "path": "http://opendatacommons.org/licenses/pddl/",
+      "title": "Open Data Commons Public Domain Dedication and License v1.0"
+    }
+  ],
+  "resources": [
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "some name.indices",
+      "matrix": "some name",
+      "kind": "indices",
+      "path": "some name.indices.parquet",
+      "group": "some name",
+      "category": "vector",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "some name.data",
+      "matrix": "some name",
+      "kind": "data",
+      "path": "some name.data.parquet",
+      "group": "some name",
+      "category": "vector",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "some name.flip",
+      "matrix": "some name",
+      "kind": "flip",
+      "path": "some name.flip.parquet",
+      "group": "some name",
+      "category": "vector",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "another name.indices",
+      "matrix": "another_matrix",
+      "kind": "indices",
+      "path": "another name.indices.parquet",
+      "group": "another name",
+      "category": "vector",
+      "nrows": 3
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector-from-dict.indices",
+      "matrix": "sa_matrix",
+      "kind": "indices",
+      "path": "sa-data-vector-from-dict.indices.parquet",
+      "group": "sa-data-vector-from-dict",
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector-from-dict.data",
+      "matrix": "sa_matrix",
+      "kind": "data",
+      "path": "sa-data-vector-from-dict.data.parquet",
+      "group": "sa-data-vector-from-dict",
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector-from-dict.distributions",
+      "matrix": "sa_matrix",
+      "kind": "distributions",
+      "path": "sa-data-vector-from-dict.distributions.parquet",
+      "group": "sa-data-vector-from-dict",
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
+    },
+    {
+      "profile": "data-resource",
+      "format": "pqt",
+      "mediatype": "application/octet-stream",
+      "name": "sa-data-vector-from-dict.flip",
+      "matrix": "sa_matrix",
+      "kind": "flip",
+      "path": "sa-data-vector-from-dict.flip.parquet",
+      "group": "sa-data-vector-from-dict",
+      "nrows": 2,
+      "foo": "bar",
+      "category": "vector"
+    }
+  ],
+  "created": "2023-09-08T01:17:50.635817Z",
+  "combinatorial": false,
+  "sequential": false,
+  "seed": null,
+  "sum_intra_duplicates": true,
+  "sum_inter_duplicates": false,
+  "matrix_serialize_format_type": "numpy"
+}
