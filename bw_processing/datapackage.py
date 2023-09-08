@@ -648,11 +648,50 @@ class Datapackage(DatapackageBase):
     def write_modified(self):
         """Write the data in modified files to the filesystem (if allowed)."""
         for index in self._modified:
+            # get resource
+            resource = self.resources[index]
+            mediatype = resource["mediatype"]
+            path = resource["path"]
+            matrix_serialize_format_type = MatrixSerializeFormat.NUMPY  # by default
+            # only used for parquet format
+            meta_object = None
+            meta_type = None
+            if mediatype == 'application/octet-stream':
+                format = resource.get('format', None)
+                if format == PARQUET_SERIALIZE_FORMAT_NAME:
+                    # parquet format
+                    matrix_serialize_format_type = MatrixSerializeFormat.PARQUET
+                    # try to guess object and type
+                    kind = resource["kind"]
+                    category = resource.get("category", None)
+                    if kind == "indices":
+                        meta_object = "vector"
+                        meta_type = "indices"
+                    elif kind == "flip":
+                        meta_object = "vector"
+                        meta_type = "generic"
+                    elif kind == "distributions":
+                        meta_object = "vector"
+                        meta_type = "distributions"
+                    elif kind == "data":
+                        meta_type = "generic"
+                        if category == "vector":
+                            meta_object = "vector"
+                        elif category == "array":
+                            meta_object = "matrix"
+                        else:
+                            raise NotImplementedError(f"Parquet format not available for resource with kind={kind} and category={category}!")
+                    else:
+                        raise NotImplementedError(f"Parquet format not available for resource with kind={kind}!")
+
             file_writer(
                 data=self.data[index],
                 fs=self.fs,
-                resource=self.resources[index]["path"],
-                mimetype=self.resources[index]["mediatype"],
+                resource=path,
+                mimetype=mediatype,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                meta_object=meta_object,
+                meta_type=meta_type,
             )
 
         self._modified = set()
