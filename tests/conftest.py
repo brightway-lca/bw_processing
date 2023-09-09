@@ -1,3 +1,6 @@
+# import fixtures
+from fixtures.basic_arrays import *
+
 import pytest
 
 

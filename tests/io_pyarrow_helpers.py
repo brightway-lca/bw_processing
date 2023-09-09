@@ -6,6 +6,8 @@ import pytest
 
 import numpy as np
 
+from tests.helpers.basic_array_helpers import data_vector, data_matrix, vector_equal_with_uncertainty_dtype
+
 from bw_processing.io_pyarrow_helpers import (
     pyarrow_generic_vector_table_to_numpy_generic_vector,
     pyarrow_distributions_vector_table_to_numpy_distributions_vector,
@@ -17,52 +19,6 @@ from bw_processing.io_pyarrow_helpers import (
     numpy_generic_matrix_to_pyarrow_generic_matrix_table
 )
 
-from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
-
-@pytest.fixture(scope="session")
-def indices_vector():
-    return np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
-
-
-def data_vector(dtype):
-    return np.array([1, 2, 3], dtype=dtype)
-
-
-def data_matrix(dtype):
-    return np.arange(12, dtype=dtype).reshape((3, 4))
-
-
-@pytest.fixture(scope="session")
-def flip_vector():
-    return np.array([True, False, False])
-
-
-@pytest.fixture(scope="session")
-def distribution_vector():
-    return np.array([
-        (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
-        (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
-        (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
-        (5, 237, np.NaN, np.NaN, 200, 300, False),  # triangular uncertainty from 200 to 300
-        (5, 2.5, np.NaN, np.NaN, 2, 3, False),  # triangular uncertainty from 2 to 3
-    ],
-        dtype=UNCERTAINTY_DTYPE
-    )
-
-
-def vector_equal_with_uncertainty_dtype(A, B, equal_nan=True):
-    if A.dtype != UNCERTAINTY_DTYPE or B.dtype != UNCERTAINTY_DTYPE:
-        return False
-    if A.shape != B.shape:
-        return False
-    for e, l in zip(A, B):
-        for i, j in zip(e, l):
-            if equal_nan:
-                if np.isnan(i) and np.isnan(j):
-                    continue
-            if i != j:
-                return False
-    return True
 
 
 def test_double_conversion_indices_vector(indices_vector):
