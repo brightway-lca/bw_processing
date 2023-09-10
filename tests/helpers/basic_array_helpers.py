@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+Some helpers to deal with basic arrays.
 
+Some functions could become fixtures but at the same time it might not be the hassle
+to convert them as fixtures.
 """
 import numpy as np
 
 from bw_processing.constants import UNCERTAINTY_DTYPE
+
 
 def data_vector(dtype):
     return np.array([1, 2, 3], dtype=dtype)

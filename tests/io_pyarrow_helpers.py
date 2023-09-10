@@ -20,7 +20,6 @@ from bw_processing.io_pyarrow_helpers import (
 )
 
 
-
 def test_double_conversion_indices_vector(indices_vector):
     table = numpy_indices_vector_to_pyarrow_indices_vector_table(indices_vector)
     arr = pyarrow_indices_vector_table_to_numpy_indices_vector(table)
@@ -47,12 +46,12 @@ def test_double_conversion_flip_vector(flip_vector):
     assert np.array_equal(arr, flip_vector)
 
 
-def test_double_conversion_distribution_vector(distribution_vector):
-    table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(distribution_vector)
+def test_double_conversion_distribution_vector(distributions_vector):
+    table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(distributions_vector)
     arr = pyarrow_distributions_vector_table_to_numpy_distributions_vector(table)
 
-    assert arr.dtype == distribution_vector.dtype
-    assert vector_equal_with_uncertainty_dtype(arr, distribution_vector, equal_nan=True)
+    assert arr.dtype == distributions_vector.dtype
+    assert vector_equal_with_uncertainty_dtype(arr, distributions_vector, equal_nan=True)
 
 
 @pytest.mark.parametrize('dtype', [np.int8, np.int32, np.float64])
