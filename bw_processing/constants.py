@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 
 import numpy as np
 
@@ -30,3 +31,19 @@ DEFAULT_LICENSES = [
         "title": "Open Data Commons Public Domain Dedication and License v1.0",
     }
 ]
+
+
+class MatrixSerializeFormat(str, Enum):
+    """
+    Enum with the serializing formats for the vectors and matrices.
+    """
+
+    NUMPY = "numpy"  # numpy .npy format
+    PARQUET = "parquet"  # Apache .parquet format
+
+
+# FILE EXTENSIONS
+NUMPY_SERIALIZE_FORMAT_EXTENSION = ".npy"
+NUMPY_SERIALIZE_FORMAT_NAME = "npy"
+PARQUET_SERIALIZE_FORMAT_EXTENSION = ".parquet"
+PARQUET_SERIALIZE_FORMAT_NAME = "pqt"
