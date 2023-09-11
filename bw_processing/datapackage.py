@@ -1,9 +1,8 @@
 import datetime
 import uuid
+from abc import ABC
 from functools import partial
 from typing import Any, Dict, List, Optional, Union
-
-from abc import ABC
 
 import numpy as np
 import pandas as pd
@@ -14,11 +13,11 @@ from fs.memoryfs import MemoryFS
 from .constants import (
     DEFAULT_LICENSES,
     INDICES_DTYPE,
-    MatrixSerializeFormat,
     NUMPY_SERIALIZE_FORMAT_EXTENSION,
-    PARQUET_SERIALIZE_FORMAT_EXTENSION,
     NUMPY_SERIALIZE_FORMAT_NAME,
-    PARQUET_SERIALIZE_FORMAT_NAME
+    PARQUET_SERIALIZE_FORMAT_EXTENSION,
+    PARQUET_SERIALIZE_FORMAT_NAME,
+    MatrixSerializeFormat,
 )
 from .errors import (
     Closed,
@@ -346,7 +345,7 @@ class Datapackage(DatapackageBase):
         seed: Optional[int] = None,
         sum_intra_duplicates: bool = True,
         sum_inter_duplicates: bool = False,
-        matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY
+        matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,
     ) -> None:
         """Start a new data package.
 
@@ -359,7 +358,9 @@ class Datapackage(DatapackageBase):
 
         self.fs = fs or MemoryFS()
         if not isinstance(matrix_serialize_format_type, MatrixSerializeFormat):
-            raise TypeError(f"Matrix serialize format type ({matrix_serialize_format_type}) not recognized!")
+            raise TypeError(
+                f"Matrix serialize format type ({matrix_serialize_format_type}) not recognized!"
+            )
         self._matrix_serialize_format_type = matrix_serialize_format_type
 
         self.metadata = {
@@ -374,7 +375,7 @@ class Datapackage(DatapackageBase):
             "seed": seed,
             "sum_intra_duplicates": sum_intra_duplicates,
             "sum_inter_duplicates": sum_inter_duplicates,
-            "matrix_serialize_format_type": matrix_serialize_format_type.value
+            "matrix_serialize_format_type": matrix_serialize_format_type.value,
         }
         for k, v in (metadata or {}).items():
             if k not in self.metadata:
@@ -656,8 +657,8 @@ class Datapackage(DatapackageBase):
             # only used for parquet format
             meta_object = None
             meta_type = None
-            if mediatype == 'application/octet-stream':
-                format = resource.get('format', None)
+            if mediatype == "application/octet-stream":
+                format = resource.get("format", None)
                 if format == PARQUET_SERIALIZE_FORMAT_NAME:
                     # parquet format
                     matrix_serialize_format_type = MatrixSerializeFormat.PARQUET
@@ -680,9 +681,13 @@ class Datapackage(DatapackageBase):
                         elif category == "array":
                             meta_object = "matrix"
                         else:
-                            raise NotImplementedError(f"Parquet format not available for resource with kind={kind} and category={category}!")
+                            raise NotImplementedError(
+                                f"Parquet format not available for resource with kind={kind} and category={category}!"
+                            )
                     else:
-                        raise NotImplementedError(f"Parquet format not available for resource with kind={kind}!")
+                        raise NotImplementedError(
+                            f"Parquet format not available for resource with kind={kind}!"
+                        )
 
             file_writer(
                 data=self.data[index],
@@ -709,13 +714,17 @@ class Datapackage(DatapackageBase):
         meta_type: Optional[str] = None,
         **kwargs,
     ) -> None:
-        assert array.ndim <= 2, f"Numpy array should be of dim 2 or less!"
+        assert (
+            array.ndim <= 2
+        ), f"Numpy array should be of dim 2 or less instead of {array.ndim}!"
 
         if matrix_serialize_format_type is None:
             # use instance default serialization format
             matrix_serialize_format_type = self._matrix_serialize_format_type
         else:
-            assert isinstance(matrix_serialize_format_type, MatrixSerializeFormat), f"The matrix serialize format is not recognized!"
+            assert isinstance(
+                matrix_serialize_format_type, MatrixSerializeFormat
+            ), f"Matrix serialization format {matrix_serialize_format_type} not recognized!"
 
         filename = None
         format = None
@@ -726,7 +735,9 @@ class Datapackage(DatapackageBase):
             filename = check_suffix(name, PARQUET_SERIALIZE_FORMAT_EXTENSION)
             format = PARQUET_SERIALIZE_FORMAT_NAME
         else:
-            raise TypeError(f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!")
+            raise TypeError(
+                f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!"
+            )
 
         if not isinstance(self.fs, MemoryFS):
             file_writer(
@@ -736,7 +747,7 @@ class Datapackage(DatapackageBase):
                 mimetype="application/octet-stream",
                 matrix_serialize_format_type=matrix_serialize_format_type,  # NIKO
                 meta_object=meta_object,
-                meta_type=meta_type
+                meta_type=meta_type,
             )
 
         if keep_proxy:
@@ -1031,7 +1042,7 @@ def create_datapackage(
     seed: Optional[int] = None,
     sum_intra_duplicates: bool = True,
     sum_inter_duplicates: bool = False,
-    matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY
+    matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,
 ) -> Datapackage:
     """Create a new data package.
 
@@ -1070,7 +1081,7 @@ def create_datapackage(
         seed=seed,
         sum_intra_duplicates=sum_intra_duplicates,
         sum_inter_duplicates=sum_inter_duplicates,
-        matrix_serialize_format_type=matrix_serialize_format_type
+        matrix_serialize_format_type=matrix_serialize_format_type,
     )
     return obj
 
@@ -1105,7 +1116,7 @@ def load_datapackage(
     return obj
 
 
-def simple_graph(data: dict, fs: Optional[FS]=None, **metadata):
+def simple_graph(data: dict, fs: Optional[FS] = None, **metadata):
     """Easy creation of simple datapackages with only persistent vectors.
 
     ``data`` is a dictionary with the form:
@@ -1125,7 +1136,9 @@ def simple_graph(data: dict, fs: Optional[FS]=None, **metadata):
     for key, value in data.items():
         indices_array = np.array([row[:2] for row in value], dtype=INDICES_DTYPE)
         data_array = np.array([row[2] for row in value])
-        flip_array = np.array([row[3] if len(row) > 3 else False for row in value], dtype=bool)
+        flip_array = np.array(
+            [row[3] if len(row) > 3 else False for row in value], dtype=bool
+        )
         dp.add_persistent_vector(
             matrix=key,
             data_array=data_array,

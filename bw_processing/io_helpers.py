@@ -1,8 +1,7 @@
 import json
-from functools import partial
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -10,10 +9,10 @@ from fs.base import FS
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
 
-from .errors import InvalidMimetype
-from .proxies import Proxy
 from .constants import MatrixSerializeFormat
-from .io_parquet_helpers import save_arr_to_parquet, load_ndarray_from_parquet
+from .errors import InvalidMimetype
+from .io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
+from .proxies import Proxy
 
 
 def generic_directory_filesystem(*, dirpath: Path) -> OSFS:
@@ -43,7 +42,7 @@ def file_reader(
     mimetype: str,
     proxy: bool = False,
     mmap_mode: Union[str, None] = None,
-    **kwargs
+    **kwargs,
 ) -> Any:
     if resource.endswith(".npy"):  # TODO: constant
         mimetype = "application/octet-stream"
@@ -58,7 +57,9 @@ def file_reader(
         elif resource.endswith(".parquet"):  # TODO: constant
             mimetype = "application/parquet"
         else:
-            raise TypeError(f"application/octet-stream mimetype (resource: {resource}) not recognized")
+            raise TypeError(
+                f"application/octet-stream mimetype (resource: {resource}) not recognized"
+            )
 
     if isinstance(resource, Path):
         resource = str(resource)
@@ -104,15 +105,16 @@ def file_reader(
 
 
 def file_writer(
-        *,
-        data: Any,
-        fs: FS,
-        resource: str,
-        mimetype: str,
-        matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
-        meta_object: Optional[str] = None,
-        meta_type: Optional[str] = None,
-        **kwargs) -> None:
+    *,
+    data: Any,
+    fs: FS,
+    resource: str,
+    mimetype: str,
+    matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
+    meta_object: Optional[str] = None,
+    meta_type: Optional[str] = None,
+    **kwargs,
+) -> None:
     if isinstance(resource, Path):
         resource = str(resource)
 
@@ -127,10 +129,12 @@ def file_writer(
                 fs.open(resource, mode="wb"),
                 data,
                 meta_object=meta_object,
-                meta_type=meta_type
+                meta_type=meta_type,
             )
         else:
-            raise TypeError(f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!")
+            raise TypeError(
+                f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!"
+            )
     elif mimetype == "application/json":
         return json.dump(
             data,

@@ -16,9 +16,8 @@ The metadata object is a `dict` object that looks like this:
 - `generic` (`dtype` is a common type);
 
 """
-import pyarrow as pa
-
 import numpy as np
+import pyarrow as pa
 
 from bw_processing import INDICES_DTYPE, UNCERTAINTY_DTYPE
 
@@ -42,8 +41,10 @@ def numpy_generic_vector_to_pyarrow_generic_vector_table(arr: np.ndarray) -> pa.
     assert isinstance(arr, np.ndarray)
     assert arr.ndim == 1
 
-    generic_schema = pa.schema([pa.field(str(0), pa.from_numpy_dtype(arr.dtype))],
-                               metadata={"object": "vector", "type": "generic"})
+    generic_schema = pa.schema(
+        [pa.field(str(0), pa.from_numpy_dtype(arr.dtype))],
+        metadata={"object": "vector", "type": "generic"},
+    )
     table = pa.table({str(0): arr}, schema=generic_schema)
 
     return table
@@ -77,9 +78,13 @@ def pyarrow_generic_vector_table_to_numpy_generic_vector(table: pa.Table) -> np.
 
 
 # specific arrow schema for indices vectors
-INDICES_SCHEMA = pa.schema([pa.field(INDICES_DTYPE[0][0], pa.from_numpy_dtype(INDICES_DTYPE[0][1])),
-                            pa.field(INDICES_DTYPE[1][0], pa.from_numpy_dtype(INDICES_DTYPE[1][1]))],
-                           metadata={"object": "vector", "type": "indices"})
+INDICES_SCHEMA = pa.schema(
+    [
+        pa.field(INDICES_DTYPE[0][0], pa.from_numpy_dtype(INDICES_DTYPE[0][1])),
+        pa.field(INDICES_DTYPE[1][0], pa.from_numpy_dtype(INDICES_DTYPE[1][1])),
+    ],
+    metadata={"object": "vector", "type": "indices"},
+)
 
 
 def numpy_indices_vector_to_pyarrow_indices_vector_table(arr: np.ndarray) -> pa.Table:
@@ -106,10 +111,13 @@ def numpy_indices_vector_to_pyarrow_indices_vector_table(arr: np.ndarray) -> pa.
         row_indices.append(row)
         col_indices.append(col)
 
-    table = pa.table({INDICES_DTYPE[0][0]: row_indices,   # col name is "row"
-                      INDICES_DTYPE[1][0]: col_indices},  # col name is "col"
-                     schema=INDICES_SCHEMA
-                     )
+    table = pa.table(
+        {
+            INDICES_DTYPE[0][0]: row_indices,  # col name is "row"
+            INDICES_DTYPE[1][0]: col_indices,
+        },  # col name is "col"
+        schema=INDICES_SCHEMA,
+    )
 
     return table
 
@@ -133,7 +141,7 @@ def pyarrow_indices_vector_table_to_numpy_indices_vector(table: pa.Table) -> np.
     assert table.schema.metadata[b"type"] == b"indices"
 
     indices_array = []
-    for row, col in zip(table['row'], table['col']):
+    for row, col in zip(table["row"], table["col"]):
         indices_array.append((row.as_py(), col.as_py()))
 
     arr = np.array(indices_array, dtype=INDICES_DTYPE)
@@ -143,15 +151,23 @@ def pyarrow_indices_vector_table_to_numpy_indices_vector(table: pa.Table) -> np.
 
 # create UNCERTAINTY schema
 NBR_UNCERTAINTY_FIELDS = len(UNCERTAINTY_DTYPE)
-PA_UNCERTAINTY_FIELDS = [pa.field(UNCERTAINTY_DTYPE[i][0],pa.from_numpy_dtype(UNCERTAINTY_DTYPE[i][1])) for i in range(NBR_UNCERTAINTY_FIELDS)]
+PA_UNCERTAINTY_FIELDS = [
+    pa.field(UNCERTAINTY_DTYPE[i][0], pa.from_numpy_dtype(UNCERTAINTY_DTYPE[i][1]))
+    for i in range(NBR_UNCERTAINTY_FIELDS)
+]
 
-UNCERTAINTY_SCHEMA = pa.schema(PA_UNCERTAINTY_FIELDS,
-                               metadata={"object": "vector", "type": "distributions"})
+UNCERTAINTY_SCHEMA = pa.schema(
+    PA_UNCERTAINTY_FIELDS, metadata={"object": "vector", "type": "distributions"}
+)
 
-UNCERTAINTY_FIELDS_NAMES = [UNCERTAINTY_DTYPE[i][0] for i in range(NBR_UNCERTAINTY_FIELDS)]
+UNCERTAINTY_FIELDS_NAMES = [
+    UNCERTAINTY_DTYPE[i][0] for i in range(NBR_UNCERTAINTY_FIELDS)
+]
 
 
-def numpy_distributions_vector_to_pyarrow_distributions_vector_table(arr: np.ndarray) -> pa.Table:
+def numpy_distributions_vector_to_pyarrow_distributions_vector_table(
+    arr: np.ndarray,
+) -> pa.Table:
     """
     Convert a specific distributions (numpy) vector to a (arrow) table.
 
@@ -177,14 +193,14 @@ def numpy_distributions_vector_to_pyarrow_distributions_vector_table(arr: np.nda
         for i, el in enumerate(arr_el):
             from_dict[UNCERTAINTY_FIELDS_NAMES[i]].append(el)
 
-    table = pa.table(from_dict,
-                     schema=UNCERTAINTY_SCHEMA
-                     )
+    table = pa.table(from_dict, schema=UNCERTAINTY_SCHEMA)
 
     return table
 
 
-def pyarrow_distributions_vector_table_to_numpy_distributions_vector(table: pa.Table) -> np.ndarray:
+def pyarrow_distributions_vector_table_to_numpy_distributions_vector(
+    table: pa.Table,
+) -> np.ndarray:
     """
     Convert a specific distributions (arrow) vector table to a (numpy) array.
 
@@ -202,11 +218,15 @@ def pyarrow_distributions_vector_table_to_numpy_distributions_vector(table: pa.T
     assert table.schema.metadata[b"object"] == b"vector"
     assert table.schema.metadata[b"type"] == b"distributions"
 
-    distributions_arrays_list = [table[UNCERTAINTY_FIELDS_NAMES[i]] for i in range(NBR_UNCERTAINTY_FIELDS)]
+    distributions_arrays_list = [
+        table[UNCERTAINTY_FIELDS_NAMES[i]] for i in range(NBR_UNCERTAINTY_FIELDS)
+    ]
 
     distributions_array = []
     for el in zip(*distributions_arrays_list):
-        distributions_array.append(tuple(el[i].as_py() for i in range(NBR_UNCERTAINTY_FIELDS)))
+        distributions_array.append(
+            tuple(el[i].as_py() for i in range(NBR_UNCERTAINTY_FIELDS))
+        )
     arr = np.array(distributions_array, dtype=UNCERTAINTY_DTYPE)
 
     return arr
@@ -232,15 +252,16 @@ def numpy_generic_matrix_to_pyarrow_generic_matrix_table(arr: np.ndarray) -> pa.
     assert arr.ndim == 2
 
     arr_dtype = arr.dtype
-    metadata={"object": "matrix", "type": "generic"}
+    metadata = {"object": "matrix", "type": "generic"}
     nbr_rows, nbr_cols = arr.shape
     arrays = [
-        pa.array(arr[:,j], type=pa.from_numpy_dtype(arr_dtype)) for j in range(nbr_cols)
+        pa.array(arr[:, j], type=pa.from_numpy_dtype(arr_dtype))
+        for j in range(nbr_cols)
     ]
     table = pa.Table.from_arrays(
         arrays=arrays,
         names=[str(j) for j in range(nbr_cols)],  # give names to each column
-        metadata=metadata
+        metadata=metadata,
     )
 
     return table

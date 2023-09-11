@@ -30,7 +30,12 @@ __version__ = "0.8.5"
 
 
 from .array_creation import create_array, create_structured_array
-from .constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE, MatrixSerializeFormat
+from .constants import (
+    DEFAULT_LICENSES,
+    INDICES_DTYPE,
+    UNCERTAINTY_DTYPE,
+    MatrixSerializeFormat,
+)
 from .datapackage import (
     Datapackage,
     DatapackageBase,

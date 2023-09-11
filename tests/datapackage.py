@@ -453,15 +453,11 @@ def test_add_dynamic_vector_flip_shapemistmatch():
 
 def test_simple_graph():
     data = {
-        "some_matrix": [
-            (1, 2, 3.14),
-            (4, 5, 17, True),
-            (8, 9, 11.11, False)
-        ],
+        "some_matrix": [(1, 2, 3.14), (4, 5, 17, True), (8, 9, 11.11, False)],
         "a different life": [
             (99, 100, 101.234, False, "ignored"),
             (1001, 1002, 777, 1),
-        ]
+        ],
     }
     expected_resource = {
         "category": "vector",
@@ -476,23 +472,23 @@ def test_simple_graph():
         "group": "some_matrix-data",
     }
     dp = simple_graph(data, name="foo", sequential=True)
-    assert dp.metadata['name'] == 'foo'
-    assert dp.metadata['sequential']
+    assert dp.metadata["name"] == "foo"
+    assert dp.metadata["sequential"]
     assert len(dp.metadata["resources"]) == 6
     assert expected_resource in dp.metadata["resources"]
 
     d, _ = dp.get_resource("some_matrix-data.flip")
     assert np.allclose(d, np.array([False, True, False]))
     d, _ = dp.get_resource("some_matrix-data.indices")
-    assert d['row'].sum() == 13
-    assert d['col'].sum() == 16
+    assert d["row"].sum() == 13
+    assert d["col"].sum() == 16
     d, _ = dp.get_resource("some_matrix-data.data")
     assert np.allclose(d, np.array([3.14, 17, 11.11]))
 
     d, _ = dp.get_resource("a different life-data.flip")
     assert np.allclose(d, np.array([False, True]))
     d, _ = dp.get_resource("a different life-data.indices")
-    assert d['row'].sum() == 1100
-    assert d['col'].sum() == 1102
+    assert d["row"].sum() == 1100
+    assert d["col"].sum() == 1102
     d, _ = dp.get_resource("a different life-data.data")
     assert np.allclose(d, np.array([101.234, 777]))
