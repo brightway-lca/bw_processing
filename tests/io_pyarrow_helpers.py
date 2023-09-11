@@ -4,6 +4,11 @@ Unit tests for the `io_pyarrow_helper.py` module.
 """
 import numpy as np
 import pytest
+from helpers.basic_array_helpers import (
+    data_matrix,
+    data_vector,
+    vector_equal_with_uncertainty_dtype,
+)
 
 from bw_processing.io_pyarrow_helpers import (
     numpy_distributions_vector_to_pyarrow_distributions_vector_table,
@@ -14,11 +19,6 @@ from bw_processing.io_pyarrow_helpers import (
     pyarrow_generic_matrix_table_to_numpy_generic_matrix,
     pyarrow_generic_vector_table_to_numpy_generic_vector,
     pyarrow_indices_vector_table_to_numpy_indices_vector,
-)
-from tests.helpers.basic_array_helpers import (
-    data_matrix,
-    data_vector,
-    vector_equal_with_uncertainty_dtype,
 )
 
 

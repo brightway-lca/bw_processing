@@ -2,6 +2,11 @@
 from pathlib import Path
 
 import pytest
+from fixtures.basic_arrays import (  # noqa: F401
+    distributions_vector,
+    flip_vector,
+    indices_vector,
+)
 
 
 def pytest_addoption(parser):

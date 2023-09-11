@@ -5,16 +5,16 @@ Unit tests for saving and loading to/from parquet files.
 import numpy as np
 import pyarrow.parquet as pq
 import pytest
+from helpers.basic_array_helpers import (
+    data_matrix,
+    data_vector,
+    vector_equal_with_uncertainty_dtype,
+)
 
 from bw_processing.errors import WrongDatatype
 from bw_processing.io_parquet_helpers import (
     load_ndarray_from_parquet,
     save_arr_to_parquet,
-)
-from tests.helpers.basic_array_helpers import (
-    data_matrix,
-    data_vector,
-    vector_equal_with_uncertainty_dtype,
 )
 
 ARR_LIST = [
