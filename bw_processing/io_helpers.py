@@ -11,8 +11,16 @@ from fs.zipfs import ZipFS
 
 from .constants import MatrixSerializeFormat
 from .errors import InvalidMimetype
-from .io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
 from .proxies import Proxy
+
+try:
+    from .io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
+
+    PARQUET = True
+except ImportError:
+    load_ndarray_from_parquet = None
+    save_arr_to_parquet = None
+    PARQUET = False
 
 
 def generic_directory_filesystem(*, dirpath: Path) -> OSFS:
@@ -74,13 +82,6 @@ def file_reader(
                 "allow_pickle": False,
             },
         ),
-        "application/parquet": (
-            load_ndarray_from_parquet,
-            "file",
-            {
-                "file": fs.open(resource, mode="rb"),
-            },
-        ),
         "application/json": (
             json.load,
             "fp",
@@ -92,6 +93,14 @@ def file_reader(
             {"filepath_or_buffer": fs.open(resource)},
         ),
     }
+    if PARQUET:
+        mapping["application/parquet"] = (
+            load_ndarray_from_parquet,
+            "file",
+            {
+                "file": fs.open(resource, mode="rb"),
+            },
+        )
 
     try:
         func, label, kwargs = mapping[mimetype]
@@ -122,6 +131,8 @@ def file_writer(
         if matrix_serialize_format_type == MatrixSerializeFormat.NUMPY:
             return np.save(fs.open(resource, mode="wb"), data, allow_pickle=False)
         elif matrix_serialize_format_type == MatrixSerializeFormat.PARQUET:
+            if not PARQUET:
+                raise ImportError("`pyarrow` library not installed")
             assert meta_type is not None
             assert meta_object is not None
 

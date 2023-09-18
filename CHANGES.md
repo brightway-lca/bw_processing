@@ -1,5 +1,9 @@
 # processing Changelog
 
+### [0.9] - 2023-09-18
+
+* Add support for parquet files
+
 ### [0.8.5] - 2023-08-24
 
 * Switch versioning scheme to help WASM packaging
