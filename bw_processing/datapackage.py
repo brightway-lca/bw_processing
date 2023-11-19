@@ -1105,7 +1105,7 @@ def load_datapackage(
     return obj
 
 
-def simple_graph(data: dict, fs: Optional[FS]=None, **metadata):
+def simple_graph(data: dict, fs: Optional[FS]=None, matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY, **metadata):
     """Easy creation of simple datapackages with only persistent vectors.
 
     ``data`` is a dictionary with the form:
@@ -1133,5 +1133,6 @@ def simple_graph(data: dict, fs: Optional[FS]=None, **metadata):
             indices_array=indices_array,
             nrows=len(value),
             flip_array=flip_array,
+            matrix_serialize_format_type=matrix_serialize_format_type
         )
     return dp
