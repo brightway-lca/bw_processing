@@ -26,6 +26,11 @@ if __name__ == "__main__":
         bwp.MatrixSerializeFormat.NUMPY
     )  # bwp.MatrixSerializeFormat.PARQUET
 
+    PARQUET_OPTIONS = {
+        "compression": "gzip",
+        "compression_level": 4
+    }
+
     if USE_OSFS:
         # VERSION OSFS
         # Directory must exist for OSFS otherwise use OSFS(dirpath, create=True)!
@@ -52,6 +57,7 @@ if __name__ == "__main__":
         flip_array=flip_array,
         keep_proxy=False,
         matrix_serialize_format_type=bwp.MatrixSerializeFormat.PARQUET,
+        parquet_options=PARQUET_OPTIONS
     )
 
     dp.add_persistent_vector(

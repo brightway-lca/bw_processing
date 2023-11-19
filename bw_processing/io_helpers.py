@@ -94,18 +94,20 @@ def file_reader(
         ),
     }
     if PARQUET:
+        parquet_options = kwargs.get("parquet_options", None)
         mapping["application/parquet"] = (
             load_ndarray_from_parquet,
             "file",
             {
                 "file": fs.open(resource, mode="rb"),
+                "parquet_options": parquet_options
             },
         )
 
     try:
         func, label, kwargs = mapping[mimetype]
     except KeyError:
-        raise InvalidMimetype("Mimetype '{}' not understoof".format(mimetype))
+        raise InvalidMimetype("Mimetype '{}' not understood".format(mimetype))
 
     if proxy:
         return Proxy(func, label, kwargs)
@@ -136,11 +138,13 @@ def file_writer(
             assert meta_type is not None
             assert meta_object is not None
 
+            parquet_options = kwargs.get("parquet_options", None)
             return save_arr_to_parquet(
                 fs.open(resource, mode="wb"),
                 data,
                 meta_object=meta_object,
                 meta_type=meta_type,
+                parquet_options=parquet_options
             )
         else:
             raise TypeError(

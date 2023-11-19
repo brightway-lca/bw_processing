@@ -311,16 +311,16 @@ class Datapackage(DatapackageBase):
             )
 
     def _load(
-        self, fs: FS, mmap_mode: Optional[str] = None, proxy: bool = False
+        self, fs: FS, mmap_mode: Optional[str] = None, proxy: bool = False, **kwargs
     ) -> None:
         self.fs = fs
         self.metadata = file_reader(
-            fs=self.fs, resource="datapackage.json", mimetype="application/json"
+            fs=self.fs, resource="datapackage.json", mimetype="application/json", **kwargs
         )
         self.data = []
-        self._load_all(mmap_mode=mmap_mode, proxy=proxy)
+        self._load_all(mmap_mode=mmap_mode, proxy=proxy, **kwargs)
 
-    def _load_all(self, mmap_mode: Optional[str] = None, proxy: bool = False) -> None:
+    def _load_all(self, mmap_mode: Optional[str] = None, proxy: bool = False, **kwargs) -> None:
         for resource in self.resources:
             try:
                 self.data.append(
@@ -330,6 +330,7 @@ class Datapackage(DatapackageBase):
                         mimetype=resource["mediatype"],
                         proxy=proxy,
                         mmap_mode=mmap_mode,
+                        **kwargs
                     )
                 )
             except (InvalidMimetype, KeyError):
@@ -645,7 +646,7 @@ class Datapackage(DatapackageBase):
                     **kwargs,
                 )
 
-    def write_modified(self):
+    def write_modified(self, **kwargs):
         """Write the data in modified files to the filesystem (if allowed)."""
         for index in self._modified:
             # get resource
@@ -692,6 +693,7 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 meta_object=meta_object,
                 meta_type=meta_type,
+                **kwargs
             )
 
         self._modified = set()
@@ -734,9 +736,10 @@ class Datapackage(DatapackageBase):
                 fs=self.fs,
                 resource=filename,
                 mimetype="application/octet-stream",
-                matrix_serialize_format_type=matrix_serialize_format_type,  # NIKO
+                matrix_serialize_format_type=matrix_serialize_format_type,
                 meta_object=meta_object,
-                meta_type=meta_type
+                meta_type=meta_type,
+                **kwargs
             )
 
         if keep_proxy:
@@ -1079,6 +1082,7 @@ def load_datapackage(
     fs_or_obj: Union[DatapackageBase, FS],
     mmap_mode: Optional[str] = None,
     proxy: bool = False,
+    **kwargs
 ) -> Datapackage:
     """Load an existing datapackage.
 
@@ -1091,7 +1095,7 @@ def load_datapackage(
         * fs_or_obj. A `Filesystem` or an instance of `DatapackageBase`.
         * mmap_mode. `str`, optional. Define memory mapping mode to use when loading Numpy arrays.
         * proxy. bool, default `False`. Load proxies instead of complete Numpy arrays; see above.
-
+        * kwargs: additional named arguments.
     Returns:
 
         A `Datapackage` instance.
@@ -1101,7 +1105,7 @@ def load_datapackage(
         obj = fs_or_obj
     else:
         obj = Datapackage()
-        obj._load(fs=fs_or_obj, mmap_mode=mmap_mode, proxy=proxy)
+        obj._load(fs=fs_or_obj, mmap_mode=mmap_mode, proxy=proxy, **kwargs)
     return obj
 
 

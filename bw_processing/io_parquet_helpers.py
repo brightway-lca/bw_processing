@@ -8,6 +8,7 @@ import os
 
 # for annotation
 from io import BufferedWriter, RawIOBase
+from typing import Optional
 
 import numpy
 import numpy as np
@@ -28,7 +29,7 @@ from bw_processing.io_pyarrow_helpers import (
 
 
 def write_ndarray_to_parquet_file(
-    file: BufferedWriter, arr: np.ndarray, meta_object: str, meta_type: str
+    file: BufferedWriter, arr: np.ndarray, meta_object: str, meta_type: str, parquet_options: Optional[dict]
 ):
     """
     Serialize `ndarray` objects to `file`.
@@ -38,9 +39,12 @@ def write_ndarray_to_parquet_file(
         arr (ndarray): Array to serialize.
         meta_object (str): "vector" or "matrix".
         meta_type (str): Type of object to serialize (see `io_pyarrow_helpers.py`).
-
+        parquet_options (dict): Options to write parquet file (see `pyarrow.parquet.write_table`).
     """
     table = None
+    if parquet_options is not None:
+        assert isinstance(parquet_options, dict), f"The parquet options must be given in a dictionnary used a named arguments for write_table()!"
+
     if meta_object == "matrix":
         table = numpy_generic_matrix_to_pyarrow_generic_matrix_table(arr=arr)
     elif meta_object == "vector":
@@ -58,23 +62,33 @@ def write_ndarray_to_parquet_file(
         raise NotImplementedError(f"Object {meta_object} is not recognized!")
 
     # Save it:
-    pq.write_table(table, file)
+    if parquet_options is not None:
+        pq.write_table(table, file, **parquet_options)
+    else:
+        pq.write_table(table, file)
 
 
-def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
+def read_parquet_file_to_ndarray(file: RawWrapper, parquet_options: Optional[dict] = None) -> numpy.ndarray:
     """
     Read an `ndarray` from a `parquet` file.
 
     Args:
         file (fs.iotools.RawWrapper): File to read from.
+        parquet_options (dict):
 
     Raises:
         `WrongDatatype` if the correct metadata is not found in the `parquet` file.
+        `TypeError` if the arguments given in `parquet_options` are not recognized or don't follow the right protocol.
 
     Returns:
         The corresponding `numpy` `ndarray`.
     """
-    table = pq.read_table(file)
+    table = None
+    if parquet_options is not None:
+        assert isinstance(parquet_options, dict), f"The parquet options must be given in a dictionnary used a named arguments for read_table()!"
+        table = pq.read_table(file, **parquet_options)
+    else:
+        table = pq.read_table(file)
 
     # reading metadata from parquet file
     try:
@@ -106,7 +120,7 @@ def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
 
 
 def save_arr_to_parquet(
-    file: RawIOBase, arr: np.ndarray, meta_object: str, meta_type: str
+    file: RawIOBase, arr: np.ndarray, meta_object: str, meta_type: str, parquet_options: Optional[dict] = None
 ) -> None:
     """
     Serialize a `numpy` `ndarray` to a `parquet` `file`.
@@ -116,6 +130,7 @@ def save_arr_to_parquet(
         arr (ndarray): The array object to save.
         meta_object (str): "vector" or "matrix".
         meta_type (str): Type of object to serialize (see `io_pyarrow_helpers.py`).
+        parquet_options (dict): Options to write parquet file (see `pyarrow.parquet.write_table`).
     """
     if hasattr(file, "write"):
         file_ctx = contextlib.nullcontext(file)
@@ -128,16 +143,17 @@ def save_arr_to_parquet(
     with file_ctx as fid:
         arr = np.asanyarray(arr)
         write_ndarray_to_parquet_file(
-            fid, arr, meta_object=meta_object, meta_type=meta_type
+            fid, arr, meta_object=meta_object, meta_type=meta_type, parquet_options=parquet_options
         )
 
 
-def load_ndarray_from_parquet(file: RawWrapper) -> np.ndarray:
+def load_ndarray_from_parquet(file: RawWrapper, parquet_options: Optional[dict]=None) -> np.ndarray:
     """
     Deserialize a `numpy` `ndarray` from a `parquet` `file`.
 
     Parameters
         file (fs.iotools.RawWrapper): File to read from.
+        parquet_options (dict): Options to load parquet file (see `pyarrow.parquet.read_table`).
 
     Returns
         The corresponding `numpy` `ndarray`.
@@ -149,6 +165,6 @@ def load_ndarray_from_parquet(file: RawWrapper) -> np.ndarray:
         file_ctx = open(file, "rb")
 
     with file_ctx as fid:
-        arr = read_parquet_file_to_ndarray(fid)
+        arr = read_parquet_file_to_ndarray(fid, parquet_options)
 
     return arr
