@@ -1,8 +1,7 @@
 import json
-from functools import partial
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -10,10 +9,18 @@ from fs.base import FS
 from fs.osfs import OSFS
 from fs.zipfs import ZipFS
 
+from .constants import MatrixSerializeFormat
 from .errors import InvalidMimetype
 from .proxies import Proxy
-from .constants import MatrixSerializeFormat
-from .io_parquet_helpers import save_arr_to_parquet, load_ndarray_from_parquet
+
+try:
+    from .io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
+
+    PARQUET = True
+except ImportError:
+    load_ndarray_from_parquet = None
+    save_arr_to_parquet = None
+    PARQUET = False
 
 
 def generic_directory_filesystem(*, dirpath: Path) -> OSFS:
@@ -43,7 +50,7 @@ def file_reader(
     mimetype: str,
     proxy: bool = False,
     mmap_mode: Union[str, None] = None,
-    **kwargs
+    **kwargs,
 ) -> Any:
     if resource.endswith(".npy"):  # TODO: constant
         mimetype = "application/octet-stream"
@@ -58,7 +65,9 @@ def file_reader(
         elif resource.endswith(".parquet"):  # TODO: constant
             mimetype = "application/parquet"
         else:
-            raise TypeError(f"application/octet-stream mimetype (resource: {resource}) not recognized")
+            raise TypeError(
+                f"application/octet-stream mimetype (resource: {resource}) not recognized"
+            )
 
     if isinstance(resource, Path):
         resource = str(resource)
@@ -73,13 +82,6 @@ def file_reader(
                 "allow_pickle": False,
             },
         ),
-        "application/parquet": (
-            load_ndarray_from_parquet,
-            "file",
-            {
-                "file": fs.open(resource, mode="rb"),
-            },
-        ),
         "application/json": (
             json.load,
             "fp",
@@ -91,6 +93,14 @@ def file_reader(
             {"filepath_or_buffer": fs.open(resource)},
         ),
     }
+    if PARQUET:
+        mapping["application/parquet"] = (
+            load_ndarray_from_parquet,
+            "file",
+            {
+                "file": fs.open(resource, mode="rb"),
+            },
+        )
 
     try:
         func, label, kwargs = mapping[mimetype]
@@ -104,15 +114,16 @@ def file_reader(
 
 
 def file_writer(
-        *,
-        data: Any,
-        fs: FS,
-        resource: str,
-        mimetype: str,
-        matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
-        meta_object: Optional[str] = None,
-        meta_type: Optional[str] = None,
-        **kwargs) -> None:
+    *,
+    data: Any,
+    fs: FS,
+    resource: str,
+    mimetype: str,
+    matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
+    meta_object: Optional[str] = None,
+    meta_type: Optional[str] = None,
+    **kwargs,
+) -> None:
     if isinstance(resource, Path):
         resource = str(resource)
 
@@ -120,6 +131,8 @@ def file_writer(
         if matrix_serialize_format_type == MatrixSerializeFormat.NUMPY:
             return np.save(fs.open(resource, mode="wb"), data, allow_pickle=False)
         elif matrix_serialize_format_type == MatrixSerializeFormat.PARQUET:
+            if not PARQUET:
+                raise ImportError("`pyarrow` library not installed")
             assert meta_type is not None
             assert meta_object is not None
 
@@ -127,10 +140,12 @@ def file_writer(
                 fs.open(resource, mode="wb"),
                 data,
                 meta_object=meta_object,
-                meta_type=meta_type
+                meta_type=meta_type,
             )
         else:
-            raise TypeError(f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!")
+            raise TypeError(
+                f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!"
+            )
     elif mimetype == "application/json":
         return json.dump(
             data,
