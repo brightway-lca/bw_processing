@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     PARQUET_OPTIONS = {
         "compression": "gzip",
-        "compression_level": 4
+        "compression_level": 9,
     }
 
     if USE_OSFS:
