@@ -8,7 +8,7 @@ Library for storing numeric data for use in matrix-based calculations. Designed 
 [![License](https://img.shields.io/pypi/l/bw-processing)][license]
 
 [![Read the documentation at https://bw-processing.readthedocs.io/](https://img.shields.io/readthedocs/bw-processing/latest.svg?label=Read%20the%20Docs)][read the docs]
-[![Tests](https://github.com/brightway-lca/bw-processing/actions/workflows/python-test.yml/badge.svg)][tests]
+[![Testing](https://github.com/brightway-lca/bw_processing/actions/workflows/python-test.yml/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/brightway-lca/bw-processing/branch/main/graph/badge.svg)][codecov]
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
@@ -16,7 +16,7 @@ Library for storing numeric data for use in matrix-based calculations. Designed 
 
 [pypi status]: https://pypi.org/project/bw-processing/
 [read the docs]: https://bw-processing.readthedocs.io/
-[tests]: https://github.com/brightway-lca/bw-processing/actions?workflow=Tests
+[tests]: https://github.com/brightway-lca/bw_processing/actions/workflows/python-test.yml
 [codecov]: https://app.codecov.io/gh/brightway-lca/bw-processing
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [black]: https://github.com/psf/black
