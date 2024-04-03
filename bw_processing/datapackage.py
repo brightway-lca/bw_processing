@@ -1053,17 +1053,16 @@ def create_datapackage(
     Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
 
     Args:
-
-        * fs: A `Filesystem`, optional. A new `MemoryFS` is used if not provided.
-        * name: `str`, optional. A new uuid is used if not provided.
-        * id_. `str`, optional. A new uuid is used if not provided.
-        * metadata. `dict`, optional. Metadata dictionary following datapackage specification; see above.
-        * combinatorial. `bool`, default `False.: Policy on how to sample columns across multiple data arrays; see readme.
-        * sequential. `bool`, default `False.: Policy on how to sample columns in data arrays; see readme.
-        * seed. `int`, optional. Seed to use in random number generator.
-        * sum_intra_duplicates. `bool`, default `True`. Should duplicate elements in a single data resource be summed together, or should the last value replace previous values.
-        * sum_inter_duplicates. `bool`, default `False`. Should duplicate elements in across data resources be summed together, or should the last value replace previous values. Order of data resources is given by the order they are added to the data package.
-        * matrix_serialize_format_type. `MatrixSerializeFormat`, default `MatrixSerializeFormat.NUMPY`. Matrix serialization format type.
+        * fs: A ``Filesystem``, optional. A new ``MemoryFS`` is used if not provided.
+        * name: ``str``, optional. A new uuid is used if not provided.
+        * `id_`: ``str``, optional. A new uuid is used if not provided.
+        * metadata: ``dict``, optional. Metadata dictionary following datapackage specification; see above.
+        * combinatorial: ``bool``, default ``False`` .: Policy on how to sample columns across multiple data arrays; see readme.
+        * sequential: ``bool``, default ``False`` .: Policy on how to sample columns in data arrays; see readme.
+        * seed: ``int``, optional. Seed to use in random number generator.
+        * sum_intra_duplicates: ``bool``, default ``True``. Should duplicate elements in a single data resource be summed together, or should the last value replace previous values.
+        * sum_inter_duplicates: ``bool``, default ``False``. Should duplicate elements in across data resources be summed together, or should the last value replace previous values. Order of data resources is given by the order they are added to the data package.
+        * matrix_serialize_format_type: ``MatrixSerializeFormat``, default ``MatrixSerializeFormat.NUMPY``. Matrix serialization format type.
 
     Returns:
 
@@ -1099,9 +1098,9 @@ def load_datapackage(
 
     Args:
 
-        * fs_or_obj. A `Filesystem` or an instance of `DatapackageBase`.
-        * mmap_mode. `str`, optional. Define memory mapping mode to use when loading Numpy arrays.
-        * proxy. bool, default `False`. Load proxies instead of complete Numpy arrays; see above.
+        * fs_or_obj: A `Filesystem` or an instance of `DatapackageBase`.
+        * mmap_mode: `str`, optional. Define memory mapping mode to use when loading Numpy arrays.
+        * proxy: bool, default `False`. Load proxies instead of complete Numpy arrays; see above.
 
     Returns:
 
@@ -1116,22 +1115,29 @@ def load_datapackage(
     return obj
 
 
-def simple_graph(data: dict, fs: Optional[FS] = None, **metadata):
+def simple_graph(data: dict, fs: Optional[FS] = None, **metadata)->Datapackage:
     """Easy creation of simple datapackages with only persistent vectors.
 
-    ``data`` is a dictionary with the form:
+    Args:
+        * data: is a dictionary.
+            The data dictionary has the form::
 
-    ..code-block:: python
+                {
+                    matrix_name: [ 
+                    (row_id, col_id, value, flip) 
+                    ]
+                }
 
-        matrix_name (str): [
-            (row id (int), col id (int), value (float), flip (bool, default False))
-        ]
 
-    ``fs`` is a filesystem.
+            Where `row_id` and `col_id are an `int` s, value is a `float` and flip is a `bool`  (False by default).
 
-    ``metadata`` are passed as kwargs to ``create_datapackage()``.
+        * fs: is a filesystem.
+        * metadata: are passed as kwargs to ``create_datapackage()``.
 
-    Returns the datapackage."""
+    Returns:
+        the datapackage.
+
+    """
     dp = create_datapackage(fs=fs, **metadata)
     for key, value in data.items():
         indices_array = np.array([row[:2] for row in value], dtype=INDICES_DTYPE)

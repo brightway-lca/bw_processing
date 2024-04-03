@@ -1,4 +1,5 @@
 Loading packages
 ================
 
-.. autofunction:: bw_processing.loading.load_package
+.. autofunction:: bw_processing.load_datapackage
+   :no-index:

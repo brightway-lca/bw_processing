@@ -46,3 +46,4 @@ html_theme = "furo"
 needs_sphinx = "5.0"
 
 version = importlib.metadata.version("bw_processing")
+myst_heading_anchors = 3
