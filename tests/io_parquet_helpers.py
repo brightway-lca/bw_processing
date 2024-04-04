@@ -77,6 +77,7 @@ def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
     assert arr.dtype == loaded_arr.dtype and np.array_equal(arr, loaded_arr)
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_distribution_vector(
     distributions_vector, tmp_path_factory
 ):
@@ -95,6 +96,7 @@ def test_save_load_parquet_file_distribution_vector(
     assert vector_equal_with_uncertainty_dtype(arr, loaded_arr)
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_meta_object(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
@@ -120,6 +122,7 @@ def test_save_load_parquet_file_wrong_meta_object(indices_vector, tmp_path_facto
             load_ndarray_from_parquet(fp)
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_meta_type(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
@@ -145,6 +148,7 @@ def test_save_load_parquet_file_wrong_meta_type(indices_vector, tmp_path_factory
             load_ndarray_from_parquet(fp)
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_metadata_format(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
