@@ -26,7 +26,7 @@ ARR_LIST = [
 
 
 @pytest.mark.parametrize("arr_fixture_name, meta_object, meta_type", ARR_LIST)
-@pytest.mark.skipif(sys.version_info == (3, 8), reason="Doesn't work in CI filesystem")
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file(
     arr_fixture_name, meta_object, meta_type, tmp_path_factory, request
 ):
@@ -46,7 +46,7 @@ def test_save_load_parquet_file(
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.float64])
-@pytest.mark.skipif(sys.version_info == (3, 8), reason="Doesn't work in CI filesystem")
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_data_vector(dtype, tmp_path_factory):
 
     arr = data_vector(dtype=dtype)
@@ -62,7 +62,7 @@ def test_save_load_parquet_file_data_vector(dtype, tmp_path_factory):
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.float64])
-@pytest.mark.skipif(sys.version_info == (3, 8), reason="Doesn't work in CI filesystem")
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
 
     arr = data_matrix(dtype=dtype)
