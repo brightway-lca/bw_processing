@@ -12,9 +12,9 @@ Here is a list of important resources for contributors:
 - [Code of Conduct][Code of Conduct]
 
 [License]: https://opensource.org/licenses/BSD-3-Clause
-[Source Code]: https://github.com/brightway-lca/bw-processing
+[Source Code]: https://github.com/brightway-lca/bw_processing
 [Documentation]: https://bw-processing.readthedocs.io/
-[Issue Tracker]: https://github.com/brightway-lca/bw-processing/issues
+[Issue Tracker]: https://github.com/brightway-lca/bw_processing/issues
 
 ## How to report a bug
 
@@ -107,8 +107,7 @@ $ pip install pre-commit
 It is recommended to open an issue before starting work on anything.
 This will allow a chance to talk it over with the owners and validate your approach.
 
-[pytest]: https://pytest.readthedocs.io/
-[pull request]: https://github.com/brightway-lca/bw-processing/pulls
+[pull request]: https://github.com/brightway-lca/bw_processing/pulls
 
 
 <!-- github-only -->

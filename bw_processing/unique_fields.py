@@ -8,7 +8,7 @@ def greedy_set_cover(data, exclude=None, raise_error=True):
 
     Feature selection is a well known problem, and is analogous to the `set cover problem <https://en.wikipedia.org/wiki/Set_cover_problem>`__, for which there is a `well known heuristic <https://en.wikipedia.org/wiki/Set_cover_problem#Greedy_algorithm>`__.
 
-    Example:
+    Example::
 
         data = [
             {'a': 1, 'b': 2, 'c': 3},
@@ -73,7 +73,7 @@ def as_unique_attributes(data, exclude=None, include=None, raise_error=False):
 
     Each element in ``data`` must have the attribute ``id``, and it must be unique. However, the field "id" is not used in selecting the unique set of attributes.
 
-    If no set of attributes is found that uniquely identifies all features is found, all fields are used. To have this case raise an error, pass ``raise_error=True``.
+    If no set of attributes is found that uniquely identifies all features is found, all fields are used. To have this case raise an error, pass ``raise_error=True``.::
 
         data = [
             {},
@@ -89,6 +89,7 @@ def as_unique_attributes(data, exclude=None, include=None, raise_error=False):
 
     Raises:
         InconsistentFields: Not all features provides all fields.
+
     """
     include = set(include or [])
     fields = greedy_set_cover(data, exclude=exclude, raise_error=raise_error)

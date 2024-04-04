@@ -5,7 +5,7 @@ Library for storing numeric data for use in matrix-based calculations. Designed 
 [![PyPI](https://img.shields.io/pypi/v/bw-processing.svg)][pypi status]
 [![Status](https://img.shields.io/pypi/status/bw-processing.svg)][pypi status]
 [![Python Version](https://img.shields.io/pypi/pyversions/bw-processing)][pypi status]
-[![License](https://img.shields.io/pypi/l/bw-processing)][license]
+[![License](https://img.shields.io/pypi/l/bw_processing)][license]
 
 [![Read the documentation at https://bw-processing.readthedocs.io/](https://img.shields.io/readthedocs/bw-processing/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Testing](https://github.com/brightway-lca/bw_processing/actions/workflows/python-test.yml/badge.svg)][tests]

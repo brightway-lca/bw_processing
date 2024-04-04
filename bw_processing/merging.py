@@ -30,7 +30,7 @@ def update_nrows(resource: dict, data: Any) -> dict:
 def add_resource_suffix(metadata: dict, suffix: str) -> dict:
     """Update the ``name``, ``path``, and ``group`` values to include ``suffix``. The suffix comes after the basename but after the data type suffix (e.g. indices, data).
 
-    Given the suffix _foo" and the metadata:
+    Given the suffix ``_foo`` and the metadata::
 
         {
             "name": "sa-data-vector-from-dict.indices",
@@ -38,7 +38,7 @@ def add_resource_suffix(metadata: dict, suffix: str) -> dict:
             "group": "sa-data-vector-from-dict",
         }
 
-    Returns:
+    It will return::
 
         {
             "name": "sa-data-vector-from-dict_foo.indices",
