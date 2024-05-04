@@ -1,25 +1,23 @@
-```{include} ../README.md
----
-end-before: <!-- github-only -->
----
-```
+# Brightway Processing
 
-[license]: license
-[contributor guide]: contributing
-[changelog]: changelog
+```{button-link} https://docs.brightway.dev
+:color: info
+:expand:
+{octicon}`light-bulb;1em` Brightway Processing is a specialized package of the Brightway Software Framework
+```
 
 ```{toctree}
 ---
 hidden:
-maxdepth: 2
+maxdepth: 1
 ---
-
-saving
-loading
-utilities
-Reference <api/modules>
-contributing
-Code of Conduct <codeofconduct>
-License <license>
-Changelog <changelog>
+self
+content/loading
+content/saving
+content/utilities
+content/api/index
+content/changelog
+content/contributing
+content/codeofconduct
+content/license
 ```

@@ -1,4 +1,4 @@
-# processing Changelog
+# `bw_processing` Changelog
 
 ### [0.9] - 2023-09-18
 
