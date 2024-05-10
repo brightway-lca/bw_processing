@@ -1,6 +1,10 @@
 # `bw_processing` Changelog
 
-### [0.9] - 2023-09-18
+### [0.9.1] - 2024-05-10
+
+* Fix deprecation warning for datetime utcnow
+
+## [0.9] - 2023-09-18
 
 * Add support for parquet files
 
