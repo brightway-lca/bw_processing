@@ -369,7 +369,7 @@ class Datapackage(DatapackageBase):
             "id": id_ or uuid.uuid4().hex,
             "licenses": (metadata or {}).get("licenses", DEFAULT_LICENSES),
             "resources": [],
-            "created": datetime.datetime.utcnow().isoformat("T") + "Z",
+            "created": datetime.datetime.now(datetime.UTC).isoformat("T") + "Z",
             "combinatorial": combinatorial,
             "sequential": sequential,
             "seed": seed,
