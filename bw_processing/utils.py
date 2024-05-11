@@ -1,6 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
+from datetime import datetime
 
 import numpy as np
 from numpy.lib.recfunctions import repack_fields
@@ -98,3 +99,11 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
         ),
         array["flip"],
     )
+
+
+def utc_now() -> datetime:
+    """Get current datetime compatible with Py 3.8 to 3.12"""
+    if hasattr(datetime, "UTC"):
+        return datetime.now(datetime.UTC)
+    else:
+        return datetime.utcnow()

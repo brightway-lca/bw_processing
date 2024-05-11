@@ -31,7 +31,7 @@ from .errors import (
 from .filesystem import clean_datapackage_name
 from .io_helpers import file_reader, file_writer
 from .proxies import Proxy, UndefinedInterface
-from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator
+from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator, utc_now
 
 
 class DatapackageBase(ABC):
@@ -369,7 +369,7 @@ class Datapackage(DatapackageBase):
             "id": id_ or uuid.uuid4().hex,
             "licenses": (metadata or {}).get("licenses", DEFAULT_LICENSES),
             "resources": [],
-            "created": datetime.datetime.now(datetime.UTC).isoformat("T") + "Z",
+            "created": utc_now().isoformat("T") + "Z",
             "combinatorial": combinatorial,
             "sequential": sequential,
             "seed": seed,
