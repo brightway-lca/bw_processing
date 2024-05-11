@@ -23,7 +23,8 @@ def safe_filename(
 
     if `add_hash`, appends hash of `string` to avoid name collisions.
 
-    From http://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename-in-python"""
+    From http://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename-in-python
+    """
     safe = re.sub(
         r"[-\s]+",
         "-",

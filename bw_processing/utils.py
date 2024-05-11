@@ -1,7 +1,7 @@
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
-from datetime import datetime
 
 import numpy as np
 from numpy.lib.recfunctions import repack_fields

@@ -13,6 +13,7 @@ class Proxy:
     def __call__(self):
         """Retrieve the data.
 
-        Rewinds the file or buffer to 0, see https://github.com/brightway-lca/bw_processing/issues/9."""
+        Rewinds the file or buffer to 0, see https://github.com/brightway-lca/bw_processing/issues/9.
+        """
         self.kwargs[self.label].seek(0)
         return self.func(**self.kwargs)

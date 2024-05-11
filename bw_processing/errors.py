@@ -29,7 +29,8 @@ class ShapeMismatch(BrightwayProcessingError):
 class InvalidName(BrightwayProcessingError):
     """Name fails datapackage requirements:
 
-    A short url-usable (and preferably human-readable) name of the package. This MUST be lower-case and contain only alphanumeric characters along with ".", "_" or "-" characters."""
+    A short url-usable (and preferably human-readable) name of the package. This MUST be lower-case and contain only alphanumeric characters along with ".", "_" or "-" characters.
+    """
 
     pass
 

@@ -127,7 +127,8 @@ class DatapackageBase(ABC):
     def del_resource_group(self, name: str) -> None:
         """Remove a resource group, and delete its data files, if any.
 
-        Use ``exclude_resource_group`` if you want to keep the underlying resource in the filesystem."""
+        Use ``exclude_resource_group`` if you want to keep the underlying resource in the filesystem.
+        """
         if self._modified:
             raise PotentialInconsistency(
                 "Datapackage is modified; save modifications or reload"
@@ -181,7 +182,8 @@ class DatapackageBase(ABC):
 
         All included objects are the same as in the original data package, i.e. no copies are made. No checks are made to ensure consistency with modifications to the original datapackage after the creation of this filtered datapackage.
 
-        This method was introduced to allow for the efficient construction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced."""
+        This method was introduced to allow for the efficient construction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced.
+        """
         fdp = FilteredDatapackage()
         fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
@@ -1115,7 +1117,7 @@ def load_datapackage(
     return obj
 
 
-def simple_graph(data: dict, fs: Optional[FS] = None, **metadata)->Datapackage:
+def simple_graph(data: dict, fs: Optional[FS] = None, **metadata) -> Datapackage:
     """Easy creation of simple datapackages with only persistent vectors.
 
     Args:
@@ -1123,8 +1125,8 @@ def simple_graph(data: dict, fs: Optional[FS] = None, **metadata)->Datapackage:
             The data dictionary has the form::
 
                 {
-                    matrix_name: [ 
-                    (row_id, col_id, value, flip) 
+                    matrix_name: [
+                    (row_id, col_id, value, flip)
                     ]
                 }
 

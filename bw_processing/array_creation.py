@@ -68,7 +68,8 @@ def create_structured_array(iterable, dtype, nrows=None, sort=False, sort_fields
 
     ``iterable`` can be data already in memory, or a generator.
 
-    ``nrows`` can be supplied, if known. If ``iterable`` has a length, it will be determined automatically. If ``nrows`` is not known, this function generates chunked arrays until ``iterable`` is exhausted, and concatenates them."""
+    ``nrows`` can be supplied, if known. If ``iterable`` has a length, it will be determined automatically. If ``nrows`` is not known, this function generates chunked arrays until ``iterable`` is exhausted, and concatenates them.
+    """
     if nrows or hasattr(iterable, "__len__"):
         if not nrows:
             nrows = len(iterable)
