@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+### [0.9.3] - 2024-05-12
+
+* Fix compatibility function for datetime utcnow for older Python versions
+
 ### [0.9.2] - 2024-05-11
 
 * Add compatibility function for datetime utcnow for older Python versions

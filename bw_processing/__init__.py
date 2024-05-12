@@ -26,7 +26,7 @@ __all__ = (
     "UndefinedInterface",
 )
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 
 
 from .array_creation import create_array, create_structured_array
