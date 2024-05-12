@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
@@ -101,9 +101,9 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     )
 
 
-def utc_now() -> datetime:
+def utc_now() -> datetime.datetime:
     """Get current datetime compatible with Py 3.8 to 3.12"""
     if hasattr(datetime, "UTC"):
-        return datetime.now(datetime.UTC)
+        return datetime.datetime.now(datetime.UTC)
     else:
-        return datetime.utcnow()
+        return datetime.datetime.utcnow()
