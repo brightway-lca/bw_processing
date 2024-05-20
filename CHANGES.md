@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+## DEV
+
+* Changed packaging
+
 ### [0.9.3] - 2024-05-12
 
 * Fix compatibility function for datetime utcnow for older Python versions

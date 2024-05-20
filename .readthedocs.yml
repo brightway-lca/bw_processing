@@ -6,7 +6,7 @@
 version: 2
 
 conda:
-   environment: docs/environment.yaml
+   environment: environment.yaml
 
 sphinx:
    configuration: docs/conf.py
