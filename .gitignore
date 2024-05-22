@@ -138,3 +138,5 @@ dmypy.json
 # Sphinx
 _build
 /docs/api/
+
+.DS_Store
