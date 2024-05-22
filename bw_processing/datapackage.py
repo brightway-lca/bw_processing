@@ -6,9 +6,10 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from fs.base import FS
-from fs.errors import ResourceNotFound
-from fs.memoryfs import MemoryFS
+from fsspec import AbstractFileSystem
+
+# Use this instead of fsspec MemoryFileSystem because that is a singleton!?
+from morefs.dict import DictFS
 
 from .constants import (
     DEFAULT_LICENSES,
@@ -109,15 +110,13 @@ class DatapackageBase(ABC):
     def del_resource(self, name_or_index: Union[str, int]) -> None:
         """Remove a resource, and delete its data file, if any."""
         if self._modified:
-            raise PotentialInconsistency(
-                "Datapackage is modified; save modifications or reload"
-            )
+            raise PotentialInconsistency("Datapackage is modified; save modifications or reload")
 
         index = self._get_index(name_or_index)
 
         try:
-            self.fs.remove(self.resources[index]["path"])
-        except (KeyError, ResourceNotFound):
+            self.fs.rm(self.resources[index]["path"])
+        except (KeyError, FileNotFoundError):
             # Interface has no path
             pass
 
@@ -130,26 +129,18 @@ class DatapackageBase(ABC):
         Use ``exclude_resource_group`` if you want to keep the underlying resource in the filesystem.
         """
         if self._modified:
-            raise PotentialInconsistency(
-                "Datapackage is modified; save modifications or reload"
-            )
+            raise PotentialInconsistency("Datapackage is modified; save modifications or reload")
 
-        indices = [
-            i
-            for i, resource in enumerate(self.resources)
-            if resource.get("group") == name
-        ]
+        indices = [i for i, resource in enumerate(self.resources) if resource.get("group") == name]
 
         for obj in (obj for i, obj in enumerate(self.resources) if i in indices):
             try:
-                self.fs.remove(obj["path"])
-            except (KeyError, ResourceNotFound):
+                self.fs.rm(obj["path"])
+            except (KeyError, FileNotFoundError):
                 # Interface has no path
                 pass
 
-        self.resources = [
-            obj for i, obj in enumerate(self.resources) if i not in indices
-        ]
+        self.resources = [obj for i, obj in enumerate(self.resources) if i not in indices]
         self.data = [obj for i, obj in enumerate(self.data) if i not in indices]
 
     def get_resource(self, name_or_index: Union[str, int]) -> (Any, dict):
@@ -188,9 +179,7 @@ class DatapackageBase(ABC):
         fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
         fdp.metadata["resources"] = []
-        to_include = [
-            i for i, resource in enumerate(self.resources) if resource.get(key) == value
-        ]
+        to_include = [i for i, resource in enumerate(self.resources) if resource.get(key) == value]
         fdp.data = [o for i, o in enumerate(self.data) if i in to_include]
         fdp.resources = [o for i, o in enumerate(self.resources) if i in to_include]
         if hasattr(self, "indexer"):
@@ -225,17 +214,13 @@ class DatapackageBase(ABC):
             if any(resource.get(key) != value for key, value in filters.items())
         ]
         fdp.data = [o for i, o in enumerate(self.data) if i in indices_to_include]
-        fdp.resources = [
-            o for i, o in enumerate(self.resources) if i in indices_to_include
-        ]
+        fdp.resources = [o for i, o in enumerate(self.resources) if i in indices_to_include]
         return fdp
 
     def _dehydrate_interfaces(self) -> None:
         """Substitute an interface resource with ``UndefinedInterface``, in preparation for finalizing data on disk."""
         interface_indices = [
-            index
-            for index, obj in enumerate(self.resources)
-            if obj["profile"] == "interface"
+            index for index, obj in enumerate(self.resources) if obj["profile"] == "interface"
         ]
 
         for index in interface_indices:
@@ -301,7 +286,7 @@ class Datapackage(DatapackageBase):
         return hash((self.fs, self.metadata))
 
     def __eq__(self, other):
-        return (self.fs, self.metadata) == (other.fs, other.metadata)
+        return (id(self.fs), self.metadata) == (id(other.fs), other.metadata)
 
     def _check_length_consistency(self) -> None:
         if len(self.resources) != len(self.data):
@@ -312,7 +297,7 @@ class Datapackage(DatapackageBase):
             )
 
     def _load(
-        self, fs: FS, mmap_mode: Optional[str] = None, proxy: bool = False
+        self, fs: AbstractFileSystem, mmap_mode: Optional[str] = None, proxy: bool = False
     ) -> None:
         self.fs = fs
         self.metadata = file_reader(
@@ -338,7 +323,7 @@ class Datapackage(DatapackageBase):
 
     def _create(
         self,
-        fs: Optional[FS],
+        fs: Optional[AbstractFileSystem],
         name: Optional[str],
         id_: Optional[str],
         metadata: Optional[dict],
@@ -358,7 +343,7 @@ class Datapackage(DatapackageBase):
         name = clean_datapackage_name(name or uuid.uuid4().hex)
         check_name(name)
 
-        self.fs = fs or MemoryFS()
+        self.fs = fs or DictFS()
         if not isinstance(matrix_serialize_format_type, MatrixSerializeFormat):
             raise TypeError(
                 f"Matrix serialize format type ({matrix_serialize_format_type}) not recognized!"
@@ -388,7 +373,7 @@ class Datapackage(DatapackageBase):
     def finalize_serialization(self) -> None:
         if self._finalized:
             raise Closed("Datapackage already finalized")
-        elif isinstance(self.fs, MemoryFS):
+        elif isinstance(self.fs, DictFS):
             raise ValueError("In-memory file systems can't be serialized")
 
         self._dehydrate_interfaces()
@@ -400,7 +385,8 @@ class Datapackage(DatapackageBase):
             resource="datapackage.json",
             mimetype="application/json",
         )
-        self.fs.close()
+        if hasattr(self.fs, "close"):
+            self.fs.close()
         self._finalized = True
 
     def _prepare_modifications(self) -> None:
@@ -471,9 +457,7 @@ class Datapackage(DatapackageBase):
 
         # Check lengths
 
-        kwargs.update(
-            {"matrix": matrix, "category": "vector", "nrows": len(indices_array)}
-        )
+        kwargs.update({"matrix": matrix, "category": "vector", "nrows": len(indices_array)})
         name = self._prepare_name(name)
 
         indices_array = load_bytes(indices_array)
@@ -516,9 +500,7 @@ class Datapackage(DatapackageBase):
         if distributions_array is not None:
             distributions_array = load_bytes(distributions_array)
             # If no uncertainty, don't need to store it
-            if (distributions_array["uncertainty_type"] < 2).sum() < len(
-                distributions_array
-            ):
+            if (distributions_array["uncertainty_type"] < 2).sum() < len(distributions_array):
                 if distributions_array.shape != indices_array.shape:
                     raise ShapeMismatch(
                         "`distributions_array` shape ({}) doesn't match `indices_array` ({}).".format(
@@ -542,9 +524,7 @@ class Datapackage(DatapackageBase):
             if flip_array.sum():
                 if flip_array.dtype != bool:
                     raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(
-                            flip_array.dtype
-                        )
+                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
                     )
                 elif flip_array.shape != indices_array.shape:
                     raise ShapeMismatch(
@@ -579,9 +559,7 @@ class Datapackage(DatapackageBase):
         """ """
         self._prepare_modifications()
 
-        kwargs.update(
-            {"matrix": matrix, "category": "array", "nrows": len(indices_array)}
-        )
+        kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
         name = self._prepare_name(name)
 
         indices_array = load_bytes(indices_array)
@@ -626,9 +604,7 @@ class Datapackage(DatapackageBase):
             if flip_array.sum():
                 if flip_array.dtype != bool:
                     raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(
-                            flip_array.dtype
-                        )
+                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
                     )
                 elif flip_array.shape != indices_array.shape:
                     raise ShapeMismatch(
@@ -716,9 +692,7 @@ class Datapackage(DatapackageBase):
         meta_type: Optional[str] = None,
         **kwargs,
     ) -> None:
-        assert (
-            array.ndim <= 2
-        ), f"Numpy array should be of dim 2 or less instead of {array.ndim}!"
+        assert array.ndim <= 2, f"Numpy array should be of dim 2 or less instead of {array.ndim}!"
 
         if matrix_serialize_format_type is None:
             # use instance default serialization format
@@ -741,13 +715,13 @@ class Datapackage(DatapackageBase):
                 f"Matrix serialize format type {matrix_serialize_format_type} is not recognized!"
             )
 
-        if not isinstance(self.fs, MemoryFS):
+        if not isinstance(self.fs, DictFS):
             file_writer(
                 data=array,
                 fs=self.fs,
                 resource=filename,
                 mimetype="application/octet-stream",
-                matrix_serialize_format_type=matrix_serialize_format_type,  # NIKO
+                matrix_serialize_format_type=matrix_serialize_format_type,
                 meta_object=meta_object,
                 meta_type=meta_type,
             )
@@ -793,9 +767,7 @@ class Datapackage(DatapackageBase):
     ) -> None:
         self._prepare_modifications()
 
-        kwargs.update(
-            {"matrix": matrix, "category": "vector", "nrows": len(indices_array)}
-        )
+        kwargs.update({"matrix": matrix, "category": "vector", "nrows": len(indices_array)})
         name = self._prepare_name(name)
 
         indices_array = load_bytes(indices_array)
@@ -815,9 +787,7 @@ class Datapackage(DatapackageBase):
             if flip_array.sum():
                 if flip_array.dtype != bool:
                     raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(
-                            flip_array.dtype
-                        )
+                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
                     )
                 elif flip_array.shape != indices_array.shape:
                     raise ShapeMismatch(
@@ -865,9 +835,7 @@ class Datapackage(DatapackageBase):
         if isinstance(flip_array, np.ndarray) and not flip_array.sum():
             flip_array = None
 
-        kwargs.update(
-            {"matrix": matrix, "category": "array", "nrows": len(indices_array)}
-        )
+        kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
         name = self._prepare_name(name)
 
         indices_array = load_bytes(indices_array)
@@ -887,9 +855,7 @@ class Datapackage(DatapackageBase):
             if flip_array.sum():
                 if flip_array.dtype != bool:
                     raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(
-                            flip_array.dtype
-                        )
+                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
                     )
                 elif flip_array.shape != indices_array.shape:
                     raise ShapeMismatch(
@@ -977,9 +943,7 @@ class Datapackage(DatapackageBase):
         )
         self.resources.append(kwargs)
 
-    def add_json_metadata(
-        self, *, data: Any, valid_for: str, name: str = None, **kwargs
-    ) -> None:
+    def add_json_metadata(self, *, data: Any, valid_for: str, name: str = None, **kwargs) -> None:
         """Add an iterable metadata object to be stored as a JSON file.
 
         The purpose of storing metadata is to enable data exchange; therefore, this method assumes that data is written to disk.
@@ -1015,9 +979,7 @@ class Datapackage(DatapackageBase):
 
         filename = check_suffix(name, ".json")
 
-        file_writer(
-            data=data, fs=self.fs, resource=filename, mimetype="application/json"
-        )
+        file_writer(data=data, fs=self.fs, resource=filename, mimetype="application/json")
         self.data.append(data)
 
         kwargs.update(
@@ -1035,7 +997,7 @@ class Datapackage(DatapackageBase):
 
 
 def create_datapackage(
-    fs: Optional[FS] = None,
+    fs: Optional[AbstractFileSystem] = None,
     name: Optional[str] = None,
     id_: Optional[str] = None,
     metadata: Optional[dict] = None,
@@ -1048,14 +1010,14 @@ def create_datapackage(
 ) -> Datapackage:
     """Create a new data package.
 
-    All arguments are optional; if a `PyFilesystem2 <https://docs.pyfilesystem.org/en/latest/>`__ filesystem is not provided, a `MemoryFS <https://docs.pyfilesystem.org/en/latest/reference/memoryfs.html>`__ will be used.
+    All arguments are optional; if a `fsspec <https://filesystem-spec.readthedocs.io/en/latest/>`__ filesystem is not provided, an in-memory `DictFS <https://github.com/iterative/morefs?tab=readme-ov-file#dictfs>`__ will be used.
 
     All metadata elements should follow the `datapackage specification <https://frictionlessdata.io/specs/data-package/>`__.
 
     Licenses are specified as a list in ``metadata``. The default license is the `Open Data Commons Public Domain Dedication and License v1.0 <http://opendatacommons.org/licenses/pddl/>`__.
 
     Args:
-        * fs: A ``Filesystem``, optional. A new ``MemoryFS`` is used if not provided.
+        * fs: A ``Filesystem``, optional. A new ``DictFS`` is used if not provided.
         * name: ``str``, optional. A new uuid is used if not provided.
         * `id_`: ``str``, optional. A new uuid is used if not provided.
         * metadata: ``dict``, optional. Metadata dictionary following datapackage specification; see above.
@@ -1088,7 +1050,7 @@ def create_datapackage(
 
 
 def load_datapackage(
-    fs_or_obj: Union[DatapackageBase, FS],
+    fs_or_obj: Union[DatapackageBase, AbstractFileSystem],
     mmap_mode: Optional[str] = None,
     proxy: bool = False,
 ) -> Datapackage:
@@ -1117,7 +1079,7 @@ def load_datapackage(
     return obj
 
 
-def simple_graph(data: dict, fs: Optional[FS] = None, **metadata) -> Datapackage:
+def simple_graph(data: dict, fs: Optional[AbstractFileSystem] = None, **metadata) -> Datapackage:
     """Easy creation of simple datapackages with only persistent vectors.
 
     Args:
@@ -1140,13 +1102,11 @@ def simple_graph(data: dict, fs: Optional[FS] = None, **metadata) -> Datapackage
         the datapackage.
 
     """
-    dp = create_datapackage(fs=fs, **metadata)
+    dp = create_datapackage(fs=fs or DictFS(), **metadata)
     for key, value in data.items():
         indices_array = np.array([row[:2] for row in value], dtype=INDICES_DTYPE)
         data_array = np.array([row[2] for row in value])
-        flip_array = np.array(
-            [row[3] if len(row) > 3 else False for row in value], dtype=bool
-        )
+        flip_array = np.array([row[3] if len(row) > 3 else False for row in value], dtype=bool)
         dp.add_persistent_vector(
             matrix=key,
             data_array=data_array,

@@ -36,7 +36,7 @@ if __name__ == "__main__":
         )
     else:
         # VERSION ZIP
-        dp_zip_file = ZipFS(str(dirpath / "datapackage_2.zip"), write=True)
+        dp_zip_file = ZipFS(str(dirpath / "datapackage_2.zip"), mode="w")
         dp = bwp.create_datapackage(
             fs=dp_zip_file, matrix_serialize_format_type=bwp.MatrixSerializeFormat.NUMPY
         )  # bwp.create_datapackage(fs=dp_zip_file, serialize_type=SerializeENum.parquet)

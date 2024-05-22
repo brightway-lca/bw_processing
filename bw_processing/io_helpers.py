@@ -5,9 +5,11 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
-from fs.base import FS
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec import AbstractFileSystem
+from fsspec.implementations.dirfs import DirFileSystem
+from fsspec.implementations.local import LocalFileSystem
+from fsspec.implementations.zip import ZipFileSystem
+from morefs.dict import DictFS
 
 from .constants import MatrixSerializeFormat
 from .errors import InvalidMimetype
@@ -23,29 +25,27 @@ except ImportError:
     PARQUET = False
 
 
-def generic_directory_filesystem(*, dirpath: Path) -> OSFS:
+def generic_directory_filesystem(*, dirpath: Path) -> DirFileSystem:
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         if not dirpath.parent.is_dir():
-            raise ValueError(
-                "Parent directory `{}` doesn't exist".format(dirpath.parent)
-            )
+            raise ValueError("Parent directory `{}` doesn't exist".format(dirpath.parent))
         dirpath.mkdir()
-    return OSFS(dirpath)
+    return DirFileSystem(path=dirpath, fs=LocalFileSystem())
 
 
 def generic_zipfile_filesystem(
     *, dirpath: Path, filename: str, write: bool = True
-) -> ZipFS:
+) -> ZipFileSystem:
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         raise ValueError("Destination directory `{}` doesn't exist".format(dirpath))
-    return ZipFS(dirpath / filename, write=write)
+    return ZipFileSystem(dirpath / filename, mode="w" if write else "r")
 
 
 def file_reader(
     *,
-    fs: FS,
+    fs: AbstractFileSystem,
     resource: str,
     mimetype: str,
     proxy: bool = False,
@@ -116,7 +116,7 @@ def file_reader(
 def file_writer(
     *,
     data: Any,
-    fs: FS,
+    fs: AbstractFileSystem,
     resource: str,
     mimetype: str,
     matrix_serialize_format_type: MatrixSerializeFormat = MatrixSerializeFormat.NUMPY,  # NIKO
@@ -129,7 +129,8 @@ def file_writer(
 
     if mimetype == "application/octet-stream":
         if matrix_serialize_format_type == MatrixSerializeFormat.NUMPY:
-            return np.save(fs.open(resource, mode="wb"), data, allow_pickle=False)
+            with fs.open(resource, mode="wb") as fo:
+                return np.save(fo, data, allow_pickle=False)
         elif matrix_serialize_format_type == MatrixSerializeFormat.PARQUET:
             if not PARQUET:
                 raise ImportError("`pyarrow` library not installed")

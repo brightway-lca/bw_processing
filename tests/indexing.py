@@ -44,20 +44,14 @@ def add_data(dp, id_field="id"):
         name="array",
         flip_array=flip_array,
     )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("vector", "row")], name="vector-csv-rows"
-    )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("vector", "col")], name="vector-csv-cols"
-    )
+    dp.add_csv_metadata(dataframe=df, valid_for=[("vector", "row")], name="vector-csv-rows")
+    dp.add_csv_metadata(dataframe=df, valid_for=[("vector", "col")], name="vector-csv-cols")
     dp.add_csv_metadata(
         dataframe=df,
         valid_for=[("vector", "row"), ("vector", "col")],
         name="vector-csv-both",
     )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("array", "row")], name="array-csv-rows"
-    )
+    dp.add_csv_metadata(dataframe=df, valid_for=[("array", "row")], name="array-csv-rows")
     dp.add_csv_metadata(
         dataframe=df,
         valid_for=[("array", "row"), ("array", "col")],
@@ -72,18 +66,14 @@ def add_data(dp, id_field="id"):
 
 @pytest.fixture
 def fixture():
-    dp = load_datapackage(
-        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
-    )
+    dp = load_datapackage(OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing")))
     dp_unchanged(dp)
     return dp
 
 
 def dp_unchanged(dp=None):
     if dp is None:
-        dp = load_datapackage(
-            OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
-        )
+        dp = load_datapackage(OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing")))
 
     array, _ = dp.get_resource("vector.indices")
     assert np.allclose(array["row"], np.array([11, 11, 13]))
@@ -134,9 +124,7 @@ def test_reset_index_modified(fixture):
     reset_index(fixture, "vector-csv-rows")
     assert fixture._modified == set([fixture._get_index("vector.indices")])
 
-    fixture = load_datapackage(
-        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
-    )
+    fixture = load_datapackage(OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing")))
     assert not fixture._modified
 
     reset_index(fixture, "csv-multiple")

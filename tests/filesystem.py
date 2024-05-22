@@ -24,9 +24,7 @@ def test_safe_filename():
         safe_filename("Wave your hand yeah 🙋!", full=True)
         == "Wave-your-hand-yeah.f7952a3d4b0534cdac0e0cbbf66aac73"
     )
-    assert (
-        safe_filename("Wave your hand yeah 🙋!", add_hash=False) == "Wave-your-hand-yeah"
-    )
+    assert safe_filename("Wave your hand yeah 🙋!", add_hash=False) == "Wave-your-hand-yeah"
 
 
 def test_clean_datapackage_name():

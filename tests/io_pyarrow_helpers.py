@@ -49,15 +49,11 @@ def test_double_conversion_flip_vector(flip_vector):
 
 
 def test_double_conversion_distribution_vector(distributions_vector):
-    table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(
-        distributions_vector
-    )
+    table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(distributions_vector)
     arr = pyarrow_distributions_vector_table_to_numpy_distributions_vector(table)
 
     assert arr.dtype == distributions_vector.dtype
-    assert vector_equal_with_uncertainty_dtype(
-        arr, distributions_vector, equal_nan=True
-    )
+    assert vector_equal_with_uncertainty_dtype(arr, distributions_vector, equal_nan=True)
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.float64])

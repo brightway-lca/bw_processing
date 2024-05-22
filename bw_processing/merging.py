@@ -4,8 +4,8 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
-from fs.base import FS
-from fs.memoryfs import MemoryFS
+from fsspec import AbstractFileSystem
+from morefs.dict import DictFS
 
 from .datapackage import DatapackageBase, create_datapackage
 from .errors import LengthMismatch
@@ -63,8 +63,8 @@ def add_resource_suffix(metadata: dict, suffix: str) -> dict:
     return metadata
 
 
-def write_data_to_fs(resource: dict, data: Any, fs: FS) -> None:
-    if isinstance(fs, MemoryFS):
+def write_data_to_fs(resource: dict, data: Any, fs: AbstractFileSystem) -> None:
+    if isinstance(fs, DictFS):
         return
     file_writer(
         data=data,
@@ -80,7 +80,7 @@ def merge_datapackages_with_mask(
     second_dp: DatapackageBase,
     second_resource_group_label: str,
     mask_array: np.ndarray,
-    output_fs: Optional[FS] = None,
+    output_fs: Optional[AbstractFileSystem] = None,
     metadata: Optional[dict] = None,
 ) -> DatapackageBase:
     """Merge two resources using a Numpy boolean mask. Returns elements from ``first_dp`` where the mask is ``True``, otherwise ``second_dp``.
@@ -108,35 +108,27 @@ def merge_datapackages_with_mask(
     """
     if first_resource_group_label == second_resource_group_label:
         add_suffix = True
-        warnings.warn(
-            "Adding suffixes '_true' and '_false' as resource group labels are identical"
-        )
+        warnings.warn("Adding suffixes '_true' and '_false' as resource group labels are identical")
     else:
         add_suffix = False
 
     try:
         first_dp = first_dp.groups[first_resource_group_label]
     except KeyError:
-        raise ValueError(
-            f"Resource group not {first_resource_group_label} not in ``first_dp``"
-        )
+        raise ValueError(f"Resource group not {first_resource_group_label} not in ``first_dp``")
     try:
         second_dp = second_dp.groups[second_resource_group_label]
     except KeyError:
-        raise ValueError(
-            f"Resource group not {second_resource_group_label} not in ``second_dp``"
-        )
+        raise ValueError(f"Resource group not {second_resource_group_label} not in ``second_dp``")
 
     DIMENSION_ERROR = """Dimension mismatch. All array lengths must be the same, but got:\n\tFirst DP: {}\n\tSecond DP: {}\n\t Mask array: {}"""
     if not (len(first_dp.data[0]) == len(first_dp.data[0]) == len(mask_array)):
         raise LengthMismatch(
-            DIMENSION_ERROR.format(
-                len(first_dp.data[0]), len(first_dp.data[0]), len(mask_array)
-            )
+            DIMENSION_ERROR.format(len(first_dp.data[0]), len(first_dp.data[0]), len(mask_array))
         )
 
     if output_fs is None:
-        output_fs = MemoryFS()
+        output_fs = DictFS()
 
     if any(resource["profile"] == "interface" for resource in first_dp.resources):
         raise ValueError("Unsupported interface found in ``first_dp``")

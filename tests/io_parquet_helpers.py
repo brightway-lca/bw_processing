@@ -14,10 +14,7 @@ from helpers.basic_array_helpers import (
 )
 
 from bw_processing.errors import WrongDatatype
-from bw_processing.io_parquet_helpers import (
-    load_ndarray_from_parquet,
-    save_arr_to_parquet,
-)
+from bw_processing.io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
 
 ARR_LIST = [
     ("indices_vector", "vector", "indices"),
@@ -34,13 +31,9 @@ def test_save_load_parquet_file(
     arr = request.getfixturevalue(arr_fixture_name)  # get fixture from name
     file = tmp_path_factory.mktemp("data") / (arr_fixture_name + ".parquet")
 
-    with file as fp:
-        save_arr_to_parquet(
-            file=fp, arr=arr, meta_object=meta_object, meta_type=meta_type
-        )
+    save_arr_to_parquet(file=file, arr=arr, meta_object=meta_object, meta_type=meta_type)
 
-    with file as fp:
-        loaded_arr = load_ndarray_from_parquet(fp)
+    loaded_arr = load_ndarray_from_parquet(file)
 
     assert arr.dtype == loaded_arr.dtype and np.array_equal(arr, loaded_arr)
 
@@ -52,11 +45,9 @@ def test_save_load_parquet_file_data_vector(dtype, tmp_path_factory):
     arr = data_vector(dtype=dtype)
     file = tmp_path_factory.mktemp("data") / "data_vector.parquet"
 
-    with file as fp:
-        save_arr_to_parquet(file=fp, arr=arr, meta_object="vector", meta_type="generic")
+    save_arr_to_parquet(file=file, arr=arr, meta_object="vector", meta_type="generic")
 
-    with file as fp:
-        loaded_arr = load_ndarray_from_parquet(fp)
+    loaded_arr = load_ndarray_from_parquet(file)
 
     assert arr.dtype == loaded_arr.dtype and np.array_equal(arr, loaded_arr)
 
@@ -78,17 +69,13 @@ def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
 
 
 @pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
-def test_save_load_parquet_file_distribution_vector(
-    distributions_vector, tmp_path_factory
-):
+def test_save_load_parquet_file_distribution_vector(distributions_vector, tmp_path_factory):
 
     arr = distributions_vector
     file = tmp_path_factory.mktemp("data") / "distributions_vector.parquet"
 
     with file as fp:
-        save_arr_to_parquet(
-            file=fp, arr=arr, meta_object="vector", meta_type="distributions"
-        )
+        save_arr_to_parquet(file=fp, arr=arr, meta_object="vector", meta_type="distributions")
 
     with file as fp:
         loaded_arr = load_ndarray_from_parquet(fp)

@@ -7,12 +7,7 @@ import pytest
 
 from bw_processing import __version__
 from bw_processing.errors import InvalidName
-from bw_processing.utils import (
-    check_name,
-    check_suffix,
-    dictionary_formatter,
-    load_bytes,
-)
+from bw_processing.utils import check_name, check_suffix, dictionary_formatter, load_bytes
 
 
 def test_version():
