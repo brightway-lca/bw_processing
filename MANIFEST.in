@@ -1,2 +1,3 @@
-include bw_processing/examples/simple.zip
+include bw_processing/examples/*.zip
+include bw_processing/examples/datapackage_1/*.parquet
 recursive-exclude dev *
