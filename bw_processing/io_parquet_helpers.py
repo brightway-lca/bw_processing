@@ -7,15 +7,14 @@ import contextlib
 import os
 
 # for annotation
-from io import BufferedWriter, RawIOBase
+from io import BufferedWriter, IOBase, RawIOBase
 
 import numpy
 import numpy as np
 import pyarrow.parquet as pq
-from fs.iotools import RawWrapper
 
-from bw_processing.errors import WrongDatatype
-from bw_processing.io_pyarrow_helpers import (
+from .errors import WrongDatatype
+from .io_pyarrow_helpers import (
     numpy_distributions_vector_to_pyarrow_distributions_vector_table,
     numpy_generic_matrix_to_pyarrow_generic_matrix_table,
     numpy_generic_vector_to_pyarrow_generic_vector_table,
@@ -49,9 +48,7 @@ def write_ndarray_to_parquet_file(
         elif meta_type == "generic":
             table = numpy_generic_vector_to_pyarrow_generic_vector_table(arr=arr)
         elif meta_type == "distributions":
-            table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(
-                arr=arr
-            )
+            table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(arr=arr)
         else:
             raise NotImplementedError(f"Vector of type {meta_type} is not recognized!")
     else:
@@ -61,12 +58,12 @@ def write_ndarray_to_parquet_file(
     pq.write_table(table, file)
 
 
-def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
+def read_parquet_file_to_ndarray(file: RawIOBase) -> numpy.ndarray:
     """
     Read an `ndarray` from a `parquet` file.
 
     Args:
-        file (fs.iotools.RawWrapper): File to read from.
+        file (io.RawIOBase or fsspec file object): File to read from.
 
     Raises:
         `WrongDatatype` if the correct metadata is not found in the `parquet` file.
@@ -81,9 +78,7 @@ def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
         binary_meta_object = table.schema.metadata[b"object"]
         binary_meta_type = table.schema.metadata[b"type"]
     except KeyError:
-        raise WrongDatatype(
-            f"Parquet file {file} does not contain the right metadata format!"
-        )
+        raise WrongDatatype(f"Parquet file {file} does not contain the right metadata format!")
 
     arr = None
     if binary_meta_object == b"matrix":
@@ -94,9 +89,7 @@ def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
         elif binary_meta_type == b"generic":
             arr = pyarrow_generic_vector_table_to_numpy_generic_vector(table=table)
         elif binary_meta_type == b"distributions":
-            arr = pyarrow_distributions_vector_table_to_numpy_distributions_vector(
-                table=table
-            )
+            arr = pyarrow_distributions_vector_table_to_numpy_distributions_vector(table=table)
         else:
             raise NotImplementedError("Vector type not recognized")
     else:
@@ -105,9 +98,7 @@ def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
     return arr
 
 
-def save_arr_to_parquet(
-    file: RawIOBase, arr: np.ndarray, meta_object: str, meta_type: str
-) -> None:
+def save_arr_to_parquet(file: RawIOBase, arr: np.ndarray, meta_object: str, meta_type: str) -> None:
     """
     Serialize a `numpy` `ndarray` to a `parquet` `file`.
 
@@ -127,17 +118,15 @@ def save_arr_to_parquet(
 
     with file_ctx as fid:
         arr = np.asanyarray(arr)
-        write_ndarray_to_parquet_file(
-            fid, arr, meta_object=meta_object, meta_type=meta_type
-        )
+        write_ndarray_to_parquet_file(fid, arr, meta_object=meta_object, meta_type=meta_type)
 
 
-def load_ndarray_from_parquet(file: RawWrapper) -> np.ndarray:
+def load_ndarray_from_parquet(file: RawIOBase) -> np.ndarray:
     """
     Deserialize a `numpy` `ndarray` from a `parquet` `file`.
 
     Parameters
-        file (fs.iotools.RawWrapper): File to read from.
+        file (io.RawIOBase or fsspec file object): File to read from.
 
     Returns
         The corresponding `numpy` `ndarray`.

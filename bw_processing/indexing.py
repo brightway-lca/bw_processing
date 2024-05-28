@@ -3,14 +3,14 @@ from typing import List, Union
 
 import numpy as np
 import pandas as pd
-from fs.base import FS
+from fsspec import AbstractFileSystem
 
 from .datapackage import Datapackage, load_datapackage
 from .errors import NonUnique
 
 
 def _get_csv_data(
-    datapackage: Union[Datapackage, FS], metadata_name: str
+    datapackage: Union[Datapackage, AbstractFileSystem], metadata_name: str
 ) -> (Datapackage, pd.DataFrame, dict, List[np.ndarray], List[int]):
     """Utility function to get CSV data from datapackage.
 
@@ -40,14 +40,15 @@ def _get_csv_data(
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Given metadata is not a CSV file")
     resources = [
-        dp.get_resource(key + ".indices")[0][label]
-        for key, label in metadata["valid_for"]
+        dp.get_resource(key + ".indices")[0][label] for key, label in metadata["valid_for"]
     ]
     indices = [dp._get_index(key + ".indices") for key, _ in metadata["valid_for"]]
     return dp, df, metadata, resources, indices
 
 
-def reset_index(datapackage: Union[Datapackage, FS], metadata_name: str) -> Datapackage:
+def reset_index(
+    datapackage: Union[Datapackage, AbstractFileSystem], metadata_name: str
+) -> Datapackage:
     """Reset the numerical indices in ``datapackage`` to sequential integers starting from zero.
 
     Updates the datapackage in place.
@@ -79,7 +80,7 @@ def reset_index(datapackage: Union[Datapackage, FS], metadata_name: str) -> Data
 
 
 def reindex(
-    datapackage: Union[Datapackage, FS],
+    datapackage: Union[Datapackage, AbstractFileSystem],
     metadata_name: str,
     data_iterable: Iterable,
     fields: List[str] = None,

@@ -2,21 +2,16 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
 
-from bw_processing import (
-    INDICES_DTYPE,
-    UNCERTAINTY_DTYPE,
-    create_datapackage,
-    load_datapackage,
-)
+from bw_processing import INDICES_DTYPE, UNCERTAINTY_DTYPE, create_datapackage, load_datapackage
+from bw_processing.io_helpers import generic_directory_filesystem
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
 
 def test_metadata_is_the_same_object():
-    dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"))
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
     for k, v in fdp.metadata.items():
@@ -28,21 +23,21 @@ def test_metadata_is_the_same_object():
 
 
 def test_fs_is_the_same_object():
-    dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"))
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
     assert fdp.fs is dp.fs
 
 
 def test_indexer_is_the_same_object():
-    dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"))
     dp.indexer = lambda x: False
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
     assert fdp.indexer is dp.indexer
 
 
 def test_data_is_the_same_object_when_not_proxy():
-    dp = load_datapackage(fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")))
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"))
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
     arr1, _ = dp.get_resource("sa-data-array.data")
@@ -54,9 +49,7 @@ def test_data_is_the_same_object_when_not_proxy():
 
 
 def test_data_is_readable_multiple_times_when_proxy_zipfs():
-    dp = load_datapackage(
-        fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")), proxy=True
-    )
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"), proxy=True)
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
     arr1, _ = dp.get_resource("sa-data-array.data")
@@ -69,7 +62,9 @@ def test_data_is_readable_multiple_times_when_proxy_zipfs():
 
 
 def test_data_is_readable_multiple_times_when_proxy_directory():
-    dp = load_datapackage(fs_or_obj=OSFS(str(dirpath / "tfd")), proxy=True)
+    dp = load_datapackage(
+        fs_or_obj=generic_directory_filesystem(dirpath=dirpath / "tfd"), proxy=True
+    )
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
 
     arr1, _ = dp.get_resource("sa-data-array.data")
@@ -82,9 +77,7 @@ def test_data_is_readable_multiple_times_when_proxy_directory():
 
 
 def test_fdp_can_load_proxy_first():
-    dp = load_datapackage(
-        fs_or_obj=ZipFS(str(dirpath / "test-fixture.zip")), proxy=True
-    )
+    dp = load_datapackage(fs_or_obj=ZipFileSystem(dirpath / "test-fixture.zip"), proxy=True)
     fdp = dp.filter_by_attribute("matrix", "sa_matrix")
     arr2, _ = fdp.get_resource("sa-data-array.data")
     arr1, _ = dp.get_resource("sa-data-array.data")
@@ -97,9 +90,7 @@ def test_fdp_can_load_proxy_first():
 
 @pytest.fixture
 def erg():
-    dp = create_datapackage(
-        fs=None, name="frg-fixture", id_="something something danger zone"
-    )
+    dp = create_datapackage(fs=None, name="frg-fixture", id_="something something danger zone")
 
     data_array = np.arange(3)
     indices_array = np.array([(0, 1), (2, 3), (4, 5)], dtype=INDICES_DTYPE)

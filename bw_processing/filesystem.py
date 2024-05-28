@@ -16,9 +16,7 @@ def clean_datapackage_name(name: str) -> str:
     return re.sub(MULTI_RE, "_", re.sub(SUBSTITUTION_RE, "_", name).strip("_")).strip()
 
 
-def safe_filename(
-    string: Union[str, bytes], add_hash: bool = True, full: bool = False
-) -> str:
+def safe_filename(string: Union[str, bytes], add_hash: bool = True, full: bool = False) -> str:
     """Convert arbitrary strings to make them safe for filenames. Substitutes strange characters, and uses unicode normalization.
 
     if `add_hash`, appends hash of `string` to avoid name collisions.

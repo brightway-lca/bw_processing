@@ -6,12 +6,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fs import open_fs
-from fs.memoryfs import MemoryFS
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec.implementations.ftp import FTPFileSystem
+from fsspec.implementations.zip import ZipFileSystem
+from morefs.dict import DictFS
 
 from bw_processing import INDICES_DTYPE, create_datapackage, load_datapackage
+from bw_processing.io_helpers import generic_directory_filesystem
 
 _windows = platform.system() == "Windows"
 
@@ -339,7 +339,7 @@ def check_metadata(dp, as_tuples=True):
 
 def test_integration_test_in_memory():
     dp = create_datapackage(fs=None, name="test-fixture", id_="fixture-42")
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
     add_data(dp)
 
     check_metadata(dp)
@@ -348,7 +348,9 @@ def test_integration_test_in_memory():
 
 def test_integration_test_directory():
     dp = load_datapackage(
-        fs_or_obj=open_fs(str(Path(__file__).parent.resolve() / "fixtures" / "tfd"))
+        fs_or_obj=generic_directory_filesystem(
+            dirpath=Path(__file__).parent.resolve() / "fixtures" / "tfd"
+        )
     )
 
     check_metadata(dp, False)
@@ -357,53 +359,54 @@ def test_integration_test_directory():
 
 @pytest.mark.slow
 def test_integration_test_ftp():
-    dp = load_datapackage(fs_or_obj=open_fs("ftp://brightway.dev/tfd/"))
+    dp = load_datapackage(fs_or_obj=FTPFileSystem(host="ftp://brightway.dev/tfd/"))
     check_metadata(dp, False)
     check_data(dp)
 
 
-@pytest.mark.slow
-def test_integration_test_s3():
-    try:
-        import fs_s3fs
-        from botocore.exceptions import NoCredentialsError
-    except ImportError:
-        raise ImportError(
-            "https://github.com/PyFilesystem/s3fs must be installed for this test."
-        )
-    try:
-        dp = load_datapackage(fs_or_obj=open_fs("s3://bwprocessing"))
-        check_metadata(dp, False)
-        check_data(dp)
-    except NoCredentialsError:
-        raise NoCredentialsError(
-            "Supply AWS credentials (https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)"
-        )
+# TBD: https://s3fs.readthedocs.io/en/latest/
+# @pytest.mark.slow
+# def test_integration_test_s3():
+#     try:
+#         import fs_s3fs
+#         from botocore.exceptions import NoCredentialsError
+#     except ImportError:
+#         raise ImportError(
+#             "https://github.com/PyFilesystem/s3fs must be installed for this test."
+#         )
+#     try:
+#         dp = load_datapackage(fs_or_obj=open_fs("s3://bwprocessing"))
+#         check_metadata(dp, False)
+#         check_data(dp)
+#     except NoCredentialsError:
+#         raise NoCredentialsError(
+#             "Supply AWS credentials (https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)"
+#         )
 
 
 @pytest.mark.skipif(_windows, reason="Permission errors on Windows CI")
 def test_integration_test_fs_temp_directory():
     with tempfile.TemporaryDirectory() as td:
-        dp = create_datapackage(fs=OSFS(td), name="test-fixture", id_="fixture-42")
+        dp = create_datapackage(
+            fs=generic_directory_filesystem(dirpath=Path(td)), name="test-fixture", id_="fixture-42"
+        )
         add_data(dp)
         dp.finalize_serialization()
 
         check_metadata(dp)
         check_data(dp)
 
-        loaded = load_datapackage(OSFS(td))
+        loaded = load_datapackage(generic_directory_filesystem(dirpath=Path(td)))
 
         check_metadata(loaded, False)
         check_data(loaded)
-
-        loaded.fs.close()
 
 
 @pytest.mark.skipif(_windows, reason="Permission errors on Windows CI")
 def test_integration_test_new_zipfile():
     with tempfile.TemporaryDirectory() as td:
         dp = create_datapackage(
-            fs=ZipFS(str(Path(td) / "foo.zip"), write=True),
+            fs=ZipFileSystem(Path(td) / "foo.zip", mode="w"),
             name="test-fixture",
             id_="fixture-42",
         )
@@ -413,7 +416,7 @@ def test_integration_test_new_zipfile():
         check_metadata(dp)
         check_data(dp)
 
-        loaded = load_datapackage(ZipFS(str(Path(td) / "foo.zip"), write=False))
+        loaded = load_datapackage(ZipFileSystem(Path(td) / "foo.zip", mode="r"))
 
         check_metadata(loaded, False)
         check_data(loaded)
@@ -421,9 +424,9 @@ def test_integration_test_new_zipfile():
 
 def test_integration_test_fixture_zipfile():
     loaded = load_datapackage(
-        ZipFS(
-            str(Path(__file__).parent.resolve() / "fixtures" / "test-fixture.zip"),
-            write=False,
+        ZipFileSystem(
+            Path(__file__).parent.resolve() / "fixtures" / "test-fixture.zip",
+            mode="r",
         )
     )
 
@@ -439,13 +442,15 @@ if __name__ == "__main__":
     (dirpath / "tfd").mkdir(exist_ok=True)
 
     dp = create_datapackage(
-        fs=OSFS(str(dirpath / "tfd")), name="test-fixture", id_="fixture-42"
+        fs=generic_directory_filesystem(dirpath=dirpath / "tfd"),
+        name="test-fixture",
+        id_="fixture-42",
     )
     add_data(dp)
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        fs=ZipFS(str(dirpath / "test-fixture.zip"), write=True),
+        fs=ZipFileSystem(dirpath / "test-fixture.zip", mode="w"),
         name="test-fixture",
         id_="fixture-42",
     )

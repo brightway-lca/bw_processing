@@ -160,9 +160,7 @@ UNCERTAINTY_SCHEMA = pa.schema(
     PA_UNCERTAINTY_FIELDS, metadata={"object": "vector", "type": "distributions"}
 )
 
-UNCERTAINTY_FIELDS_NAMES = [
-    UNCERTAINTY_DTYPE[i][0] for i in range(NBR_UNCERTAINTY_FIELDS)
-]
+UNCERTAINTY_FIELDS_NAMES = [UNCERTAINTY_DTYPE[i][0] for i in range(NBR_UNCERTAINTY_FIELDS)]
 
 
 def numpy_distributions_vector_to_pyarrow_distributions_vector_table(
@@ -224,9 +222,7 @@ def pyarrow_distributions_vector_table_to_numpy_distributions_vector(
 
     distributions_array = []
     for el in zip(*distributions_arrays_list):
-        distributions_array.append(
-            tuple(el[i].as_py() for i in range(NBR_UNCERTAINTY_FIELDS))
-        )
+        distributions_array.append(tuple(el[i].as_py() for i in range(NBR_UNCERTAINTY_FIELDS)))
     arr = np.array(distributions_array, dtype=UNCERTAINTY_DTYPE)
 
     return arr
@@ -254,10 +250,7 @@ def numpy_generic_matrix_to_pyarrow_generic_matrix_table(arr: np.ndarray) -> pa.
     arr_dtype = arr.dtype
     metadata = {"object": "matrix", "type": "generic"}
     nbr_rows, nbr_cols = arr.shape
-    arrays = [
-        pa.array(arr[:, j], type=pa.from_numpy_dtype(arr_dtype))
-        for j in range(nbr_cols)
-    ]
+    arrays = [pa.array(arr[:, j], type=pa.from_numpy_dtype(arr_dtype)) for j in range(nbr_cols)]
     table = pa.Table.from_arrays(
         arrays=arrays,
         names=[str(j) for j in range(nbr_cols)],  # give names to each column

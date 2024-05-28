@@ -3,9 +3,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from fs.memoryfs import MemoryFS
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
+from morefs.dict import DictFS
 
 from bw_processing import (
     INDICES_DTYPE,
@@ -15,15 +14,14 @@ from bw_processing import (
     merge_datapackages_with_mask,
 )
 from bw_processing.errors import LengthMismatch
+from bw_processing.io_helpers import generic_directory_filesystem
 
 fixture_dir = Path(__file__).parent.resolve() / "fixtures"
 
 
 def test_basic_merging_functionality():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
@@ -32,7 +30,7 @@ def test_basic_merging_functionality():
         mask_array=np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0], dtype=bool),
     )
     assert isinstance(result, DatapackageBase)
-    assert isinstance(result.fs, MemoryFS)
+    assert isinstance(result.fs, DictFS)
     assert len(result.resources) == 5
 
     d, r = result.get_resource("sa-data-vector.data")
@@ -56,12 +54,10 @@ def test_basic_merging_functionality():
 
 
 def test_write_new_datapackage():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     with tempfile.TemporaryDirectory() as td:
-        temp_fs = OSFS(td)
+        temp_fs = generic_directory_filesystem(dirpath=Path(td))
         result = merge_datapackages_with_mask(
             first_dp=first,
             first_resource_group_label="sa-data-vector",
@@ -70,10 +66,10 @@ def test_write_new_datapackage():
             mask_array=np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0], dtype=bool),
             output_fs=temp_fs,
         )
-        result = load_datapackage(OSFS(td))
+        result = load_datapackage(generic_directory_filesystem(dirpath=Path(td)))
 
         assert isinstance(result, DatapackageBase)
-        assert not isinstance(result.fs, MemoryFS)
+        assert not isinstance(result.fs, DictFS)
         assert len(result.resources) == 5
 
         for suffix in {"indices", "data", "distributions", "flip"}:
@@ -106,10 +102,8 @@ def test_write_new_datapackage():
 
 
 def test_add_suffix():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_same_1.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_same_2.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(str(fixture_dir / "merging" / "merging_same_1.zip")))
+    second = load_datapackage(ZipFileSystem(str(fixture_dir / "merging" / "merging_same_2.zip")))
     with pytest.warns(UserWarning):
         result = merge_datapackages_with_mask(
             first_dp=first,
@@ -152,10 +146,8 @@ def test_add_suffix():
 
 
 def test_wrong_resource_group_name():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     with pytest.raises(ValueError):
         merge_datapackages_with_mask(
             first_dp=first,
@@ -189,9 +181,7 @@ def test_shape_mismatch_data():
 
     dp2 = create_datapackage()
     data_array = np.arange(5)
-    indices_array = np.array(
-        [(x, y) for x, y in zip(range(5), range(10, 15))], dtype=INDICES_DTYPE
-    )
+    indices_array = np.array([(x, y) for x, y in zip(range(5), range(10, 15))], dtype=INDICES_DTYPE)
     dp2.add_persistent_vector(
         matrix="sa_matrix",
         data_array=data_array,
@@ -209,10 +199,8 @@ def test_shape_mismatch_data():
 
 
 def test_shape_mismatch_mask():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     with pytest.raises(LengthMismatch):
         merge_datapackages_with_mask(
             first_dp=first,
@@ -224,10 +212,8 @@ def test_shape_mismatch_mask():
 
 
 def test_new_metadata():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
@@ -253,10 +239,8 @@ def test_new_metadata():
 
 
 def test_default_metadata():
-    first = load_datapackage(ZipFS(str(fixture_dir / "merging" / "merging_first.zip")))
-    second = load_datapackage(
-        ZipFS(str(fixture_dir / "merging" / "merging_second.zip"))
-    )
+    first = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_first.zip"))
+    second = load_datapackage(ZipFileSystem(fixture_dir / "merging" / "merging_second.zip"))
     result = merge_datapackages_with_mask(
         first_dp=first,
         first_resource_group_label="sa-data-vector",
@@ -313,7 +297,7 @@ def create_fixtures():
     (fixture_dir / "merging").mkdir(exist_ok=True)
 
     dp = create_datapackage(
-        fs=ZipFS(str(fixture_dir / "merging" / "merging_first.zip"), write=True),
+        fs=ZipFileSystem(str(fixture_dir / "merging" / "merging_first.zip"), mode="w"),
         name="merging-fixture",
         id_="fixture-42",
     )
@@ -332,7 +316,7 @@ def create_fixtures():
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        fs=ZipFS(str(fixture_dir / "merging" / "merging_second.zip"), write=True),
+        fs=ZipFileSystem(str(fixture_dir / "merging" / "merging_second.zip"), mode="w"),
         name="merging-fixture",
         id_="fixture-42",
     )
@@ -347,7 +331,7 @@ def create_fixtures():
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        fs=ZipFS(str(fixture_dir / "merging" / "merging_same_1.zip"), write=True),
+        fs=ZipFileSystem(str(fixture_dir / "merging" / "merging_same_1.zip"), mode="w"),
         name="merging-fixture",
         id_="fixture-42",
     )
@@ -366,7 +350,7 @@ def create_fixtures():
     dp.finalize_serialization()
 
     dp = create_datapackage(
-        fs=ZipFS(str(fixture_dir / "merging" / "merging_same_2.zip"), write=True),
+        fs=ZipFileSystem(str(fixture_dir / "merging" / "merging_same_2.zip"), mode="w"),
         name="merging-fixture",
         id_="fixture-42",
     )

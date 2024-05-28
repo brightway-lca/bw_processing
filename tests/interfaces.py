@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
 
 from bw_processing import load_datapackage
 
@@ -25,7 +25,7 @@ class Array:
 
 
 def test_list_dehydrated_interfaces():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     assert dp.dehydrated_interfaces() == ["sa-vector-interface", "sa-array-interface"]
 
     dp.rehydrate_interface("sa-vector-interface.data", Vector())
@@ -33,7 +33,7 @@ def test_list_dehydrated_interfaces():
 
 
 def test_rehydrate_vector_interface():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     dp.rehydrate_interface("sa-vector-interface.data", Vector())
     data, resource = dp.get_resource("sa-vector-interface.data")
     assert next(data) == 1
@@ -51,14 +51,14 @@ def test_rehydrate_vector_interface():
 
 
 def test_rehydrate_vector_interface_fix_name():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     dp.rehydrate_interface("sa-vector-interface", Vector())
     data, resource = dp.get_resource("sa-vector-interface.data")
     assert next(data) == 1
 
 
 def test_rehydrate_vector_interface_config():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     data, resource = dp.get_resource("sa-vector-interface.data")
     resource["config"] = {"foo": "bar"}
 
@@ -69,7 +69,7 @@ def test_rehydrate_vector_interface_config():
 
 
 def test_rehydrate_vector_interface_config_keyerror():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     data, resource = dp.get_resource("sa-vector-interface.data")
 
     with pytest.raises(KeyError):
@@ -77,7 +77,7 @@ def test_rehydrate_vector_interface_config_keyerror():
 
 
 def test_rehydrate_array_interface():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     dp.rehydrate_interface("sa-array-interface.data", Array())
     data, resource = dp.get_resource("sa-array-interface.data")
     assert data[7] == 7
@@ -95,7 +95,7 @@ def test_rehydrate_array_interface():
 
 
 def test_rehydrate_array_interface_config():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     data, resource = dp.get_resource("sa-array-interface.data")
     resource["config"] = {"foo": "bar"}
 
@@ -106,7 +106,7 @@ def test_rehydrate_array_interface_config():
 
 
 def test_rehydrate_array_interface_config_keyerror():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     data, resource = dp.get_resource("sa-array-interface.data")
 
     with pytest.raises(KeyError):

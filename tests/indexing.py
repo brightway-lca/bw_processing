@@ -3,12 +3,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fs.osfs import OSFS
 
 from bw_processing import create_datapackage, load_datapackage
 from bw_processing.constants import INDICES_DTYPE
 from bw_processing.errors import NonUnique
 from bw_processing.indexing import reindex, reset_index
+from bw_processing.io_helpers import generic_directory_filesystem
 
 ### Fixture
 
@@ -44,20 +44,14 @@ def add_data(dp, id_field="id"):
         name="array",
         flip_array=flip_array,
     )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("vector", "row")], name="vector-csv-rows"
-    )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("vector", "col")], name="vector-csv-cols"
-    )
+    dp.add_csv_metadata(dataframe=df, valid_for=[("vector", "row")], name="vector-csv-rows")
+    dp.add_csv_metadata(dataframe=df, valid_for=[("vector", "col")], name="vector-csv-cols")
     dp.add_csv_metadata(
         dataframe=df,
         valid_for=[("vector", "row"), ("vector", "col")],
         name="vector-csv-both",
     )
-    dp.add_csv_metadata(
-        dataframe=df, valid_for=[("array", "row")], name="array-csv-rows"
-    )
+    dp.add_csv_metadata(dataframe=df, valid_for=[("array", "row")], name="array-csv-rows")
     dp.add_csv_metadata(
         dataframe=df,
         valid_for=[("array", "row"), ("array", "col")],
@@ -73,7 +67,9 @@ def add_data(dp, id_field="id"):
 @pytest.fixture
 def fixture():
     dp = load_datapackage(
-        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+        generic_directory_filesystem(
+            dirpath=Path(__file__).parent.resolve() / "fixtures" / "indexing"
+        )
     )
     dp_unchanged(dp)
     return dp
@@ -82,7 +78,9 @@ def fixture():
 def dp_unchanged(dp=None):
     if dp is None:
         dp = load_datapackage(
-            OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+            generic_directory_filesystem(
+                dirpath=Path(__file__).parent.resolve() / "fixtures" / "indexing"
+            )
         )
 
     array, _ = dp.get_resource("vector.indices")
@@ -135,7 +133,9 @@ def test_reset_index_modified(fixture):
     assert fixture._modified == set([fixture._get_index("vector.indices")])
 
     fixture = load_datapackage(
-        OSFS(str(Path(__file__).parent.resolve() / "fixtures" / "indexing"))
+        generic_directory_filesystem(
+            dirpath=Path(__file__).parent.resolve() / "fixtures" / "indexing"
+        )
     )
     assert not fixture._modified
 
@@ -376,7 +376,9 @@ if __name__ == "__main__":
     (dirpath / "indexing").mkdir(exist_ok=True)
 
     dp = create_datapackage(
-        fs=OSFS(str(dirpath / "indexing")), name="indexing-fixture", id_="fixture-i"
+        fs=generic_directory_filesystem(dirpath=dirpath / "indexing"),
+        name="indexing-fixture",
+        id_="fixture-i",
     )
     add_data(dp)
     dp.finalize_serialization()

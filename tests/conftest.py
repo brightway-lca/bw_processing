@@ -2,17 +2,11 @@
 from pathlib import Path
 
 import pytest
-from fixtures.basic_arrays import (  # noqa: F401
-    distributions_vector,
-    flip_vector,
-    indices_vector,
-)
+from fixtures.basic_arrays import distributions_vector, flip_vector, indices_vector  # noqa: F401
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
-    )
+    parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
 
 
 def pytest_configure(config):

@@ -4,18 +4,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from fs.memoryfs import MemoryFS
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
+from morefs.dict import DictFS
 
 from bw_processing import create_datapackage, load_datapackage, simple_graph
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
-from bw_processing.errors import (
-    NonUnique,
-    PotentialInconsistency,
-    ShapeMismatch,
-    WrongDatatype,
-)
+from bw_processing.errors import NonUnique, PotentialInconsistency, ShapeMismatch, WrongDatatype
+from bw_processing.io_helpers import generic_directory_filesystem
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
@@ -84,7 +79,7 @@ def copy_fixture(fixture_name, dest):
 
 
 def test_group_ordering_consistent():
-    dp = load_datapackage(ZipFS(dirpath / "test-fixture.zip"))
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     assert list(dp.groups) == [
         "sa-data-vector-from-dict",
         "sa-data-vector",
@@ -111,7 +106,7 @@ def test_add_resource_with_same_name():
 
 def test_save_modifications(tmp_path):
     copy_fixture("tfd", tmp_path)
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
 
     assert dp.resources[1]["name"] == "sa-data-vector-from-dict.data"
     assert np.allclose(dp.data[1], [3.3, 8.3])
@@ -123,13 +118,13 @@ def test_save_modifications(tmp_path):
     assert np.allclose(dp.data[1], 42)
     assert not dp._modified
 
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
     assert np.allclose(dp.data[1], 42)
 
 
 def test_del_resource_filesystem(tmp_path):
     copy_fixture("tfd", tmp_path)
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
     reference_length = len(dp)
     assert "sa-vector-interface.indices.npy" in [o.name for o in tmp_path.iterdir()]
     dp.del_resource("sa-vector-interface.indices")
@@ -143,7 +138,7 @@ def test_del_resource_filesystem(tmp_path):
 def test_del_resource_in_memory():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     reference_length = len(dp)
     assert "sa-vector-interface.indices" in [o["name"] for o in dp.resources]
@@ -157,7 +152,7 @@ def test_del_resource_in_memory():
 
 def test_del_resource_error_modifications(tmp_path):
     copy_fixture("tfd", tmp_path)
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
     dp._modified = [1]
     with pytest.raises(PotentialInconsistency):
         dp.del_resource(1)
@@ -165,7 +160,7 @@ def test_del_resource_error_modifications(tmp_path):
 
 def test_del_resource_group_filesystem(tmp_path):
     copy_fixture("tfd", tmp_path)
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
 
     reference_length = len(dp)
     assert "sa-data-vector.indices.npy" in [o.name for o in tmp_path.iterdir()]
@@ -180,7 +175,7 @@ def test_del_resource_group_filesystem(tmp_path):
 def test_del_resource_group_in_memory():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     reference_length = len(dp)
     assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
@@ -194,7 +189,7 @@ def test_del_resource_group_in_memory():
 
 def test_del_resource_group_error_modifications(tmp_path):
     copy_fixture("tfd", tmp_path)
-    dp = load_datapackage(OSFS(str(tmp_path)))
+    dp = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
     dp._modified = [1]
     with pytest.raises(PotentialInconsistency):
         dp.del_resource_group("sa-vector-interface")
@@ -203,7 +198,7 @@ def test_del_resource_group_error_modifications(tmp_path):
 def test_exclude_basic():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     reference_length = len(dp)
     assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
@@ -220,7 +215,7 @@ def test_exclude_basic():
 def test_exclude_no_match():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     reference_length = len(dp)
     assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
@@ -234,7 +229,7 @@ def test_exclude_no_match():
 def test_exclude_multiple_filters():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     reference_length = len(dp)
     assert "sa-array-interface.indices" in [o["name"] for o in dp.resources]
@@ -251,7 +246,7 @@ def test_exclude_multiple_filters():
 def test_exclude_multiple_matrix():
     dp = create_datapackage()
     add_data(dp)
-    assert isinstance(dp.fs, MemoryFS)
+    assert isinstance(dp.fs, DictFS)
 
     assert "sa-data-vector.indices" in [o["name"] for o in dp.resources]
     ndp = dp.exclude({"matrix": "sa_matrix"})
