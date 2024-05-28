@@ -5,10 +5,10 @@ A basic example on how to use parquet files.
 from pathlib import Path
 
 import numpy as np
-from fs.osfs import OSFS
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
 
 import bw_processing as bwp
+from bw_processing.io_helpers import generic_directory_filesystem
 
 if __name__ == "__main__":
     print("This is a basic example on how to use parquet files.")
@@ -30,13 +30,13 @@ if __name__ == "__main__":
         # VERSION OSFS
         # Directory must exist for OSFS otherwise use OSFS(dirpath, create=True)!
         # Every created object will be saved in that same directory
-        dp_dir = OSFS(str(dirpath / "datapackage_1"), create=True)
+        dp_dir = generic_directory_filesystem(dirpath=dirpath / "datapackage_1", create=True)
         dp = bwp.create_datapackage(
             fs=dp_dir, matrix_serialize_format_type=bwp.MatrixSerializeFormat.NUMPY
         )
     else:
         # VERSION ZIP
-        dp_zip_file = ZipFS(str(dirpath / "datapackage_2.zip"), mode="w")
+        dp_zip_file = ZipFileSystem(str(dirpath / "datapackage_2.zip"), mode="w")
         dp = bwp.create_datapackage(
             fs=dp_zip_file, matrix_serialize_format_type=bwp.MatrixSerializeFormat.NUMPY
         )  # bwp.create_datapackage(fs=dp_zip_file, serialize_type=SerializeENum.parquet)
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     # OSFS must be open! (and it was closed with finalize_serialization())
 
     if USE_OSFS:
-        dp_dir = OSFS(str(dirpath / "datapackage_1"))
+        dp_dir = generic_directory_filesystem(dirpath=dirpath / "datapackage_1")
         dp2 = bwp.load_datapackage(fs_or_obj=dp_dir)
     else:
-        dp_zip_file = ZipFS(str(dirpath / "datapackage_2.zip"))
+        dp_zip_file = ZipFileSystem(dirpath / "datapackage_2.zip")
         dp2 = bwp.load_datapackage(fs_or_obj=dp_zip_file)
 
     print("Done!")

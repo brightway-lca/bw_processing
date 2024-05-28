@@ -107,10 +107,10 @@ class ExampleArrayInterface:
 Serialized datapackages cannot contain executable code, both because of our chosen data formats, and for security reasons. Therefore, when loading a datapackage with an interface, that interface object needs to be reconstituted as Python code - we call this cycle dehydration and rehydration. Dehydration happens automatically when a datapackage is finalized with `finalize_serialization()`, but rehydration needs to be done manually using `rehydrate_interface()`. For example:
 
 ```python
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
 from bw_processing import load_datapackage
 
-my_dp = load_datapackage(ZipFS("some-path.zip"))
+my_dp = load_datapackage(ZipFileSystem("some-path.zip"))
 my_dp.rehydrate_interface("some-resource-name", ExampleVectorInterface())
 ```
 
@@ -119,7 +119,7 @@ You can list the dehydrated interfaces present with `.dehydrated_interfaces()`.
 You can store useful information for the interface object initialization under the resource key `config`. This can be used in instantiating an interface if you pass `initialize_with_config`:
 
 ```python
-from fs.zipfs import ZipFS
+from fsspec.implementations.zip import ZipFileSystem
 from bw_processing import load_datapackage
 import requests
 import numpy as np
@@ -133,7 +133,7 @@ class MyInterface:
         return np.array(requests.get(self.url).json())
 
 
-my_dp = load_datapackage(ZipFS("some-path.zip"))
+my_dp = load_datapackage(ZipFileSystem("some-path.zip"))
 data_obj, resource_metadata = my_dp.get_resource("some-interface")
 print(resource_metadata['config'])
 >>> {"url": "example.com"}

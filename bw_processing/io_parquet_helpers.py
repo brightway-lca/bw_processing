@@ -7,12 +7,11 @@ import contextlib
 import os
 
 # for annotation
-from io import BufferedWriter, RawIOBase
+from io import BufferedWriter, IOBase, RawIOBase
 
 import numpy
 import numpy as np
 import pyarrow.parquet as pq
-from fs.iotools import RawWrapper
 
 from .errors import WrongDatatype
 from .io_pyarrow_helpers import (
@@ -59,12 +58,12 @@ def write_ndarray_to_parquet_file(
     pq.write_table(table, file)
 
 
-def read_parquet_file_to_ndarray(file: RawWrapper) -> numpy.ndarray:
+def read_parquet_file_to_ndarray(file: RawIOBase) -> numpy.ndarray:
     """
     Read an `ndarray` from a `parquet` file.
 
     Args:
-        file (fs.iotools.RawWrapper): File to read from.
+        file (io.RawIOBase or fsspec file object): File to read from.
 
     Raises:
         `WrongDatatype` if the correct metadata is not found in the `parquet` file.
@@ -122,12 +121,12 @@ def save_arr_to_parquet(file: RawIOBase, arr: np.ndarray, meta_object: str, meta
         write_ndarray_to_parquet_file(fid, arr, meta_object=meta_object, meta_type=meta_type)
 
 
-def load_ndarray_from_parquet(file: RawWrapper) -> np.ndarray:
+def load_ndarray_from_parquet(file: RawIOBase) -> np.ndarray:
     """
     Deserialize a `numpy` `ndarray` from a `parquet` `file`.
 
     Parameters
-        file (fs.iotools.RawWrapper): File to read from.
+        file (io.RawIOBase or fsspec file object): File to read from.
 
     Returns
         The corresponding `numpy` `ndarray`.
