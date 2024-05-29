@@ -1,7 +1,8 @@
 # `bw_processing` Changelog
 
-## DEV
+### [0.9.4] - 2024-05-29
 
+* [PR #66: Change from `pyfilesystem2` to `fsspec`](https://github.com/brightway-lca/bw_processing/issues/65)
 * Changed packaging
 
 ### [0.9.3] - 2024-05-12
