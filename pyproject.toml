@@ -48,6 +48,7 @@ tracker = "https://github.com/brightway-lca/bw_processing/issues"
 # seems to work, at least for now
 testing = [
     "bw_processing",
+    "pyarrow",
     "pytest",
     "pytest-cov",
     "python-coveralls"
