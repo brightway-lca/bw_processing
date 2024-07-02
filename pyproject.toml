@@ -72,6 +72,7 @@ version = {attr = "bw_processing.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "--cov bw_processing --cov-report term-missing --verbose"
+log_cli = 1
 norecursedirs = [
     "dist",
     "build",
