@@ -289,8 +289,8 @@ def test_add_persistent_vector_distributions_shapemismatch():
     dp = create_datapackage()
     distributions_array = np.array(
         [
-            (3, 1.3, 2.5, np.NaN, np.NaN, np.NaN, False),
-            (0, 1.3, 2.5, np.NaN, np.NaN, np.NaN, False),
+            (3, 1.3, 2.5, np.nan, np.nan, np.nan, False),
+            (0, 1.3, 2.5, np.nan, np.nan, np.nan, False),
         ],
         dtype=UNCERTAINTY_DTYPE,
     )
