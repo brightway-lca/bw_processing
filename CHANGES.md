@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+### [0.9.6] - 2024-07-02
+
+* [PR #68: replace `np.NaN` by `np.nan`](https://github.com/brightway-lca/bw_processing/pull/68)
+
 ### [0.9.5] - 2024-05-29
 
 * [PR #66: Change from `pyfilesystem2` to `fsspec`](https://github.com/brightway-lca/bw_processing/issues/65)
