@@ -24,19 +24,19 @@ def flip_vector():
 def distributions_vector():
     return np.array(
         [
-            (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
-            (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
-            (0, 1, np.NaN, np.NaN, np.NaN, np.NaN, False),
+            (0, 1, np.nan, np.nan, np.nan, np.nan, False),
+            (0, 1, np.nan, np.nan, np.nan, np.nan, False),
+            (0, 1, np.nan, np.nan, np.nan, np.nan, False),
             (
                 5,
                 237,
-                np.NaN,
-                np.NaN,
+                np.nan,
+                np.nan,
                 200,
                 300,
                 False,
             ),  # triangular uncertainty from 200 to 300
-            (5, 2.5, np.NaN, np.NaN, 2, 3, False),  # triangular uncertainty from 2 to 3
+            (5, 2.5, np.nan, np.nan, 2, 3, False),  # triangular uncertainty from 2 to 3
         ],
         dtype=UNCERTAINTY_DTYPE,
     )
