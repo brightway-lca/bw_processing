@@ -14,6 +14,8 @@ from morefs.dict import DictFS
 from .constants import (
     DEFAULT_LICENSES,
     INDICES_DTYPE,
+    MAX_SIGNED_32BIT_INT,
+    MAX_SIGNED_64BIT_INT,
     NUMPY_SERIALIZE_FORMAT_EXTENSION,
     NUMPY_SERIALIZE_FORMAT_NAME,
     PARQUET_SERIALIZE_FORMAT_EXTENSION,
@@ -257,6 +259,12 @@ class DatapackageBase(ABC):
 
         self.data[index] = resource
 
+    def get_max_index_value(self) -> int:
+        """Get maximum index value (max signed 32 or 64 bit integer) for this datapackage"""
+        if self.metadata.get("64_bit_indices"):
+            return MAX_SIGNED_64BIT_INT
+        return MAX_SIGNED_32BIT_INT
+
 
 class FilteredDatapackage(DatapackageBase):
     """A subset of a datapackage. Used in matrix construction or other data manipulation operations.
@@ -360,6 +368,7 @@ class Datapackage(DatapackageBase):
             "combinatorial": combinatorial,
             "sequential": sequential,
             "seed": seed,
+            "64_bit_indices": True,
             "sum_intra_duplicates": sum_intra_duplicates,
             "sum_inter_duplicates": sum_inter_duplicates,
             "matrix_serialize_format_type": matrix_serialize_format_type.value,

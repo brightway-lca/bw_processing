@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 
 MAX_SIGNED_32BIT_INT = 2147483647
+MAX_SIGNED_64BIT_INT = 9223372036854775807
 
 # We could try to save space by not storing the columns
 # `row_index` and `col_index`, and add them after loading from
@@ -20,7 +21,7 @@ UNCERTAINTY_DTYPE = [
     ("maximum", np.float32),
     ("negative", bool),
 ]
-INDICES_DTYPE = [("row", np.int32), ("col", np.int32)]
+INDICES_DTYPE = [("row", np.int64), ("col", np.int64)]
 
 NAME_RE = re.compile(r"^[\w\-\.]*$")
 
