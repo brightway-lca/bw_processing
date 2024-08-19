@@ -8,7 +8,7 @@ from fsspec.implementations.zip import ZipFileSystem
 from morefs.dict import DictFS
 
 from bw_processing import create_datapackage, load_datapackage, simple_graph
-from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
+from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE, MAX_SIGNED_64BIT_INT, MAX_SIGNED_32BIT_INT
 from bw_processing.errors import NonUnique, PotentialInconsistency, ShapeMismatch, WrongDatatype
 from bw_processing.io_helpers import generic_directory_filesystem
 
@@ -87,6 +87,16 @@ def test_group_ordering_consistent():
         "sa-vector-interface",
         "sa-array-interface",
     ]
+
+
+def test_get_max_index_value():
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
+    assert dp.metadata.get("64_bit_indices")
+    assert dp.get_max_index_value() == MAX_SIGNED_64BIT_INT
+
+    dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture-32bit.zip"))
+    assert not dp.metadata.get("64_bit_indices")
+    assert dp.get_max_index_value() == MAX_SIGNED_32BIT_INT
 
 
 def test_add_resource_with_same_name():

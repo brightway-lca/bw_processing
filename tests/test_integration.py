@@ -20,7 +20,7 @@ class Dummy:
     pass
 
 
-def add_data(dp):
+def add_data(dp, indices_32bit=False):
     from_dicts = [
         {
             "row": 0,
@@ -49,7 +49,10 @@ def add_data(dp):
     )
 
     data_array = np.array([2, 7, 12])
-    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    if indices_32bit:
+        indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=[("row", np.int32), ("col", np.int32)])
+    else:
+        indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     flip_array = np.array([1, 0, 0], dtype=bool)
     dp.add_persistent_vector(
         matrix="sa_matrix",
@@ -330,6 +333,7 @@ def check_metadata(dp, as_tuples=True):
         "combinatorial": False,
         "sequential": False,
         "seed": None,
+        "64_bit_indices": True,
         "sum_intra_duplicates": True,
         "sum_inter_duplicates": False,
     }
@@ -455,4 +459,14 @@ if __name__ == "__main__":
         id_="fixture-42",
     )
     add_data(dp)
+    dp.finalize_serialization()
+
+    # 32 bit fixture for backwards compatibility
+    dp = create_datapackage(
+        fs=ZipFileSystem(dirpath / "test-fixture-32bit.zip", mode="w"),
+        name="test-fixture-32bit",
+        id_="fixture-32",
+    )
+    del dp.metadata["64_bit_indices"]
+    add_data(dp, indices_32bit=True)
     dp.finalize_serialization()

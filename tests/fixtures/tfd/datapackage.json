@@ -203,10 +203,11 @@
       "valid_for": "sa-data-array"
     }
   ],
-  "created": "2024-08-18T20:58:29.941013Z",
+  "created": "2024-08-19T19:47:32.910904Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
+  "64_bit_indices": true,
   "sum_intra_duplicates": true,
   "sum_inter_duplicates": false,
   "matrix_serialize_format_type": "numpy"

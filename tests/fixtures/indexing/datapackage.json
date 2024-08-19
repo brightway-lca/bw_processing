@@ -167,10 +167,11 @@
       ]
     }
   ],
-  "created": "2024-08-18T20:58:57.736902Z",
+  "created": "2024-08-19T19:49:18.240180Z",
   "combinatorial": false,
   "sequential": false,
   "seed": null,
+  "64_bit_indices": true,
   "sum_intra_duplicates": true,
   "sum_inter_duplicates": false,
   "matrix_serialize_format_type": "numpy"
