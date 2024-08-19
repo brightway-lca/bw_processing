@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+# [1.0] - 2024-08-19
+
+* Move default indices type to 64 bit integers
+
 ### [0.9.6] - 2024-07-02
 
 * [PR #68: replace `np.NaN` by `np.nan`](https://github.com/brightway-lca/bw_processing/pull/68)
