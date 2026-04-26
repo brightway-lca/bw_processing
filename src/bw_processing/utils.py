@@ -6,9 +6,9 @@ from typing import Any, Union
 import numpy as np
 from numpy.lib.recfunctions import repack_fields
 
-from .array_creation import create_structured_array
-from .constants import INDICES_DTYPE, NAME_RE, UNCERTAINTY_DTYPE
-from .errors import InvalidName
+from bw_processing.array_creation import create_structured_array
+from bw_processing.constants import INDICES_DTYPE, NAME_RE, UNCERTAINTY_DTYPE
+from bw_processing.errors import InvalidName
 
 
 def load_bytes(obj: Any) -> Any:

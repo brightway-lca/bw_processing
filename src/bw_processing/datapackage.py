@@ -6,7 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from .matrix_entry import MatrixEntry
+    from bw_processing.matrix_entry import MatrixEntry
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ from fsspec import AbstractFileSystem
 # Use this instead of fsspec MemoryFileSystem because that is a singleton!?
 from morefs.dict import DictFS
 
-from .constants import (
+from bw_processing.constants import (
     DEFAULT_LICENSES,
     INDICES_DTYPE,
     MAX_SIGNED_32BIT_INT,
@@ -26,7 +26,7 @@ from .constants import (
     PARQUET_SERIALIZE_FORMAT_NAME,
     MatrixSerializeFormat,
 )
-from .errors import (
+from bw_processing.errors import (
     Closed,
     InvalidMimetype,
     LengthMismatch,
@@ -35,10 +35,10 @@ from .errors import (
     ShapeMismatch,
     WrongDatatype,
 )
-from .filesystem import clean_datapackage_name
-from .io_helpers import file_reader, file_writer
-from .proxies import Proxy, UndefinedInterface
-from .utils import check_name, check_suffix, load_bytes, resolve_dict_iterator, utc_now
+from bw_processing.filesystem import clean_datapackage_name
+from bw_processing.io_helpers import file_reader, file_writer
+from bw_processing.proxies import Proxy, UndefinedInterface
+from bw_processing.utils import check_name, check_suffix, load_bytes, resolve_dict_iterator, utc_now
 
 
 class DatapackageBase(ABC):

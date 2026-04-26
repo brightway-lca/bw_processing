@@ -100,7 +100,7 @@ def create_datapackage_from_entries(
     Returns:
         A :class:`Datapackage` instance.
     """
-    from .datapackage import create_datapackage
+    from bw_processing.datapackage import create_datapackage
 
     dp = create_datapackage(fs=fs, **metadata)
     for matrix_name, entries in data.items():

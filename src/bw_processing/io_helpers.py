@@ -11,12 +11,12 @@ from fsspec.implementations.local import LocalFileSystem
 from fsspec.implementations.zip import ZipFileSystem
 from morefs.dict import DictFS
 
-from .constants import MatrixSerializeFormat
-from .errors import InvalidMimetype
-from .proxies import Proxy
+from bw_processing.constants import MatrixSerializeFormat
+from bw_processing.errors import InvalidMimetype
+from bw_processing.proxies import Proxy
 
 try:
-    from .io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
+    from bw_processing.io_parquet_helpers import load_ndarray_from_parquet, save_arr_to_parquet
 
     PARQUET = True
 except ImportError:

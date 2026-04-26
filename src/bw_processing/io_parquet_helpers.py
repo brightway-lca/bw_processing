@@ -13,8 +13,8 @@ import numpy
 import numpy as np
 import pyarrow.parquet as pq
 
-from .errors import WrongDatatype
-from .io_pyarrow_helpers import (
+from bw_processing.errors import WrongDatatype
+from bw_processing.io_pyarrow_helpers import (
     numpy_distributions_vector_to_pyarrow_distributions_vector_table,
     numpy_generic_matrix_to_pyarrow_generic_matrix_table,
     numpy_generic_vector_to_pyarrow_generic_vector_table,

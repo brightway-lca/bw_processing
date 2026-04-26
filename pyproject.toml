@@ -66,7 +66,9 @@ dev = [
 [tool.setuptools]
 license-files = ["LICENSE"]
 include-package-data = true
-packages = ["bw_processing", "bw_processing.examples"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.dynamic]
 version = {attr = "bw_processing.__version__"}
