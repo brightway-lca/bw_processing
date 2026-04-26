@@ -7,9 +7,9 @@ import pandas as pd
 from fsspec import AbstractFileSystem
 from morefs.dict import DictFS
 
-from .datapackage import DatapackageBase, create_datapackage
-from .errors import LengthMismatch
-from .io_helpers import file_writer
+from bw_processing.datapackage import DatapackageBase, create_datapackage
+from bw_processing.errors import LengthMismatch
+from bw_processing.io_helpers import file_writer
 
 
 def mask_resource(obj: Any, mask: np.ndarray) -> Any:

@@ -32,9 +32,9 @@ __all__ = (
 __version__ = "1.0"
 
 
-from .array_creation import create_array, create_structured_array
-from .constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE, MatrixSerializeFormat
-from .datapackage import (
+from bw_processing.array_creation import create_array, create_structured_array
+from bw_processing.constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE, MatrixSerializeFormat
+from bw_processing.datapackage import (
     Datapackage,
     DatapackageBase,
     FilteredDatapackage,
@@ -42,11 +42,11 @@ from .datapackage import (
     load_datapackage,
     simple_graph,
 )
-from .examples import examples_dir
-from .filesystem import clean_datapackage_name, md5, safe_filename
-from .indexing import reindex, reset_index
-from .io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
-from .matrix_entry import MatrixEntry, MatrixName, create_datapackage_from_entries
-from .merging import merge_datapackages_with_mask
-from .proxies import UndefinedInterface
-from .unique_fields import as_unique_attributes, as_unique_attributes_dataframe
+from bw_processing.examples import examples_dir
+from bw_processing.filesystem import clean_datapackage_name, md5, safe_filename
+from bw_processing.indexing import reindex, reset_index
+from bw_processing.io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
+from bw_processing.matrix_entry import MatrixEntry, MatrixName, create_datapackage_from_entries
+from bw_processing.merging import merge_datapackages_with_mask
+from bw_processing.proxies import UndefinedInterface
+from bw_processing.unique_fields import as_unique_attributes, as_unique_attributes_dataframe

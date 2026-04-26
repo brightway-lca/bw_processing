@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .errors import InconsistentFields, NonUnique
+from bw_processing.errors import InconsistentFields, NonUnique
 
 
 def greedy_set_cover(data, exclude=None, raise_error=True):

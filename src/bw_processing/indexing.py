@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from fsspec import AbstractFileSystem
 
-from .datapackage import Datapackage, load_datapackage
-from .errors import NonUnique
+from bw_processing.datapackage import Datapackage, load_datapackage
+from bw_processing.errors import NonUnique
 
 
 def _get_csv_data(
