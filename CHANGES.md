@@ -1,5 +1,11 @@
 # `bw_processing` Changelog
 
+## [1.1] - 2026-04-26
+
+* [PR #79: Add `MatrixEntry` dataclass, `MatrixName` StrEnum, and `create_datapackage_from_entries` high-level API](https://github.com/brightway-lca/bw_processing/pull/79)
+* [PR #80: Convert to `src` layout with absolute imports and CI fixes](https://github.com/brightway-lca/bw_processing/pull/80)
+* [PR #81: Fix parquet tests using `pathlib.Path` as context manager](https://github.com/brightway-lca/bw_processing/pull/81)
+
 # [1.0] - 2024-08-19
 
 * Move default indices type to 64 bit integers
