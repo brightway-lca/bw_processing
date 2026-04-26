@@ -59,11 +59,8 @@ def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
     arr = data_matrix(dtype=dtype)
     file = tmp_path_factory.mktemp("data") / "data_matrix.parquet"
 
-    with file as fp:
-        save_arr_to_parquet(file=fp, arr=arr, meta_object="matrix", meta_type="generic")
-
-    with file as fp:
-        loaded_arr = load_ndarray_from_parquet(fp)
+    save_arr_to_parquet(file=file, arr=arr, meta_object="matrix", meta_type="generic")
+    loaded_arr = load_ndarray_from_parquet(file)
 
     assert arr.dtype == loaded_arr.dtype and np.array_equal(arr, loaded_arr)
 
@@ -74,11 +71,8 @@ def test_save_load_parquet_file_distribution_vector(distributions_vector, tmp_pa
     arr = distributions_vector
     file = tmp_path_factory.mktemp("data") / "distributions_vector.parquet"
 
-    with file as fp:
-        save_arr_to_parquet(file=fp, arr=arr, meta_object="vector", meta_type="distributions")
-
-    with file as fp:
-        loaded_arr = load_ndarray_from_parquet(fp)
+    save_arr_to_parquet(file=file, arr=arr, meta_object="vector", meta_type="distributions")
+    loaded_arr = load_ndarray_from_parquet(file)
 
     assert vector_equal_with_uncertainty_dtype(arr, loaded_arr)
 
@@ -88,25 +82,21 @@ def test_save_load_parquet_file_wrong_meta_object(indices_vector, tmp_path_facto
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
     with pytest.raises(NotImplementedError):
-        with file as fp:
-            save_arr_to_parquet(
-                file=fp, arr=indices_vector, meta_object="wrong", meta_type="indices"
-            )
+        save_arr_to_parquet(
+            file=file, arr=indices_vector, meta_object="wrong", meta_type="indices"
+        )
 
     with pytest.raises(NotImplementedError):
-        with file as fp:
-            save_arr_to_parquet(
-                file=fp, arr=indices_vector, meta_object="vector", meta_type="indices"
-            )
+        save_arr_to_parquet(
+            file=file, arr=indices_vector, meta_object="vector", meta_type="indices"
+        )
 
-        with file as fp:
-            table = pq.read_table(fp)
-            metadata = {"object": "wrong", "type": "indices"}
-            new_table = table.replace_schema_metadata(metadata=metadata)
-            pq.write_table(new_table, fp)
+        table = pq.read_table(file)
+        metadata = {"object": "wrong", "type": "indices"}
+        new_table = table.replace_schema_metadata(metadata=metadata)
+        pq.write_table(new_table, file)
 
-        with file as fp:
-            load_ndarray_from_parquet(fp)
+        load_ndarray_from_parquet(file)
 
 
 @pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
@@ -114,25 +104,21 @@ def test_save_load_parquet_file_wrong_meta_type(indices_vector, tmp_path_factory
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
     with pytest.raises(NotImplementedError):
-        with file as fp:
-            save_arr_to_parquet(
-                file=fp, arr=indices_vector, meta_object="vector", meta_type="wrong"
-            )
+        save_arr_to_parquet(
+            file=file, arr=indices_vector, meta_object="vector", meta_type="wrong"
+        )
 
     with pytest.raises(NotImplementedError):
-        with file as fp:
-            save_arr_to_parquet(
-                file=fp, arr=indices_vector, meta_object="vector", meta_type="indices"
-            )
+        save_arr_to_parquet(
+            file=file, arr=indices_vector, meta_object="vector", meta_type="indices"
+        )
 
-        with file as fp:
-            table = pq.read_table(fp)
-            metadata = {"object": "vector", "type": "wrong"}
-            new_table = table.replace_schema_metadata(metadata=metadata)
-            pq.write_table(new_table, fp)
+        table = pq.read_table(file)
+        metadata = {"object": "vector", "type": "wrong"}
+        new_table = table.replace_schema_metadata(metadata=metadata)
+        pq.write_table(new_table, file)
 
-        with file as fp:
-            load_ndarray_from_parquet(fp)
+        load_ndarray_from_parquet(file)
 
 
 @pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
@@ -140,16 +126,13 @@ def test_save_load_parquet_file_wrong_metadata_format(indices_vector, tmp_path_f
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
     with pytest.raises(WrongDatatype):
-        with file as fp:
-            save_arr_to_parquet(
-                file=fp, arr=indices_vector, meta_object="vector", meta_type="indices"
-            )
+        save_arr_to_parquet(
+            file=file, arr=indices_vector, meta_object="vector", meta_type="indices"
+        )
 
-        with file as fp:
-            table = pq.read_table(fp)
-            metadata = {}
-            new_table = table.replace_schema_metadata(metadata=metadata)
-            pq.write_table(new_table, fp)
+        table = pq.read_table(file)
+        metadata = {}
+        new_table = table.replace_schema_metadata(metadata=metadata)
+        pq.write_table(new_table, file)
 
-        with file as fp:
-            load_ndarray_from_parquet(fp)
+        load_ndarray_from_parquet(file)
