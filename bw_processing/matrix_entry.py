@@ -1,8 +1,5 @@
 import dataclasses
 import math
-from typing import Optional
-
-from fsspec import AbstractFileSystem
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,7 +47,7 @@ class MatrixEntry:
 
 def create_datapackage_from_entries(
     data: dict,
-    fs: Optional[AbstractFileSystem] = None,
+    fs=None,
     **metadata,
 ):
     """Create a datapackage from a dictionary of :class:`MatrixEntry` lists.
@@ -79,11 +76,9 @@ def create_datapackage_from_entries(
     Returns:
         A :class:`Datapackage` instance.
     """
-    # Import here to avoid circular imports at module level
     from .datapackage import create_datapackage
-    from morefs.dict import DictFS
 
-    dp = create_datapackage(fs=fs or DictFS(), **metadata)
+    dp = create_datapackage(fs=fs, **metadata)
     for matrix_name, entries in data.items():
         dp.add_entries(
             matrix=matrix_name,
