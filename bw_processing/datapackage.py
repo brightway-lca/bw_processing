@@ -1,8 +1,12 @@
 import datetime
 import uuid
+import warnings
 from abc import ABC
 from functools import partial
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+if TYPE_CHECKING:
+    from .matrix_entry import MatrixEntry
 
 import numpy as np
 import pandas as pd
@@ -446,6 +450,30 @@ class Datapackage(DatapackageBase):
             distributions_array=distributions_array,
             matrix_serialize_format_type=matrix_serialize_format_type,
             **kwargs,
+        )
+
+    def add_entries(
+        self,
+        *,
+        matrix: str,
+        entries: list["MatrixEntry"],
+        name: Optional[str] = None,
+    ) -> None:
+        """Add matrix data from a list of :class:`MatrixEntry` objects.
+
+        High-level convenience method that does not require working directly
+        with NumPy arrays.
+
+        Args:
+            matrix: Name of the target matrix (e.g. ``"technosphere"``).
+            entries: List of :class:`.MatrixEntry` instances.
+            name: Optional resource group name; auto-generated if omitted.
+        """
+        self.add_persistent_vector_from_iterator(
+            matrix=matrix,
+            name=name,
+            dict_iterator=(e.as_dict() for e in entries),
+            nrows=len(entries),
         )
 
     def add_persistent_vector(
@@ -1091,6 +1119,10 @@ def load_datapackage(
 def simple_graph(data: dict, fs: Optional[AbstractFileSystem] = None, **metadata) -> Datapackage:
     """Easy creation of simple datapackages with only persistent vectors.
 
+    .. deprecated::
+        Use :func:`bw_processing.matrix_entry.create_datapackage_from_entries` with
+        :class:`bw_processing.matrix_entry.MatrixEntry` objects instead.
+
     Args:
         * data: is a dictionary.
             The data dictionary has the form::
@@ -1111,6 +1143,11 @@ def simple_graph(data: dict, fs: Optional[AbstractFileSystem] = None, **metadata
         the datapackage.
 
     """
+    warnings.warn(
+        "simple_graph is deprecated; use create_datapackage_from_entries with MatrixEntry objects instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     dp = create_datapackage(fs=fs or DictFS(), **metadata)
     for key, value in data.items():
         indices_array = np.array([row[:2] for row in value], dtype=INDICES_DTYPE)

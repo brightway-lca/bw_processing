@@ -5,6 +5,7 @@ __all__ = (
     "clean_datapackage_name",
     "create_array",
     "create_datapackage",
+    "create_datapackage_from_entries",
     "create_structured_array",
     "Datapackage",
     "DatapackageBase",
@@ -15,6 +16,7 @@ __all__ = (
     "generic_zipfile_filesystem",
     "INDICES_DTYPE",
     "load_datapackage",
+    "MatrixEntry",
     "MatrixSerializeFormat",
     "md5",
     "merge_datapackages_with_mask",
@@ -43,6 +45,7 @@ from .examples import examples_dir
 from .filesystem import clean_datapackage_name, md5, safe_filename
 from .indexing import reindex, reset_index
 from .io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
+from .matrix_entry import MatrixEntry, create_datapackage_from_entries
 from .merging import merge_datapackages_with_mask
 from .proxies import UndefinedInterface
 from .unique_fields import as_unique_attributes, as_unique_attributes_dataframe
