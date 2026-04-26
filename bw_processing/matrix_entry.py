@@ -20,7 +20,7 @@ class MatrixEntry:
         row: Integer row index in the target matrix.
         col: Integer column index in the target matrix.
         amount: The numeric value to place at (row, col).
-        flip: If True, negate the value when building the matrix.
+        flip: If True, multiply the value by -1 when building the matrix.
         uncertainty_type: Probability distribution type (0 = no uncertainty,
             2 = lognormal, 3 = normal, etc. — see stats_arrays for full list).
         loc: Distribution location parameter. For lognormal this is the log
