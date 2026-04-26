@@ -1,5 +1,27 @@
 import dataclasses
 import math
+from enum import Enum
+
+
+class MatrixName(str, Enum):
+    """Standard matrix names used in Brightway.
+
+    Because this is a ``str`` enum, members can be used anywhere a plain
+    string is accepted — no ``.value`` needed::
+
+        MatrixEntry(row=1, col=4, amount=2.5)  # inside a dict keyed by MatrixName
+        dp.add_entries(matrix=MatrixName.technosphere, entries=[...])
+
+    Derived libraries may define additional matrices as plain strings;
+    these three cover the core Brightway LCA workflow.
+    """
+
+    technosphere = "technosphere_matrix"
+    biosphere = "biosphere_matrix"
+    characterization = "characterization_matrix"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -57,14 +79,16 @@ def create_datapackage_from_entries(
 
     Args:
         data: Dictionary mapping matrix names to lists of :class:`MatrixEntry`
-            objects, e.g.::
+            objects. Use :class:`MatrixName` members as keys for the standard
+            Brightway matrices; derived libraries may use plain strings for
+            additional matrices::
 
                 {
-                    "technosphere": [
+                    MatrixName.technosphere: [
                         MatrixEntry(row=1, col=4, amount=2.5),
                         MatrixEntry(row=2, col=5, amount=7.0, flip=True),
                     ],
-                    "biosphere": [
+                    MatrixName.biosphere: [
                         MatrixEntry(row=10, col=4, amount=0.3),
                     ],
                 }
