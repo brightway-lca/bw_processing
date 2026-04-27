@@ -2,7 +2,11 @@ import dataclasses
 import math
 from enum import Enum
 
-from stats_arrays import NoUncertainty, UndefinedUncertainty
+try:
+    from stats_arrays import NoUncertainty, UndefinedUncertainty
+    _NO_UNCERTAINTY_IDS = (UndefinedUncertainty.id, NoUncertainty.id)
+except ImportError:
+    _NO_UNCERTAINTY_IDS = (0, 1)
 
 
 class MatrixName(str, Enum):
@@ -66,7 +70,7 @@ class MatrixEntry:
     negative: bool = False
 
     def __post_init__(self):
-        if self.uncertainty_type in (UndefinedUncertainty.id, NoUncertainty.id):
+        if self.uncertainty_type in _NO_UNCERTAINTY_IDS:
             if math.isnan(self.loc):
                 object.__setattr__(self, "loc", self.amount)
             elif self.loc != self.amount:
