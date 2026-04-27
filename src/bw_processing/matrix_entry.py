@@ -2,6 +2,8 @@ import dataclasses
 import math
 from enum import Enum
 
+from stats_arrays import NoUncertainty, UndefinedUncertainty
+
 
 class MatrixName(str, Enum):
     """Standard matrix names used in Brightway.
@@ -64,7 +66,7 @@ class MatrixEntry:
     negative: bool = False
 
     def __post_init__(self):
-        if self.uncertainty_type in (0, 1):
+        if self.uncertainty_type in (UndefinedUncertainty.id, NoUncertainty.id):
             if math.isnan(self.loc):
                 object.__setattr__(self, "loc", self.amount)
             elif self.loc != self.amount:
