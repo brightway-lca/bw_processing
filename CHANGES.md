@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+## [1.1.1] - 2026-04-27
+
+* [PR #84: Fix `MatrixEntry.loc` defaulting to NaN for no-uncertainty types; raise `ValueError` on inconsistent `loc`/`amount`; use `stats_arrays` class IDs with integer fallback](https://github.com/brightway-lca/bw_processing/pull/84)
+
 ## [1.1] - 2026-04-26
 
 * [PR #79: Add `MatrixEntry` dataclass, `MatrixName` StrEnum, and `create_datapackage_from_entries` high-level API](https://github.com/brightway-lca/bw_processing/pull/79)
