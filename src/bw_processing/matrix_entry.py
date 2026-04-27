@@ -63,6 +63,16 @@ class MatrixEntry:
     maximum: float = math.nan
     negative: bool = False
 
+    def __post_init__(self):
+        if self.uncertainty_type in (0, 1):
+            if math.isnan(self.loc):
+                object.__setattr__(self, "loc", self.amount)
+            elif self.loc != self.amount:
+                raise ValueError(
+                    f"uncertainty_type {self.uncertainty_type} requires loc == amount, "
+                    f"got loc={self.loc} but amount={self.amount}"
+                )
+
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
 
