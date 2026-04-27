@@ -42,11 +42,31 @@ class TestMatrixEntry:
         assert e.flip is False
         assert e.uncertainty_type == 0
         assert e.negative is False
-        assert math.isnan(e.loc)
+        assert e.loc == pytest.approx(3.0)
         assert math.isnan(e.scale)
         assert math.isnan(e.shape)
         assert math.isnan(e.minimum)
         assert math.isnan(e.maximum)
+
+    def test_loc_set_to_amount_for_no_uncertainty(self):
+        e = MatrixEntry(row=1, col=2, amount=5.0)
+        assert e.loc == pytest.approx(5.0)
+
+    def test_explicit_loc_matching_amount_accepted(self):
+        e = MatrixEntry(row=1, col=2, amount=5.0, uncertainty_type=0, loc=5.0)
+        assert e.loc == pytest.approx(5.0)
+
+    def test_loc_mismatch_raises_for_uncertainty_type_0(self):
+        with pytest.raises(ValueError, match="loc == amount"):
+            MatrixEntry(row=1, col=2, amount=5.0, uncertainty_type=0, loc=9.9)
+
+    def test_loc_mismatch_raises_for_uncertainty_type_1(self):
+        with pytest.raises(ValueError, match="loc == amount"):
+            MatrixEntry(row=1, col=2, amount=5.0, uncertainty_type=1, loc=9.9)
+
+    def test_loc_not_set_when_uncertainty_type_nonzero(self):
+        e = MatrixEntry(row=1, col=2, amount=5.0, uncertainty_type=2)
+        assert math.isnan(e.loc)
 
     def test_frozen(self):
         e = MatrixEntry(row=1, col=2, amount=3.0)

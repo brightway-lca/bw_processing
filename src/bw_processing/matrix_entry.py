@@ -2,6 +2,12 @@ import dataclasses
 import math
 from enum import Enum
 
+try:
+    from stats_arrays import NoUncertainty, UndefinedUncertainty
+    _NO_UNCERTAINTY_IDS = (UndefinedUncertainty.id, NoUncertainty.id)
+except ImportError:
+    _NO_UNCERTAINTY_IDS = (0, 1)
+
 
 class MatrixName(str, Enum):
     """Standard matrix names used in Brightway.
@@ -62,6 +68,16 @@ class MatrixEntry:
     minimum: float = math.nan
     maximum: float = math.nan
     negative: bool = False
+
+    def __post_init__(self):
+        if self.uncertainty_type in _NO_UNCERTAINTY_IDS:
+            if math.isnan(self.loc):
+                object.__setattr__(self, "loc", self.amount)
+            elif self.loc != self.amount:
+                raise ValueError(
+                    f"uncertainty_type {self.uncertainty_type} requires loc == amount, "
+                    f"got loc={self.loc} but amount={self.amount}"
+                )
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
