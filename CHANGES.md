@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+## [1.2] - 2026-05-26
+
+* [PR #87: Default to `ZIP_DEFLATED` compression in `generic_zipfile_filesystem`; index arrays compress to ~10% of original size, reducing large datapackages ~4×](https://github.com/brightway-lca/bw_processing/pull/87)
+
 ## [1.1.1] - 2026-04-27
 
 * [PR #84: Fix `MatrixEntry.loc` defaulting to NaN for no-uncertainty types; raise `ValueError` on inconsistent `loc`/`amount`; use `stats_arrays` class IDs with integer fallback](https://github.com/brightway-lca/bw_processing/pull/84)
