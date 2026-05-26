@@ -1,4 +1,5 @@
 import shutil
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,7 @@ from morefs.dict import DictFS
 from bw_processing import create_datapackage, load_datapackage, simple_graph
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE, MAX_SIGNED_64BIT_INT, MAX_SIGNED_32BIT_INT
 from bw_processing.errors import NonUnique, PotentialInconsistency, ShapeMismatch, WrongDatatype
-from bw_processing.io_helpers import generic_directory_filesystem
+from bw_processing.io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
 
@@ -497,3 +498,41 @@ def test_simple_graph():
     assert d["col"].sum() == 1102
     d, _ = dp.get_resource("a different life-data.data")
     assert np.allclose(d, np.array([101.234, 777]))
+
+
+def _write_zip_datapackage(dirpath, filename="test.zip", **kwargs):
+    fs = generic_zipfile_filesystem(dirpath=dirpath, filename=filename, **kwargs)
+    dp = create_datapackage(fs=fs, name="test-zip-compression")
+    add_data(dp)
+    dp.finalize_serialization()
+    return dirpath / filename
+
+
+def test_zipfile_default_compression(tmp_path):
+    """Default compression is ZIP_DEFLATED; indices compress well so file is smaller than uncompressed."""
+    compressed_path = _write_zip_datapackage(tmp_path, filename="compressed.zip")
+    uncompressed_path = _write_zip_datapackage(tmp_path, filename="uncompressed.zip", compression=zipfile.ZIP_STORED)
+
+    with zipfile.ZipFile(compressed_path) as zf:
+        for info in zf.infolist():
+            if info.filename.endswith(".indices.npy"):
+                assert info.compress_type == zipfile.ZIP_DEFLATED
+
+    assert compressed_path.stat().st_size < uncompressed_path.stat().st_size
+
+
+def test_zipfile_stored_compression(tmp_path):
+    """ZIP_STORED writes uncompressed entries."""
+    zip_path = _write_zip_datapackage(tmp_path, compression=zipfile.ZIP_STORED)
+
+    with zipfile.ZipFile(zip_path) as zf:
+        for info in zf.infolist():
+            assert info.compress_type == zipfile.ZIP_STORED
+
+
+def test_zipfile_compressed_roundtrip(tmp_path):
+    """Data written with ZIP_DEFLATED can be read back correctly."""
+    zip_path = _write_zip_datapackage(tmp_path)
+    dp = load_datapackage(ZipFileSystem(str(zip_path)))
+    data, _ = dp.get_resource("sa-data-vector.data")
+    assert np.allclose(data, [2, 7, 12])

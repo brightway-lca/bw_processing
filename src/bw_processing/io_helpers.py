@@ -1,4 +1,5 @@
 import json
+import zipfile
 from mimetypes import guess_type
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -35,12 +36,22 @@ def generic_directory_filesystem(*, dirpath: Path) -> DirFileSystem:
 
 
 def generic_zipfile_filesystem(
-    *, dirpath: Path, filename: str, write: bool = True
+    *,
+    dirpath: Path,
+    filename: str,
+    write: bool = True,
+    compression: int = zipfile.ZIP_DEFLATED,
+    compresslevel: Optional[int] = None,
 ) -> ZipFileSystem:
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         raise ValueError("Destination directory `{}` doesn't exist".format(dirpath))
-    return ZipFileSystem(dirpath / filename, mode="w" if write else "r")
+    return ZipFileSystem(
+        dirpath / filename,
+        mode="w" if write else "r",
+        compression=compression,
+        compresslevel=compresslevel,
+    )
 
 
 def file_reader(
