@@ -198,6 +198,26 @@ Datapackages are created using `create_datapackage`, which takes the following a
 * overwrite: `bool`, default `False`. Overwrite an existing resource with the same `dirpath` and `name`.
 * compress: `bool`, default `False`. Save to a zipfile, if saving to disk.
 
+### Zip file compression
+
+When writing a datapackage as a zip file via `generic_zipfile_filesystem`, compression is enabled by default (`zipfile.ZIP_DEFLATED`). Index arrays in particular compress extremely well (often to <10% of their original size) because they contain a limited set of repeated integer values. Float data arrays compress less, but the overall file size reduction is substantial.
+
+```python
+import zipfile
+from bw_processing.io_helpers import generic_zipfile_filesystem
+
+# Default: ZIP_DEFLATED (recommended — good compression, fast)
+fs = generic_zipfile_filesystem(dirpath=some_path, filename="my.zip")
+
+# Uncompressed — fastest write/read, largest file
+fs = generic_zipfile_filesystem(dirpath=some_path, filename="my.zip", compression=zipfile.ZIP_STORED)
+
+# LZMA — best compression ratio, but much slower to write
+fs = generic_zipfile_filesystem(dirpath=some_path, filename="my.zip", compression=zipfile.ZIP_LZMA)
+```
+
+The `compression` and `compresslevel` arguments are passed directly to Python's `zipfile.ZipFile`. See the [Python docs](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile) for all options.
+
 Calling this function return an instance of `Datapackage`. You still need to add data.
 
 ## Contributing
