@@ -60,6 +60,23 @@ def greedy_set_cover(data, exclude=None, raise_error=True):
 
 
 def as_unique_attributes_dataframe(df, exclude=None, include=None, raise_error=False):
+    """Return a copy of ``df`` keeping only the columns needed to uniquely identify each row.
+
+    Columns are selected using the greedy set-cover heuristic (see
+    :func:`greedy_set_cover`). Columns listed in ``include`` are always kept,
+    even if they are not required for uniqueness.
+
+    Args:
+        df: Input pandas DataFrame.
+        exclude: Column names to skip during the uniqueness search.
+        include: Column names to always retain in the output.
+        raise_error: If ``True``, raise ``NonUnique`` when no unique set can be
+            found; otherwise, all columns are kept silently.
+
+    Returns:
+        A DataFrame with only the uniqueness-covering (and always-included)
+        columns.
+    """
     assert isinstance(df, pd.DataFrame)
     include = greedy_set_cover(
         df.reset_index().to_dict("records"), exclude=exclude, raise_error=raise_error

@@ -35,12 +35,15 @@ DEFAULT_LICENSES = [
 
 
 class MatrixSerializeFormat(str, Enum):
-    """
-    Enum with the serializing formats for the vectors and matrices.
+    """Serialization format used when writing numpy arrays to disk.
+
+    Because this is a ``str`` enum, values can be compared directly to strings.
+    The default is ``NUMPY``.  ``PARQUET`` requires the optional ``pyarrow``
+    dependency.
     """
 
-    NUMPY = "numpy"  # numpy .npy format
-    PARQUET = "parquet"  # Apache .parquet format
+    NUMPY = "numpy"
+    PARQUET = "parquet"
 
 
 # FILE EXTENSIONS
