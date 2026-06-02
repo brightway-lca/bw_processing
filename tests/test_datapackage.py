@@ -8,7 +8,7 @@ import pytest
 from fsspec.implementations.zip import ZipFileSystem
 from morefs.dict import DictFS
 
-from bw_processing import create_datapackage, load_datapackage, simple_graph
+from bw_processing import create_datapackage, load_datapackage, simple_graph, MatrixSerializeFormat
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE, MAX_SIGNED_64BIT_INT, MAX_SIGNED_32BIT_INT
 from bw_processing.errors import NonUnique, PotentialInconsistency, ShapeMismatch, WrongDatatype
 from bw_processing.io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
@@ -455,6 +455,218 @@ def test_add_dynamic_vector_flip_shapemistmatch():
             flip_array=flip_array,
             indices_array=indices_array,
         )
+
+
+def test_add_persistent_vector_scale_array():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_persistent_vector_scale_dtype():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([1, 2, 3])  # integer dtype
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_vector_scale_shapemismatch():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_array_scale_array():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_persistent_array(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_persistent_array_scale_dtype():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_array(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_array_scale_shapemismatch():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_persistent_array(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_vector_scale_array():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_dynamic_vector(
+        matrix="sa_matrix",
+        interface=Dummy(),
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_dynamic_vector_scale_dtype():
+    dp = create_datapackage()
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_vector(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_vector_scale_shapemismatch():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_dynamic_vector(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_array_scale_array():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_dynamic_array(
+        matrix="sa_matrix",
+        interface=Dummy(),
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_dynamic_array_scale_dtype():
+    dp = create_datapackage()
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_array(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_array_scale_shapemismatch():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_dynamic_array(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_scale_array_parquet_roundtrip(tmp_path):
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    data_array = np.array([100.0, 200.0, 300.0])
+
+    dp = create_datapackage(
+        fs=generic_directory_filesystem(dirpath=tmp_path),
+        name="scale-parquet-test",
+    )
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+        matrix_serialize_format_type=MatrixSerializeFormat.PARQUET,
+    )
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    assert "sa-data-vector.scale" in [o["name"] for o in dp2.resources]
+    loaded, meta = dp2.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(loaded, scale_array)
 
 
 def test_simple_graph():
