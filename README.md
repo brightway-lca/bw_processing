@@ -42,6 +42,7 @@ The [Brightway LCA framework](https://brightway.dev/) has stored data used in co
 * **Dynamic data sources**. Instead of requiring that data for matrix construction be present and savedd on disk, it can now be generated dynamically, either through code running locally or on another computer system. This is a big step towards embeddding life cycle assessment in a web of environmental models.
 * **Use [fsspec](https://filesystem-spec.readthedocs.io/en/latest/) for file IO**. The use of this library allows for data packages to be stored on your local computer, or on [many logical or virtual file systems](https://docs.pyfilesystem.org/en/latest/guide.html).
 * **Simpler handling of numeric values whose sign should be flipped**. Sometimes it is more convenient to specify positive numbers in dataset definitions, even though such numbers should be negative when inserted into the resulting matrices. For example, in the technosphere matrix in life cycle assessment, products produced are positive and products consumed are negative, though both values are given as positive in datasets. Brightway used to use a type mapping dictionary to indicate which values in a matrix should have their sign flipped after insertion. Such mapping dictionaries are brittle and inelegant. `bw_processing` uses an optional boolean vector, called `flip`, to indicate if any values should be flipped.
+* **Per-exchange multiplicative scaling**. An optional float vector, called `scale`, can be attached to any resource group. Each element is a multiplicative factor applied to the corresponding data value — whether static or sampled stochastically — before it is inserted into the matrix. Typical uses are allocation factors and unit conversions. A value of `1.0` leaves the data unchanged.
 * **Separation of uncertainty distribution parameters from other data**. Fitting data to a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function) (PDF), or an estimate of such a PDF, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including [direct sampling from real data](https://github.com/PascalLesage/presamples/). Therefore, uncertainty distribution parameters are stored separately,  only loaded if needed, and are only one way to express quantitative uncertainty.
 
 ## Concepts
@@ -144,6 +145,36 @@ data_obj, resource_metadata = my_dp.get_resource("some-interface")
 print(data_obj.url)
 >>> "example.com"
 ```
+
+### Scale arrays
+
+Any resource group (persistent or dynamic, vector or array) can carry an optional `scale_array`: a one-dimensional float array of the same length as `indices_array`. Each element is a multiplicative factor applied to the corresponding data value before it is inserted into the matrix. The factor is applied to both static and stochastically-sampled values. A value of `1.0` leaves the data unchanged.
+
+Typical use cases:
+
+* **Allocation factors** — when a process produces multiple products, the exchange amounts must be partitioned between them. Storing the allocation coefficients as a `scale_array` keeps them alongside the data they modify without requiring a separate processing step.
+* **Unit conversions** — when source data is expressed in a unit that differs from the matrix convention, a constant conversion factor can be stored as a `scale_array` rather than baked into every data value.
+
+```python
+import numpy as np
+from bw_processing import create_datapackage
+from bw_processing.constants import INDICES_DTYPE
+
+dp = create_datapackage()
+indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+data_array = np.array([100.0, 200.0, 300.0])
+scale_array = np.array([0.6, 1.0, 0.4])  # e.g. allocation factors
+
+dp.add_persistent_vector(
+    matrix="technosphere",
+    name="my-process",
+    indices_array=indices_array,
+    data_array=data_array,
+    scale_array=scale_array,
+)
+```
+
+The stored resource has `kind="scale"` and can be retrieved via `dp.get_resource("my-process.scale")`. The `scale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
 
 ### Policies
 
