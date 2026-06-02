@@ -457,6 +457,192 @@ def test_add_dynamic_vector_flip_shapemistmatch():
         )
 
 
+def test_add_persistent_vector_scale_array():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_persistent_vector_scale_dtype():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([1, 2, 3])  # integer dtype
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_vector_scale_shapemismatch():
+    dp = create_datapackage()
+    data_array = np.array([2.0, 7.0, 12.0])
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_array_scale_array():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_persistent_array(
+        matrix="sa_matrix",
+        data_array=data_array,
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_persistent_array_scale_dtype():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_array(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_persistent_array_scale_shapemismatch():
+    dp = create_datapackage()
+    data_array = np.arange(12, dtype=float).reshape(3, 4)
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_persistent_array(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_vector_scale_array():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_dynamic_vector(
+        matrix="sa_matrix",
+        interface=Dummy(),
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_dynamic_vector_scale_dtype():
+    dp = create_datapackage()
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_vector(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_vector_scale_shapemismatch():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_dynamic_vector(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_array_scale_array():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    dp.add_dynamic_array(
+        matrix="sa_matrix",
+        interface=Dummy(),
+        name="sa-data-vector",
+        indices_array=indices_array,
+        scale_array=scale_array,
+    )
+    assert "sa-data-vector.scale" in [o["name"] for o in dp.resources]
+    data, meta = dp.get_resource("sa-data-vector.scale")
+    assert meta["kind"] == "scale"
+    assert np.allclose(data, scale_array)
+
+
+def test_add_dynamic_array_scale_dtype():
+    dp = create_datapackage()
+    scale_array = np.array([1, 2, 3])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_array(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
+def test_add_dynamic_array_scale_shapemismatch():
+    dp = create_datapackage()
+    scale_array = np.array([0.5, 1.0, 2.0, 3.0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(ShapeMismatch):
+        dp.add_dynamic_array(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            indices_array=indices_array,
+            scale_array=scale_array,
+        )
+
+
 def test_simple_graph():
     data = {
         "some_matrix": [(1, 2, 3.14), (4, 5, 17, True), (8, 9, 11.11, False)],

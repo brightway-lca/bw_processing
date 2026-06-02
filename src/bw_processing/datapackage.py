@@ -485,11 +485,20 @@ class Datapackage(DatapackageBase):
         data_array: Optional[np.ndarray] = None,
         flip_array: Optional[np.ndarray] = None,
         distributions_array: Optional[np.ndarray] = None,
+        scale_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
-        """ """
+        """Add a persistent vector resource group to the datapackage.
+
+        ``scale_array`` is an optional 1-D float array of the same length as
+        ``indices_array``.  Each element is a multiplicative factor applied to
+        the corresponding data value — whether static or stochastic — before
+        the value is inserted into the matrix.  Typical uses are allocation
+        factors and unit conversions.  A value of ``1.0`` leaves the data
+        unchanged.
+        """
         self._prepare_modifications()
 
         # Check lengths
@@ -580,6 +589,15 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
+        if scale_array is not None:
+            self._add_scale_array_resource(
+                scale_array=scale_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
 
     def add_persistent_array(
         self,
@@ -589,11 +607,20 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
+        scale_array: Optional[np.ndarray] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
-        """ """
+        """Add a persistent array resource group to the datapackage.
+
+        ``scale_array`` is an optional 1-D float array of the same length as
+        ``indices_array``.  Each element is a multiplicative factor applied to
+        the corresponding data value — whether static or stochastic — before
+        the value is inserted into the matrix.  Typical uses are allocation
+        factors and unit conversions.  A value of ``1.0`` leaves the data
+        unchanged.
+        """
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
@@ -660,6 +687,15 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
+        if scale_array is not None:
+            self._add_scale_array_resource(
+                scale_array=scale_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
 
     def write_modified(self):
         """Write the data in modified files to the filesystem (if allowed)."""
@@ -683,7 +719,7 @@ class Datapackage(DatapackageBase):
                     if kind == "indices":
                         meta_object = "vector"
                         meta_type = "indices"
-                    elif kind == "flip":
+                    elif kind in ("flip", "scale"):
                         meta_object = "vector"
                         meta_type = "generic"
                     elif kind == "distributions":
@@ -715,6 +751,39 @@ class Datapackage(DatapackageBase):
             )
 
         self._modified = set()
+
+    def _add_scale_array_resource(
+        self,
+        *,
+        scale_array: np.ndarray,
+        indices_array: np.ndarray,
+        name: str,
+        keep_proxy: bool,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat],
+        **kwargs,
+    ) -> None:
+        scale_array = load_bytes(scale_array)
+        if not np.issubdtype(scale_array.dtype, np.floating):
+            raise WrongDatatype(
+                "`scale_array` dtype is {}, but must be a float dtype".format(scale_array.dtype)
+            )
+        elif scale_array.shape != indices_array.shape:
+            raise ShapeMismatch(
+                "`scale_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                    scale_array.shape, indices_array.shape
+                )
+            )
+        self._add_numpy_array_resource(
+            array=scale_array,
+            group=name,
+            name=name + ".scale",
+            kind="scale",
+            keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="generic",
+            **kwargs,
+        )
 
     def _add_numpy_array_resource(
         self,
@@ -798,6 +867,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,  # Not interface
+        scale_array: Optional[np.ndarray] = None,  # Not interface
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -843,6 +913,15 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
+        if scale_array is not None:
+            self._add_scale_array_resource(
+                scale_array=scale_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
 
         self.data.append(interface)
         resource = {
@@ -862,6 +941,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
+        scale_array: Optional[np.ndarray] = None,  # Not interface
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -911,6 +991,15 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
+        if scale_array is not None:
+            self._add_scale_array_resource(
+                scale_array=scale_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
 
         self.data.append(interface)
         resource = {
