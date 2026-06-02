@@ -2,6 +2,7 @@
 
 ## [1.3] - 2026-06-02
 
+* [PR #89: Add `scale_array` support for per-exchange multiplicative rescaling](https://github.com/brightway-lca/bw_processing/pull/89)
 * [PR #90: Improve docstrings and fill out README; update conda channel to `conda-forge`](https://github.com/brightway-lca/bw_processing/pull/90)
 
 ## [1.2] - 2026-05-26
