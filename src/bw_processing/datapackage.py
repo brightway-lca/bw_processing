@@ -384,6 +384,17 @@ class Datapackage(DatapackageBase):
         self.data = []
 
     def finalize_serialization(self) -> None:
+        """Write the metadata file and close the filesystem.
+
+        Must be called once after all resources have been added, before the
+        datapackage can be loaded again from disk. Dehydrates any interface
+        resources (replaces them with ``UndefinedInterface``) prior to writing.
+
+        Raises:
+            Closed: Datapackage has already been finalized.
+            ValueError: Datapackage uses an in-memory filesystem, which cannot
+                be serialized.
+        """
         if self._finalized:
             raise Closed("Datapackage already finalized")
         elif isinstance(self.fs, DictFS):
@@ -698,7 +709,12 @@ class Datapackage(DatapackageBase):
             )
 
     def write_modified(self):
-        """Write the data in modified files to the filesystem (if allowed)."""
+        """Flush modified resources back to the filesystem.
+
+        After directly editing data arrays in ``self.data``, call this method
+        to persist the changes. Clears the internal ``_modified`` set on
+        completion. Does nothing if no resources have been marked as modified.
+        """
         for index in self._modified:
             # get resource
             resource = self.resources[index]
@@ -872,6 +888,31 @@ class Datapackage(DatapackageBase):
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
+        """Add a dynamic vector resource group to the datapackage.
+
+        The matrix values are provided at runtime by ``interface`` rather than
+        stored on disk. ``interface`` must implement ``__next__()`` and return a
+        1-D numpy array of length ``len(indices_array)`` each time it is called.
+
+        The ``indices_array``, optional ``flip_array``, and optional
+        ``scale_array`` are static and are stored as normal numpy resources.
+
+        Args:
+            matrix: Name of the target matrix.
+            interface: Object implementing the dynamic-vector interface
+                (``__next__()``).
+            indices_array: Structured numpy array with dtype ``INDICES_DTYPE``
+                mapping each data value to a matrix cell.
+            name: Optional resource group name; auto-generated if omitted.
+            flip_array: Optional boolean array; where ``True`` the value is
+                multiplied by ``-1`` before insertion.
+            scale_array: Optional 1-D float array of multiplicative factors
+                applied before matrix insertion.
+            keep_proxy: If ``True``, store a proxy rather than the raw array
+                for on-disk resources.
+            matrix_serialize_format_type: Override the instance-level
+                serialization format for static arrays in this group.
+        """
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "vector", "nrows": len(indices_array)})
@@ -946,7 +987,33 @@ class Datapackage(DatapackageBase):
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
-        """`interface` must support the presamples API."""
+        """Add a dynamic array resource group to the datapackage.
+
+        The matrix values are provided at runtime by ``interface``, which must
+        implement the presamples array API: a ``.shape`` property returning
+        ``(nrows, ncols)`` and ``.__getitem__(args)`` returning the 1-D column
+        array for ``args[1]``.  ``ncols`` may be ``None`` for an infinite
+        interface.
+
+        The ``indices_array``, optional ``flip_array``, and optional
+        ``scale_array`` are static and are stored as normal numpy resources.
+
+        Args:
+            matrix: Name of the target matrix.
+            interface: Object implementing the dynamic-array interface
+                (``.shape`` and ``.__getitem__``).
+            indices_array: Structured numpy array with dtype ``INDICES_DTYPE``
+                mapping each data value to a matrix cell.
+            name: Optional resource group name; auto-generated if omitted.
+            flip_array: Optional boolean array; where ``True`` the value is
+                multiplied by ``-1`` before insertion.
+            scale_array: Optional 1-D float array of multiplicative factors
+                applied before matrix insertion.
+            keep_proxy: If ``True``, store a proxy rather than the raw array
+                for on-disk resources.
+            matrix_serialize_format_type: Override the instance-level
+                serialization format for static arrays in this group.
+        """
         self._prepare_modifications()
 
         if isinstance(flip_array, np.ndarray) and not flip_array.sum():

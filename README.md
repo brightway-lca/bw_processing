@@ -55,6 +55,18 @@ Data objects can be vectors or arrays. Vectors will always produce the same matr
 
 ### Vectors versus arrays
 
+Vectors and arrays differ in how many possible values they provide per matrix cell.
+
+A **vector** provides one value per cell. Every time a vector resource is used, it produces the same result. This is the standard case for deterministic LCA calculations.
+
+An **array** provides multiple possible values per cell, stored as columns of a 2-D numpy array. Each time the data package is iterated, a different column is selected and inserted into the matrix. This is used for:
+
+* **Monte Carlo analysis** — columns hold independently sampled values drawn from the uncertainty distributions.
+* **Scenario analysis** — each column represents a predefined scenario, such as a different technology mix or policy assumption.
+* **Presamples** — a generalization of the [presamples library](https://github.com/PascalLesage/presamples/), where pre-drawn samples are stored for reproducibility.
+
+Which column is selected on each iteration is controlled by the `sequential` and `combinatorial` policies; see [Policies](#policies).
+
 ### Persistent versus dynamic
 
 Persistent data is fixed, and can be completely loaded into memory and used directly or written to disk. Dynamic data is only resolved as the data is used, during matrix construction and iteration. Dynamic data is provided by *interfaces* - Python code that either generates the data, or wraps data coming from other software. There are many possible use cases for data interfaces, including:
@@ -208,7 +220,7 @@ Please make sure you understand how `combinatorial` and `sequential` interact! T
 
 ## Install
 
-Install using pip or conda (channel `cmutel`). Depends on `numpy` and `pandas` (for reading and writing CSVs).
+Install using pip or conda (channel `conda-forge`). Depends on `numpy` and `pandas` (for reading and writing CSVs).
 
 Has no explicit or implicit dependence on any other part of Brightway.
 

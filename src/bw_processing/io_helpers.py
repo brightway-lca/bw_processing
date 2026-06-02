@@ -27,6 +27,19 @@ except ImportError:
 
 
 def generic_directory_filesystem(*, dirpath: Path) -> DirFileSystem:
+    """Return a ``DirFileSystem`` rooted at ``dirpath``, creating it if needed.
+
+    Args:
+        dirpath: Path to the target directory. Created if it does not exist;
+            its parent must already exist.
+
+    Returns:
+        A ``fsspec`` ``DirFileSystem`` pointing at ``dirpath``.
+
+    Raises:
+        ValueError: Parent directory does not exist.
+        AssertionError: ``dirpath`` is not a ``pathlib.Path``.
+    """
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         if not dirpath.parent.is_dir():
@@ -43,6 +56,28 @@ def generic_zipfile_filesystem(
     compression: int = zipfile.ZIP_DEFLATED,
     compresslevel: Optional[int] = None,
 ) -> ZipFileSystem:
+    """Return a ``ZipFileSystem`` for ``dirpath / filename``.
+
+    Args:
+        dirpath: Directory that contains (or will contain) the zip file.
+            Must already exist.
+        filename: Name of the zip file (e.g. ``"my-dp.zip"``).
+        write: If ``True`` (default), open for writing; otherwise open for
+            reading.
+        compression: ``zipfile`` compression constant.  Defaults to
+            ``zipfile.ZIP_DEFLATED`` which gives good compression speed.
+            Pass ``zipfile.ZIP_STORED`` for no compression or
+            ``zipfile.ZIP_LZMA`` for maximum compression.
+        compresslevel: Compression level passed to ``zipfile.ZipFile``;
+            ``None`` uses the default for the chosen algorithm.
+
+    Returns:
+        A ``fsspec`` ``ZipFileSystem``.
+
+    Raises:
+        ValueError: ``dirpath`` does not exist.
+        AssertionError: ``dirpath`` is not a ``pathlib.Path``.
+    """
     assert isinstance(dirpath, Path), "`dirpath` must be a `pathlib.Path` instance"
     if not dirpath.is_dir():
         raise ValueError("Destination directory `{}` doesn't exist".format(dirpath))
