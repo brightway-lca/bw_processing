@@ -25,6 +25,13 @@ Library for storing numeric data for use in matrix-based calculations. Designed 
 
 - [Background](#background)
 - [Concepts](#concepts)
+  - [Data packages](#data-packages)
+  - [Vectors versus arrays](#vectors-versus-arrays)
+  - [Persistent versus dynamic](#persistent-versus-dynamic)
+  - [Scale arrays](#scale-arrays)
+  - [Parameter arrays for sensitivity analysis](#parameter-arrays-for-sensitivity-analysis)
+  - [NaN as a sentinel value](#nan-as-a-sentinel-value)
+  - [Policies](#policies)
 - [Install](#install)
 - [Usage](#usage)
 - [Contributing](#contributing)
@@ -43,6 +50,7 @@ The [Brightway LCA framework](https://brightway.dev/) has stored data used in co
 * **Use [fsspec](https://filesystem-spec.readthedocs.io/en/latest/) for file IO**. The use of this library allows for data packages to be stored on your local computer, or on [many logical or virtual file systems](https://docs.pyfilesystem.org/en/latest/guide.html).
 * **Simpler handling of numeric values whose sign should be flipped**. Sometimes it is more convenient to specify positive numbers in dataset definitions, even though such numbers should be negative when inserted into the resulting matrices. For example, in the technosphere matrix in life cycle assessment, products produced are positive and products consumed are negative, though both values are given as positive in datasets. Brightway used to use a type mapping dictionary to indicate which values in a matrix should have their sign flipped after insertion. Such mapping dictionaries are brittle and inelegant. `bw_processing` uses an optional boolean vector, called `flip`, to indicate if any values should be flipped.
 * **Per-exchange multiplicative scaling**. An optional float vector, called `scale`, can be attached to any resource group. Each element is a multiplicative factor applied to the corresponding data value — whether static or sampled stochastically — before it is inserted into the matrix. Typical uses are allocation factors and unit conversions. A value of `1.0` leaves the data unchanged.
+* **Recording independent variables for sensitivity analysis**. An optional `params_array` can be attached to any resource group to record the values of model parameters (independent variables) that were used to generate the data. For array resources each column of `params_array` corresponds to the same column in `data_array`, making it straightforward to correlate inputs with outputs for sensitivity analysis methods such as Morris or Sobol.
 * **Separation of uncertainty distribution parameters from other data**. Fitting data to a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function) (PDF), or an estimate of such a PDF, is only one approach to quantitative uncertainty analysis. We would like to support other approaches, including [direct sampling from real data](https://github.com/PascalLesage/presamples/). Therefore, uncertainty distribution parameters are stored separately,  only loaded if needed, and are only one way to express quantitative uncertainty.
 
 ## Concepts
@@ -187,6 +195,119 @@ dp.add_persistent_vector(
 ```
 
 The stored resource has `kind="scale"` and can be retrieved via `dp.get_resource("my-process.scale")`. The `scale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
+
+### Parameter arrays for sensitivity analysis
+
+Any resource group can carry an optional `params_array` that records the values of the independent variables (model parameters) used to generate the data. This is the foundation for global sensitivity analysis workflows such as [Morris screening](https://en.wikipedia.org/wiki/Morris_method) or [Sobol indices](https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis).
+
+**Shape conventions:**
+
+| Resource type | `data_array` shape | `params_array` shape |
+|---|---|---|
+| persistent / dynamic vector | `(n_exchanges,)` | `(n_params,)` |
+| persistent array | `(n_exchanges, n_scenarios)` | `(n_params, n_scenarios)` |
+| dynamic array | `(n_exchanges, n_scenarios)` | `(n_params, n_scenarios)` — column count not validated against interface |
+
+Column `j` of `params_array` describes the parameter configuration that produced column `j` of `data_array`. The `params_array` must be a float dtype.
+
+#### Basic usage
+
+```python
+import numpy as np
+from bw_processing import create_datapackage, INDICES_DTYPE
+
+dp = create_datapackage()
+indices = np.array([(1, 4), (2, 5)], dtype=INDICES_DTYPE)
+
+# Store the parameter values alongside the data
+dp.add_persistent_vector(
+    matrix="technosphere",
+    name="my-process",
+    indices_array=indices,
+    data_array=np.array([100.0, 200.0]),
+    params_array=np.array([25.0, 1.013]),  # temperature (°C), pressure (atm)
+)
+```
+
+#### Adding labels
+
+`param_labels` is an optional list of label objects (strings or dicts) whose length must match `params_array.shape[0]`. When provided, a companion `name.param_labels.json` file is written inside the same resource group, containing a `"values"` list and an optional `"schema"` (a [JSON Schema](https://json-schema.org/) document). Pass `param_label_schema=StringLabelSchema()` for plain-string labels, or a `ParamLabelSchema` for structured dict labels.
+
+```python
+import numpy as np
+from bw_processing import create_datapackage, INDICES_DTYPE, StringLabelSchema
+
+dp = create_datapackage()
+dp.add_persistent_vector(
+    matrix="technosphere",
+    name="my-process",
+    indices_array=np.array([(1, 4)], dtype=INDICES_DTYPE),
+    data_array=np.array([100.0]),
+    params_array=np.array([25.0, 1.013]),
+    param_labels=["temperature", "pressure"],
+    param_label_schema=StringLabelSchema(),
+)
+```
+
+#### Structured labels with a schema
+
+Use `ParamLabelSchema` and `ParamLabelField` when labels are structured objects, and pass a `param_label_schema` to validate each label at write time:
+
+```python
+import numpy as np
+from bw_processing import (
+    create_datapackage,
+    INDICES_DTYPE,
+    ParamLabelField,
+    ParamLabelSchema,
+)
+
+dp = create_datapackage()
+
+schema = ParamLabelSchema(
+    fields=[
+        ParamLabelField(name="name",      type="string"),
+        ParamLabelField(name="database",  type="string"),
+        ParamLabelField(name="year",      type="integer", required=False),
+    ],
+    description="Brightway activity reference",
+)
+
+param_labels = [
+    {"name": "electricity", "database": "ecoinvent", "year": 2020},
+    {"name": "heat",        "database": "ecoinvent"},
+]
+
+dp.add_persistent_array(
+    matrix="technosphere",
+    name="sa-run",
+    indices_array=np.array([(1, 4), (2, 5)], dtype=INDICES_DTYPE),
+    data_array=np.array([[10.0, 20.0, 30.0],   # 2 exchanges × 3 scenarios
+                         [40.0, 50.0, 60.0]]),
+    params_array=np.array([[25.0, 30.0, 35.0],  # temperature: 2 params × 3 scenarios
+                            [1.0,  1.1,  1.2]]),
+    param_labels=param_labels,
+    param_label_schema=schema,  # validates every label against the JSON Schema on write
+)
+```
+
+`ParamLabelField.type` accepts the standard JSON Schema type names: `"string"`, `"integer"`, `"number"`, `"boolean"`. For plain-string labels you can also pass `param_label_schema=StringLabelSchema()` to make the schema explicit.
+
+#### Retrieving params and labels
+
+```python
+params_data, _  = dp.get_resource("sa-run.params")       # numpy array
+labels_data, _  = dp.get_resource("sa-run.param_labels")  # {"schema": ..., "values": [...]}
+
+# Reconstruct the schema dataclass from the stored JSON Schema:
+from bw_processing import schema_from_json_schema
+schema = schema_from_json_schema(labels_data["schema"])
+# → ParamLabelSchema(fields=[...])
+```
+
+#### Dependency
+
+`params_array` validation uses the [`jsonschema`](https://python-jsonschema.readthedocs.io/) library, which is a required dependency of `bw_processing`.
 
 ### NaN as a sentinel value
 

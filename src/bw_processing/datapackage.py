@@ -37,6 +37,7 @@ from bw_processing.errors import (
 )
 from bw_processing.filesystem import clean_datapackage_name
 from bw_processing.io_helpers import file_reader, file_writer
+from bw_processing.param_labels import AnyLabelSchema
 from bw_processing.proxies import Proxy, UndefinedInterface
 from bw_processing.utils import check_name, check_suffix, load_bytes, resolve_dict_iterator, utc_now
 
@@ -497,6 +498,9 @@ class Datapackage(DatapackageBase):
         flip_array: Optional[np.ndarray] = None,
         distributions_array: Optional[np.ndarray] = None,
         scale_array: Optional[np.ndarray] = None,
+        params_array: Optional[np.ndarray] = None,
+        param_labels: Optional[list] = None,
+        param_label_schema: Optional[AnyLabelSchema] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -509,7 +513,16 @@ class Datapackage(DatapackageBase):
         the value is inserted into the matrix.  Typical uses are allocation
         factors and unit conversions.  A value of ``1.0`` leaves the data
         unchanged.
+
+        ``params_array`` is an optional 1-D float array recording the values of
+        independent variables (e.g. model parameters) used to generate this
+        resource group.  ``param_labels`` is an optional list of label objects
+        (strings or dicts) of the same length as ``params_array``; if provided,
+        a ``name.param_labels.json`` file is written alongside the array.
+        ``param_label_schema`` describes the structure of each label object and
+        triggers validation on write; it requires ``param_labels``.
         """
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         # Check lengths
@@ -609,6 +622,34 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if params_array is not None:
+            params_array = load_bytes(params_array)
+            if params_array.ndim != 1:
+                raise ShapeMismatch(
+                    "`params_array` for a vector must be 1-D, got shape {}.".format(
+                        params_array.shape
+                    )
+                )
+            self._add_params_array_resource(
+                params_array=params_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
+            if param_labels is not None:
+                if len(param_labels) != len(params_array):
+                    raise ShapeMismatch(
+                        "`param_labels` length ({}) doesn't match `params_array` ({}).".format(
+                            len(param_labels), len(params_array)
+                        )
+                    )
+                self._add_param_labels_resource(
+                    param_labels=param_labels,
+                    param_label_schema=param_label_schema,
+                    name=name,
+                    **kwargs,
+                )
 
     def add_persistent_array(
         self,
@@ -619,6 +660,9 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         scale_array: Optional[np.ndarray] = None,
+        params_array: Optional[np.ndarray] = None,
+        param_labels: Optional[list] = None,
+        param_label_schema: Optional[AnyLabelSchema] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -631,7 +675,14 @@ class Datapackage(DatapackageBase):
         the value is inserted into the matrix.  Typical uses are allocation
         factors and unit conversions.  A value of ``1.0`` leaves the data
         unchanged.
+
+        ``params_array`` is an optional 2-D float array of shape
+        ``(n_params, n_scenarios)`` where ``n_scenarios`` must equal
+        ``data_array.shape[1]``.  It records the independent variable values
+        that produced each scenario column.  See ``add_persistent_vector`` for
+        the ``param_labels`` and ``param_label_schema`` arguments.
         """
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
@@ -707,6 +758,40 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if params_array is not None:
+            params_array = load_bytes(params_array)
+            if params_array.ndim != 2:
+                raise ShapeMismatch(
+                    "`params_array` for an array must be 2-D, got shape {}.".format(
+                        params_array.shape
+                    )
+                )
+            if params_array.shape[1] != data_array.shape[1]:
+                raise ShapeMismatch(
+                    "`params_array` column count ({}) doesn't match `data_array` ({}).".format(
+                        params_array.shape[1], data_array.shape[1]
+                    )
+                )
+            self._add_params_array_resource(
+                params_array=params_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
+            if param_labels is not None:
+                if len(param_labels) != params_array.shape[0]:
+                    raise ShapeMismatch(
+                        "`param_labels` length ({}) doesn't match `params_array` rows ({}).".format(
+                            len(param_labels), params_array.shape[0]
+                        )
+                    )
+                self._add_param_labels_resource(
+                    param_labels=param_labels,
+                    param_label_schema=param_label_schema,
+                    name=name,
+                    **kwargs,
+                )
 
     def write_modified(self):
         """Flush modified resources back to the filesystem.
@@ -735,7 +820,7 @@ class Datapackage(DatapackageBase):
                     if kind == "indices":
                         meta_object = "vector"
                         meta_type = "indices"
-                    elif kind in ("flip", "scale"):
+                    elif kind in ("flip", "scale", "params"):
                         meta_object = "vector"
                         meta_type = "generic"
                     elif kind == "distributions":
@@ -756,15 +841,23 @@ class Datapackage(DatapackageBase):
                             f"Parquet format not available for resource with kind={kind}!"
                         )
 
-            file_writer(
-                data=self.data[index],
-                fs=self.fs,
-                resource=path,
-                mimetype=mediatype,
-                matrix_serialize_format_type=matrix_serialize_format_type,
-                meta_object=meta_object,
-                meta_type=meta_type,
-            )
+            if mediatype == "application/json":
+                file_writer(
+                    data=self.data[index],
+                    fs=self.fs,
+                    resource=path,
+                    mimetype=mediatype,
+                )
+            else:
+                file_writer(
+                    data=self.data[index],
+                    fs=self.fs,
+                    resource=path,
+                    mimetype=mediatype,
+                    matrix_serialize_format_type=matrix_serialize_format_type,
+                    meta_object=meta_object,
+                    meta_type=meta_type,
+                )
 
         self._modified = set()
 
@@ -800,6 +893,70 @@ class Datapackage(DatapackageBase):
             meta_type="generic",
             **kwargs,
         )
+
+    @staticmethod
+    def _check_params_args(
+        params_array: Optional[np.ndarray],
+        param_labels: Optional[list],
+        param_label_schema: Optional[AnyLabelSchema],
+    ) -> None:
+        if param_label_schema is not None and param_labels is None:
+            raise ValueError("`param_label_schema` requires `param_labels`")
+        if param_labels is not None and params_array is None:
+            raise ValueError("`param_labels` requires `params_array`")
+
+    def _add_params_array_resource(
+        self,
+        *,
+        params_array: np.ndarray,
+        name: str,
+        keep_proxy: bool,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat],
+        **kwargs,
+    ) -> None:
+        if not np.issubdtype(params_array.dtype, np.floating):
+            raise WrongDatatype(
+                "`params_array` dtype is {}, but must be a float dtype".format(params_array.dtype)
+            )
+        self._add_numpy_array_resource(
+            array=params_array,
+            group=name,
+            name=name + ".params",
+            kind="params",
+            keep_proxy=keep_proxy,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            meta_object="vector",
+            meta_type="generic",
+            **kwargs,
+        )
+
+    def _add_param_labels_resource(
+        self,
+        *,
+        param_labels: list,
+        param_label_schema: Optional[AnyLabelSchema],
+        name: str,
+        **kwargs,
+    ) -> None:
+        data: dict = {"values": param_labels}
+        if param_label_schema is not None:
+            param_label_schema.validate(param_labels)
+            data["schema"] = param_label_schema.to_json_schema()
+
+        filename = check_suffix(name + ".param_labels", ".json")
+        file_writer(data=data, fs=self.fs, resource=filename, mimetype="application/json")
+        self.data.append(data)
+
+        resource: dict = {
+            "profile": "data-resource",
+            "mediatype": "application/json",
+            "path": str(filename),
+            "name": name + ".param_labels",
+            "kind": "param_labels",
+            "group": name,
+        }
+        resource.update(**kwargs)
+        self.resources.append(resource)
 
     def _add_numpy_array_resource(
         self,
@@ -884,6 +1041,9 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,  # Not interface
         scale_array: Optional[np.ndarray] = None,  # Not interface
+        params_array: Optional[np.ndarray] = None,  # Not interface
+        param_labels: Optional[list] = None,
+        param_label_schema: Optional[AnyLabelSchema] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -894,8 +1054,10 @@ class Datapackage(DatapackageBase):
         stored on disk. ``interface`` must implement ``__next__()`` and return a
         1-D numpy array of length ``len(indices_array)`` each time it is called.
 
-        The ``indices_array``, optional ``flip_array``, and optional
-        ``scale_array`` are static and are stored as normal numpy resources.
+        The ``indices_array``, optional ``flip_array``, optional ``scale_array``,
+        and optional ``params_array`` are static and are stored as normal numpy
+        resources.  See ``add_persistent_vector`` for documentation of the
+        ``params_array``, ``param_labels``, and ``param_label_schema`` arguments.
 
         Args:
             matrix: Name of the target matrix.
@@ -913,6 +1075,7 @@ class Datapackage(DatapackageBase):
             matrix_serialize_format_type: Override the instance-level
                 serialization format for static arrays in this group.
         """
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "vector", "nrows": len(indices_array)})
@@ -963,6 +1126,34 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if params_array is not None:
+            params_array = load_bytes(params_array)
+            if params_array.ndim != 1:
+                raise ShapeMismatch(
+                    "`params_array` for a vector must be 1-D, got shape {}.".format(
+                        params_array.shape
+                    )
+                )
+            self._add_params_array_resource(
+                params_array=params_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
+            if param_labels is not None:
+                if len(param_labels) != len(params_array):
+                    raise ShapeMismatch(
+                        "`param_labels` length ({}) doesn't match `params_array` ({}).".format(
+                            len(param_labels), len(params_array)
+                        )
+                    )
+                self._add_param_labels_resource(
+                    param_labels=param_labels,
+                    param_label_schema=param_label_schema,
+                    name=name,
+                    **kwargs,
+                )
 
         self.data.append(interface)
         resource = {
@@ -983,6 +1174,9 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         scale_array: Optional[np.ndarray] = None,  # Not interface
+        params_array: Optional[np.ndarray] = None,  # Not interface
+        param_labels: Optional[list] = None,
+        param_label_schema: Optional[AnyLabelSchema] = None,
         keep_proxy: bool = False,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
@@ -995,8 +1189,12 @@ class Datapackage(DatapackageBase):
         array for ``args[1]``.  ``ncols`` may be ``None`` for an infinite
         interface.
 
-        The ``indices_array``, optional ``flip_array``, and optional
-        ``scale_array`` are static and are stored as normal numpy resources.
+        The ``indices_array``, optional ``flip_array``, optional ``scale_array``,
+        and optional ``params_array`` are static and are stored as normal numpy
+        resources.  For dynamic arrays the column count of ``params_array`` is
+        not validated against the interface (whose column count may be unknown at
+        write time).  See ``add_persistent_vector`` for documentation of the
+        ``params_array``, ``param_labels``, and ``param_label_schema`` arguments.
 
         Args:
             matrix: Name of the target matrix.
@@ -1014,6 +1212,7 @@ class Datapackage(DatapackageBase):
             matrix_serialize_format_type: Override the instance-level
                 serialization format for static arrays in this group.
         """
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         if isinstance(flip_array, np.ndarray) and not flip_array.sum():
@@ -1067,6 +1266,34 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if params_array is not None:
+            params_array = load_bytes(params_array)
+            if params_array.ndim != 2:
+                raise ShapeMismatch(
+                    "`params_array` for an array must be 2-D, got shape {}.".format(
+                        params_array.shape
+                    )
+                )
+            self._add_params_array_resource(
+                params_array=params_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
+            if param_labels is not None:
+                if len(param_labels) != params_array.shape[0]:
+                    raise ShapeMismatch(
+                        "`param_labels` length ({}) doesn't match `params_array` rows ({}).".format(
+                            len(param_labels), params_array.shape[0]
+                        )
+                    )
+                self._add_param_labels_resource(
+                    param_labels=param_labels,
+                    param_label_schema=param_label_schema,
+                    name=name,
+                    **kwargs,
+                )
 
         self.data.append(interface)
         resource = {
