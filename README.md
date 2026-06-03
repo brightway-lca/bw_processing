@@ -231,7 +231,7 @@ dp.add_persistent_vector(
 
 #### Adding labels
 
-`param_labels` is an optional list of label objects (strings or dicts) whose length must match `params_array.shape[0]`. When provided, a companion `name.param_labels.json` file is written inside the same resource group, containing a `"values"` list and an optional `"schema"` (a [JSON Schema](https://json-schema.org/) document).
+`param_labels` is an optional list of label objects (strings or dicts) whose length must match `params_array.shape[0]`. When provided, a companion `name.param_labels.json` file is written inside the same resource group, containing a `"values"` list and an optional `"schema"` (a [JSON Schema](https://json-schema.org/) document). Pass `param_label_schema=StringLabelSchema()` for plain-string labels, or a `ParamLabelSchema` for structured dict labels.
 
 ```python
 import numpy as np
@@ -244,7 +244,8 @@ dp.add_persistent_vector(
     indices_array=np.array([(1, 4)], dtype=INDICES_DTYPE),
     data_array=np.array([100.0]),
     params_array=np.array([25.0, 1.013]),
-    param_labels=["temperature", "pressure"],  # plain strings — no schema needed
+    param_labels=["temperature", "pressure"],
+    param_label_schema=StringLabelSchema(),
 )
 ```
 
