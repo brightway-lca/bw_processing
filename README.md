@@ -268,7 +268,7 @@ schema = ParamLabelSchema(
     fields=[
         ParamLabelField(name="name",      type="string"),
         ParamLabelField(name="database",  type="string"),
-        ParamLabelField(name="amount",    type="number", required=False),
+        ParamLabelField(name="year",      type="integer", required=False),
     ],
     description="Brightway activity reference",
 )
@@ -282,7 +282,7 @@ dp.add_persistent_array(
     params_array=np.array([[25.0, 30.0, 35.0],  # temperature: 2 params × 3 scenarios
                             [1.0,  1.1,  1.2]]),
     param_labels=[
-        {"name": "electricity", "database": "ecoinvent", "amount": 1.0},
+        {"name": "electricity", "database": "ecoinvent", "year": 2020},
         {"name": "heat",        "database": "ecoinvent"},
     ],
     param_label_schema=schema,  # validates every label against the JSON Schema on write
