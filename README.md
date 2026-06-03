@@ -188,6 +188,38 @@ dp.add_persistent_vector(
 
 The stored resource has `kind="scale"` and can be retrieved via `dp.get_resource("my-process.scale")`. The `scale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
 
+### NaN as a sentinel value
+
+A `NaN` value in a data vector or array is treated by `matrix_utils` as **"no data insertion"** — that element is skipped when the matrix is built or rebuilt, leaving the corresponding matrix cell at whatever value was written by an earlier package. This convention makes it straightforward to define scenario or override packages: set an element to `NaN` to inherit the base value, or to a real number to override it.
+
+```python
+import numpy as np
+from bw_processing import create_datapackage, INDICES_DTYPE
+
+# Base package — sets matrix[0,0]=5 and matrix[1,1]=7
+dp_base = create_datapackage()
+dp_base.add_persistent_vector(
+    matrix="foo",
+    name="base",
+    indices_array=np.array([(0, 0), (1, 1)], dtype=INDICES_DTYPE),
+    data_array=np.array([5.0, 7.0]),
+)
+
+# Scenario package — overrides matrix[1,1] but leaves matrix[0,0] untouched
+dp_scenario = create_datapackage()
+dp_scenario.add_persistent_vector(
+    matrix="foo",
+    name="scenario",
+    indices_array=np.array([(0, 0), (1, 1)], dtype=INDICES_DTYPE),
+    data_array=np.array([np.nan, 99.0]),
+)
+# When both packages are passed to MappedMatrix:
+# matrix[0,0] == 5.0  (NaN in scenario → base value preserved)
+# matrix[1,1] == 99.0 (non-NaN in scenario → override applied)
+```
+
+Note that `NaN` skipping is implemented in `matrix_utils`, not in `bw_processing` itself. `bw_processing` stores and retrieves the `NaN` values faithfully; the skip logic runs at matrix construction time.
+
 ### Policies
 
 Data package policies define how the data should be used. Policies apply to the entire data package; you may wish to adjust what is stored in which data packages to get the effect you desire.
