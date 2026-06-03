@@ -1,5 +1,6 @@
 __all__ = (
     "__version__",
+    "AnyLabelSchema",
     "as_unique_attributes",
     "as_unique_attributes_dataframe",
     "clean_datapackage_name",
@@ -21,10 +22,14 @@ __all__ = (
     "MatrixSerializeFormat",
     "md5",
     "merge_datapackages_with_mask",
+    "ParamLabelField",
+    "ParamLabelSchema",
     "reindex",
     "reset_index",
     "safe_filename",
+    "schema_from_json_schema",
     "simple_graph",
+    "StringLabelSchema",
     "UNCERTAINTY_DTYPE",
     "UndefinedInterface",
 )
@@ -34,6 +39,13 @@ __version__ = "1.3"
 
 from bw_processing.array_creation import create_array, create_structured_array
 from bw_processing.constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE, MatrixSerializeFormat
+from bw_processing.param_labels import (
+    AnyLabelSchema,
+    ParamLabelField,
+    ParamLabelSchema,
+    StringLabelSchema,
+    schema_from_json_schema,
+)
 from bw_processing.datapackage import (
     Datapackage,
     DatapackageBase,
