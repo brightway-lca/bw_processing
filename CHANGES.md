@@ -2,7 +2,6 @@
 
 ## [1.4] - 2026-06-03
 
-* [PR #92: Document NaN as a sentinel value for matrix insertion](https://github.com/brightway-lca/bw_processing/pull/92)
 * [PR #93: Add `params_array` support for sensitivity analysis](https://github.com/brightway-lca/bw_processing/pull/93)
 
 ## [1.3] - 2026-06-02
