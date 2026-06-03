@@ -274,6 +274,11 @@ schema = ParamLabelSchema(
     description="Brightway activity reference",
 )
 
+param_labels = [
+    {"name": "electricity", "database": "ecoinvent", "year": 2020},
+    {"name": "heat",        "database": "ecoinvent"},
+]
+
 dp.add_persistent_array(
     matrix="technosphere",
     name="sa-run",
@@ -282,10 +287,7 @@ dp.add_persistent_array(
                          [40.0, 50.0, 60.0]]),
     params_array=np.array([[25.0, 30.0, 35.0],  # temperature: 2 params × 3 scenarios
                             [1.0,  1.1,  1.2]]),
-    param_labels=[
-        {"name": "electricity", "database": "ecoinvent", "year": 2020},
-        {"name": "heat",        "database": "ecoinvent"},
-    ],
+    param_labels=param_labels,
     param_label_schema=schema,  # validates every label against the JSON Schema on write
 )
 ```
