@@ -260,7 +260,6 @@ from bw_processing import (
     INDICES_DTYPE,
     ParamLabelField,
     ParamLabelSchema,
-    StringLabelSchema,
 )
 
 dp = create_datapackage()

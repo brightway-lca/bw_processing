@@ -522,10 +522,7 @@ class Datapackage(DatapackageBase):
         ``param_label_schema`` describes the structure of each label object and
         triggers validation on write; it requires ``param_labels``.
         """
-        if param_label_schema is not None and param_labels is None:
-            raise ValueError("`param_label_schema` requires `param_labels`")
-        if param_labels is not None and params_array is None:
-            raise ValueError("`param_labels` requires `params_array`")
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         # Check lengths
@@ -685,10 +682,7 @@ class Datapackage(DatapackageBase):
         that produced each scenario column.  See ``add_persistent_vector`` for
         the ``param_labels`` and ``param_label_schema`` arguments.
         """
-        if param_label_schema is not None and param_labels is None:
-            raise ValueError("`param_label_schema` requires `param_labels`")
-        if param_labels is not None and params_array is None:
-            raise ValueError("`param_labels` requires `params_array`")
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
@@ -900,6 +894,17 @@ class Datapackage(DatapackageBase):
             **kwargs,
         )
 
+    @staticmethod
+    def _check_params_args(
+        params_array: Optional[np.ndarray],
+        param_labels: Optional[list],
+        param_label_schema: Optional[AnyLabelSchema],
+    ) -> None:
+        if param_label_schema is not None and param_labels is None:
+            raise ValueError("`param_label_schema` requires `param_labels`")
+        if param_labels is not None and params_array is None:
+            raise ValueError("`param_labels` requires `params_array`")
+
     def _add_params_array_resource(
         self,
         *,
@@ -929,7 +934,7 @@ class Datapackage(DatapackageBase):
         self,
         *,
         param_labels: list,
-        param_label_schema: Optional[Any],
+        param_label_schema: Optional[AnyLabelSchema],
         name: str,
         **kwargs,
     ) -> None:
@@ -1070,10 +1075,7 @@ class Datapackage(DatapackageBase):
             matrix_serialize_format_type: Override the instance-level
                 serialization format for static arrays in this group.
         """
-        if param_label_schema is not None and param_labels is None:
-            raise ValueError("`param_label_schema` requires `param_labels`")
-        if param_labels is not None and params_array is None:
-            raise ValueError("`param_labels` requires `params_array`")
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         kwargs.update({"matrix": matrix, "category": "vector", "nrows": len(indices_array)})
@@ -1210,10 +1212,7 @@ class Datapackage(DatapackageBase):
             matrix_serialize_format_type: Override the instance-level
                 serialization format for static arrays in this group.
         """
-        if param_label_schema is not None and param_labels is None:
-            raise ValueError("`param_label_schema` requires `param_labels`")
-        if param_labels is not None and params_array is None:
-            raise ValueError("`param_labels` requires `params_array`")
+        self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
         if isinstance(flip_array, np.ndarray) and not flip_array.sum():

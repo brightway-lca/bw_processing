@@ -2,6 +2,8 @@ import jsonschema
 from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional, Union
 
+VALID_FIELD_TYPES = ("string", "integer", "number", "boolean")
+
 
 @dataclass
 class StringLabelSchema:
@@ -69,15 +71,22 @@ class ParamLabelSchema:
     @classmethod
     def from_json_schema(cls, data: Dict) -> "ParamLabelSchema":
         required = set(data.get("required", []))
-        fields = [
-            ParamLabelField(
-                name=name,
-                type=defn.get("type", "string"),
-                required=name in required,
-                description=defn.get("description"),
+        fields = []
+        for name, defn in data.get("properties", {}).items():
+            type_val = defn.get("type", "string")
+            if type_val not in VALID_FIELD_TYPES:
+                raise ValueError(
+                    f"Unknown field type {type_val!r} for field {name!r}; "
+                    f"must be one of {VALID_FIELD_TYPES}"
+                )
+            fields.append(
+                ParamLabelField(
+                    name=name,
+                    type=type_val,
+                    required=name in required,
+                    description=defn.get("description"),
+                )
             )
-            for name, defn in data.get("properties", {}).items()
-        ]
         return cls(fields=fields, description=data.get("description"))
 
 

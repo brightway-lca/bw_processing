@@ -32,7 +32,7 @@ dependencies = [
     # dependencies as strings with quotes, e.g. "foo"
     # You can add version requirements
     "fsspec",
-    "jsonschema",
+    "jsonschema>=4.0",
     "morefs",
     "numpy",
     "pandas",

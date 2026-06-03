@@ -1,3 +1,4 @@
+import jsonschema
 import numpy as np
 import pytest
 
@@ -38,7 +39,7 @@ def test_string_label_schema_validation_passes():
 
 
 def test_string_label_schema_validation_fails():
-    with pytest.raises(Exception):  # jsonschema.ValidationError
+    with pytest.raises(jsonschema.ValidationError):
         StringLabelSchema().validate([{"not": "a string"}])
 
 
@@ -94,13 +95,13 @@ def test_param_label_schema_validation_passes():
 
 def test_param_label_schema_validation_fails_missing_required():
     schema = ParamLabelSchema(fields=[ParamLabelField(name="name", type="string", required=True)])
-    with pytest.raises(Exception):  # jsonschema.ValidationError
+    with pytest.raises(jsonschema.ValidationError):
         schema.validate([{"other": "field"}])
 
 
 def test_param_label_schema_validation_fails_wrong_type():
     schema = ParamLabelSchema(fields=[ParamLabelField(name="amount", type="number")])
-    with pytest.raises(Exception):
+    with pytest.raises(jsonschema.ValidationError):
         schema.validate([{"amount": "not-a-number"}])
 
 
@@ -369,3 +370,114 @@ def test_round_trip_with_params_and_labels(tmp_path):
     reconstructed = schema_from_json_schema(labels_data["schema"])
     assert isinstance(reconstructed, ParamLabelSchema)
     assert reconstructed == schema
+
+
+def test_round_trip_persistent_array_with_params(tmp_path):
+    fs = generic_directory_filesystem(dirpath=tmp_path / "dp")
+    dp = create_datapackage(fs=fs)
+    dp.add_persistent_array(
+        matrix="technosphere",
+        indices_array=_make_indices(2),
+        data_array=np.array([[1.0, 2.0], [3.0, 4.0]]),
+        params_array=np.array([[10.0, 20.0]]),  # 1 param, 2 scenarios
+        param_labels=["temperature"],
+        param_label_schema=StringLabelSchema(),
+        name="test",
+    )
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path / "dp"))
+    params_data, _ = dp2.get_resource("test.params")
+    assert params_data.shape == (1, 2)
+    np.testing.assert_array_equal(params_data, np.array([[10.0, 20.0]]))
+
+
+# ---------------------------------------------------------------------------
+# from_json_schema type validation
+# ---------------------------------------------------------------------------
+
+
+def test_from_json_schema_rejects_unknown_type():
+    with pytest.raises(ValueError, match="Unknown field type"):
+        ParamLabelSchema.from_json_schema(
+            {"type": "object", "properties": {"x": {"type": "array"}}}
+        )
+
+
+# ---------------------------------------------------------------------------
+# Write-time schema validation failure
+# ---------------------------------------------------------------------------
+
+
+def test_write_time_validation_failure():
+    dp = create_datapackage()
+    schema = ParamLabelSchema(fields=[ParamLabelField(name="name", type="string")])
+    with pytest.raises(jsonschema.ValidationError):
+        dp.add_persistent_vector(
+            matrix="technosphere",
+            indices_array=_make_indices(),
+            data_array=np.array([1.0]),
+            params_array=np.array([25.0]),
+            param_labels=[{"name": 42}],  # "name" should be a string, not an int
+            param_label_schema=schema,
+            name="test",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Dynamic vector and array with params
+# ---------------------------------------------------------------------------
+
+
+class _DummyInterface:
+    pass
+
+
+def test_dynamic_vector_with_params():
+    dp = create_datapackage()
+    dp.add_dynamic_vector(
+        matrix="technosphere",
+        interface=_DummyInterface(),
+        indices_array=_make_indices(),
+        params_array=np.array([25.0, 1.013]),
+        param_labels=["temperature", "pressure"],
+        param_label_schema=StringLabelSchema(),
+        name="test",
+    )
+    kinds = {r["kind"] for r in dp.resources}
+    assert "params" in kinds
+    assert "param_labels" in kinds
+    labels_data, _ = dp.get_resource("test.param_labels")
+    assert labels_data["values"] == ["temperature", "pressure"]
+    assert labels_data["schema"] == {"type": "string"}
+
+
+def test_dynamic_array_with_params():
+    dp = create_datapackage()
+    # 2 params, 3 scenarios — column count not validated against the interface
+    dp.add_dynamic_array(
+        matrix="technosphere",
+        interface=_DummyInterface(),
+        indices_array=_make_indices(),
+        params_array=np.array([[10.0, 20.0, 30.0], [1.0, 2.0, 3.0]]),
+        param_labels=["temperature", "pressure"],
+        param_label_schema=StringLabelSchema(),
+        name="test",
+    )
+    kinds = {r["kind"] for r in dp.resources}
+    assert "params" in kinds
+    assert "param_labels" in kinds
+    params_data, _ = dp.get_resource("test.params")
+    assert params_data.shape == (2, 3)
+
+
+def test_dynamic_array_params_must_be_2d():
+    dp = create_datapackage()
+    with pytest.raises(ShapeMismatch):
+        dp.add_dynamic_array(
+            matrix="technosphere",
+            interface=_DummyInterface(),
+            indices_array=_make_indices(),
+            params_array=np.array([1.0, 2.0]),  # 1D — wrong for array
+            name="test",
+        )
