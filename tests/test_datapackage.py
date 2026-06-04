@@ -330,6 +330,23 @@ def test_add_persistent_vector_flip_dtype():
         )
 
 
+def test_add_persistent_vector_flip_dtype_all_zeros():
+    # A non-bool flip that is all-zeros must still raise WrongDatatype;
+    # previously the dtype check was skipped when sum() == 0.
+    dp = create_datapackage()
+    data_array = np.array([2, 7, 12])
+    flip_array = np.array([0, 0, 0])  # all falsy, but wrong dtype
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            flip_array=flip_array,
+            indices_array=indices_array,
+        )
+
+
 def test_add_persistent_vector_flip_shapemistmatch():
     dp = create_datapackage()
     data_array = np.array([2, 7, 12])
@@ -386,6 +403,21 @@ def test_add_persistent_array_flip_dtype():
         )
 
 
+def test_add_persistent_array_flip_dtype_all_zeros():
+    dp = create_datapackage()
+    data_array = np.arange(12).reshape(3, 4)
+    flip_array = np.array([0, 0, 0])  # all falsy, but wrong dtype
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_array(
+            matrix="sa_matrix",
+            data_array=data_array,
+            name="sa-data-vector",
+            flip_array=flip_array,
+            indices_array=indices_array,
+        )
+
+
 def test_add_persistent_array_flip_shapemistmatch():
     dp = create_datapackage()
     data_array = np.arange(12).reshape(3, 4)
@@ -415,6 +447,20 @@ def test_add_dynamic_array_flip_dtype():
         )
 
 
+def test_add_dynamic_array_flip_dtype_all_zeros():
+    dp = create_datapackage()
+    flip_array = np.array([0, 0, 0])  # all falsy, but wrong dtype
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_array(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            flip_array=flip_array,
+            indices_array=indices_array,
+        )
+
+
 def test_add_dynamic_array_flip_shapemistmatch():
     dp = create_datapackage()
     flip_array = np.array([0, 1, 0, 1], dtype=bool)
@@ -432,6 +478,20 @@ def test_add_dynamic_array_flip_shapemistmatch():
 def test_add_dynamic_vector_flip_dtype():
     dp = create_datapackage()
     flip_array = np.array([0, 1, 0])
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    with pytest.raises(WrongDatatype):
+        dp.add_dynamic_vector(
+            matrix="sa_matrix",
+            interface=Dummy(),
+            name="sa-data-vector",
+            flip_array=flip_array,
+            indices_array=indices_array,
+        )
+
+
+def test_add_dynamic_vector_flip_dtype_all_zeros():
+    dp = create_datapackage()
+    flip_array = np.array([0, 0, 0])  # all falsy, but wrong dtype
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
     with pytest.raises(WrongDatatype):
         dp.add_dynamic_vector(
