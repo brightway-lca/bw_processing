@@ -35,7 +35,7 @@ __all__ = (
     "UndefinedInterface",
 )
 
-__version__ = "1.4"
+__version__ = "1.5"
 
 
 from bw_processing.array_creation import create_array, create_structured_array
