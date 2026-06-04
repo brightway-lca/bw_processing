@@ -189,9 +189,28 @@ class TestArrayEntry:
         e = ArrayEntry(rows=rows, cols=cols, data=data)
         assert e.data.shape == (3, 10)
 
+    def test_fields_are_normalized_to_ndarray(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)))
+        assert isinstance(e.rows, np.ndarray)
+        assert isinstance(e.cols, np.ndarray)
+        assert isinstance(e.data, np.ndarray)
+
+    def test_flip_coerced_to_bool(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), flip=[1, 0])
+        assert e.flip.dtype == bool
+        assert list(e.flip) == [True, False]
+
     def test_rows_must_be_1d(self):
         with pytest.raises(ValueError, match="1-D"):
             ArrayEntry(rows=[[0, 1], [2, 3]], cols=[0, 1, 2, 3], data=np.ones((4, 2)))
+
+    def test_rows_must_be_integer_dtype(self):
+        with pytest.raises(ValueError, match="integer dtype"):
+            ArrayEntry(rows=np.array([1.7, 2.9]), cols=np.array([3, 4]), data=np.ones((2, 3)))
+
+    def test_cols_must_be_integer_dtype(self):
+        with pytest.raises(ValueError, match="integer dtype"):
+            ArrayEntry(rows=np.array([1, 2]), cols=np.array([3.0, 4.0]), data=np.ones((2, 3)))
 
     def test_cols_shape_mismatch(self):
         with pytest.raises(ValueError, match="cols.*rows"):

@@ -1,7 +1,7 @@
 import dataclasses
 import math
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -102,33 +102,37 @@ class ArrayEntry:
         flip: Optional 1-D boolean sequence of length ``n_entries``.
     """
 
-    rows: Union[np.ndarray, list]
-    cols: Union[np.ndarray, list]
+    rows: np.ndarray
+    cols: np.ndarray
     data: np.ndarray
-    flip: Optional[Union[np.ndarray, list]] = None
+    flip: Optional[np.ndarray] = None
 
     def __post_init__(self):
-        rows = np.asarray(self.rows)
-        cols = np.asarray(self.cols)
-        data = np.asarray(self.data)
+        self.rows = np.asarray(self.rows)
+        self.cols = np.asarray(self.cols)
+        self.data = np.asarray(self.data)
 
-        if rows.ndim != 1:
-            raise ValueError(f"`rows` must be 1-D, got shape {rows.shape}")
-        if cols.shape != rows.shape:
+        if self.rows.ndim != 1:
+            raise ValueError(f"`rows` must be 1-D, got shape {self.rows.shape}")
+        if not np.issubdtype(self.rows.dtype, np.integer):
+            raise ValueError(f"`rows` must have integer dtype, got {self.rows.dtype}")
+        if self.cols.shape != self.rows.shape:
             raise ValueError(
-                f"`cols` shape {cols.shape} doesn't match `rows` shape {rows.shape}"
+                f"`cols` shape {self.cols.shape} doesn't match `rows` shape {self.rows.shape}"
             )
-        if data.ndim != 2:
-            raise ValueError(f"`data` must be 2-D, got {data.ndim}-D")
-        if data.shape[0] != len(rows):
+        if not np.issubdtype(self.cols.dtype, np.integer):
+            raise ValueError(f"`cols` must have integer dtype, got {self.cols.dtype}")
+        if self.data.ndim != 2:
+            raise ValueError(f"`data` must be 2-D, got {self.data.ndim}-D")
+        if self.data.shape[0] != len(self.rows):
             raise ValueError(
-                f"`data` has {data.shape[0]} rows but `rows` has {len(rows)} entries"
+                f"`data` has {self.data.shape[0]} rows but `rows` has {len(self.rows)} entries"
             )
         if self.flip is not None:
-            flip = np.asarray(self.flip)
-            if flip.shape != rows.shape:
+            self.flip = np.asarray(self.flip, dtype=bool)
+            if self.flip.shape != self.rows.shape:
                 raise ValueError(
-                    f"`flip` shape {flip.shape} doesn't match `rows` shape {rows.shape}"
+                    f"`flip` shape {self.flip.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
 
 

@@ -564,16 +564,14 @@ class Datapackage(DatapackageBase):
             entries: List of :class:`.ArrayEntry` instances.
         """
         for entry in entries:
-            indices = np.array(
-                list(zip(entry.rows, entry.cols)),
-                dtype=INDICES_DTYPE,
-            )
-            flip_array = np.asarray(entry.flip) if entry.flip is not None else None
+            indices = np.empty(len(entry.rows), dtype=INDICES_DTYPE)
+            indices["row"] = entry.rows
+            indices["col"] = entry.cols
             self.add_persistent_array(
                 matrix=matrix,
                 indices_array=indices,
-                data_array=np.asarray(entry.data),
-                flip_array=flip_array,
+                data_array=entry.data,
+                flip_array=entry.flip,
             )
 
     def add_persistent_vector(
