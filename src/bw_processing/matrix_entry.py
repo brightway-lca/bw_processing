@@ -60,7 +60,7 @@ class MatrixEntry:
         negative: Whether the underlying value is negative.
         rescale: Per-exchange multiplicative factor applied before matrix
             insertion. ``1.0`` (the default) leaves the value unchanged.
-            Stored as a ``scale_array`` resource (``kind="scale"``).
+            Stored as a ``rescale_array`` resource (``kind="rescale"``).
     """
 
     row: int
@@ -104,16 +104,16 @@ class ArrayEntry:
         cols: 1-D sequence of integer column indices, one per matrix entry.
         data: 2-D array of shape ``(n_entries, n_scenarios)``.
         flip: Optional 1-D boolean sequence of length ``n_entries``.
-        scale: Optional 1-D float array of per-entry multiplicative factors
+        rescale: Optional 1-D float array of per-entry multiplicative factors
             (one per row). ``1.0`` leaves the value unchanged. Stored as a
-            ``scale_array`` resource (``kind="scale"``).
+            ``rescale_array`` resource (``kind="rescale"``).
     """
 
     rows: np.ndarray
     cols: np.ndarray
     data: np.ndarray
     flip: Optional[np.ndarray] = None
-    scale: Optional[np.ndarray] = None
+    rescale: Optional[np.ndarray] = None
 
     def __post_init__(self):
         self.rows = np.asarray(self.rows)
@@ -142,11 +142,11 @@ class ArrayEntry:
                 raise ValueError(
                     f"`flip` shape {self.flip.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
-        if self.scale is not None:
-            self.scale = np.asarray(self.scale, dtype=np.float32)
-            if self.scale.shape != self.rows.shape:
+        if self.rescale is not None:
+            self.rescale = np.asarray(self.rescale, dtype=np.float32)
+            if self.rescale.shape != self.rows.shape:
                 raise ValueError(
-                    f"`scale` shape {self.scale.shape} doesn't match `rows` shape {self.rows.shape}"
+                    f"`rescale` shape {self.rescale.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
 
 

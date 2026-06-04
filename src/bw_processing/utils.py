@@ -80,7 +80,7 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
         sort_fields=sort_fields,
     )
     rescale = array["rescale"]
-    scale_array = rescale if (rescale != 1.0).any() else None
+    rescale_array = rescale if (rescale != 1.0).any() else None
     return (
         array["amount"],
         # Not repacking fields would cause this multi-field index to return a view
@@ -101,7 +101,7 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
             ]
         ),
         array["flip"],
-        scale_array,
+        rescale_array,
     )
 
 

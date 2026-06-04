@@ -511,7 +511,7 @@ class Datapackage(DatapackageBase):
             indices_array,
             distributions_array,
             flip_array,
-            scale_array,
+            rescale_array,
         ) = resolve_dict_iterator(dict_iterator, nrows)
         self.add_persistent_vector(
             matrix=matrix,
@@ -521,7 +521,7 @@ class Datapackage(DatapackageBase):
             indices_array=indices_array,
             flip_array=flip_array,
             distributions_array=distributions_array,
-            scale_array=scale_array,
+            rescale_array=rescale_array,
             matrix_serialize_format_type=matrix_serialize_format_type,
             **kwargs,
         )
@@ -537,7 +537,7 @@ class Datapackage(DatapackageBase):
 
         High-level convenience method that does not require working directly
         with NumPy arrays. If any entry has a ``rescale`` value other than
-        ``1.0``, the rescale values are stored as a ``scale_array`` resource.
+        ``1.0``, the rescale values are stored as a ``rescale_array`` resource.
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -561,7 +561,7 @@ class Datapackage(DatapackageBase):
 
         Each :class:`.ArrayEntry` becomes one persistent-array resource group.
         Resource group names are auto-generated. If an entry has a ``scale``
-        array it is stored as a ``scale_array`` resource (``kind="scale"``).
+        array it is stored as a ``rescale_array`` resource (``kind="scale"``).
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -576,7 +576,7 @@ class Datapackage(DatapackageBase):
                 indices_array=indices,
                 data_array=entry.data,
                 flip_array=entry.flip,
-                scale_array=entry.scale,
+                rescale_array=entry.rescale,
             )
 
     def add_persistent_vector(
@@ -588,7 +588,7 @@ class Datapackage(DatapackageBase):
         data_array: Optional[np.ndarray] = None,
         flip_array: Optional[np.ndarray] = None,
         distributions_array: Optional[np.ndarray] = None,
-        scale_array: Optional[np.ndarray] = None,
+        rescale_array: Optional[np.ndarray] = None,
         params_array: Optional[np.ndarray] = None,
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -598,7 +598,7 @@ class Datapackage(DatapackageBase):
     ) -> None:
         """Add a persistent vector resource group to the datapackage.
 
-        ``scale_array`` is an optional 1-D float array of the same length as
+        ``rescale_array`` is an optional 1-D float array of the same length as
         ``indices_array``.  Each element is a multiplicative factor applied to
         the corresponding data value — whether static or stochastic — before
         the value is inserted into the matrix.  Typical uses are allocation
@@ -704,9 +704,9 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
-        if scale_array is not None:
-            self._add_scale_array_resource(
-                scale_array=scale_array,
+        if rescale_array is not None:
+            self._add_rescale_array_resource(
+                rescale_array=rescale_array,
                 indices_array=indices_array,
                 name=name,
                 keep_proxy=keep_proxy,
@@ -750,7 +750,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
-        scale_array: Optional[np.ndarray] = None,
+        rescale_array: Optional[np.ndarray] = None,
         params_array: Optional[np.ndarray] = None,
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -760,7 +760,7 @@ class Datapackage(DatapackageBase):
     ) -> None:
         """Add a persistent array resource group to the datapackage.
 
-        ``scale_array`` is an optional 1-D float array of the same length as
+        ``rescale_array`` is an optional 1-D float array of the same length as
         ``indices_array``.  Each element is a multiplicative factor applied to
         the corresponding data value — whether static or stochastic — before
         the value is inserted into the matrix.  Typical uses are allocation
@@ -840,9 +840,9 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
-        if scale_array is not None:
-            self._add_scale_array_resource(
-                scale_array=scale_array,
+        if rescale_array is not None:
+            self._add_rescale_array_resource(
+                rescale_array=rescale_array,
                 indices_array=indices_array,
                 name=name,
                 keep_proxy=keep_proxy,
@@ -911,7 +911,7 @@ class Datapackage(DatapackageBase):
                     if kind == "indices":
                         meta_object = "vector"
                         meta_type = "indices"
-                    elif kind in ("flip", "scale", "params"):
+                    elif kind in ("flip", "rescale", "params"):
                         meta_object = "vector"
                         meta_type = "generic"
                     elif kind == "distributions":
@@ -952,32 +952,32 @@ class Datapackage(DatapackageBase):
 
         self._modified = set()
 
-    def _add_scale_array_resource(
+    def _add_rescale_array_resource(
         self,
         *,
-        scale_array: np.ndarray,
+        rescale_array: np.ndarray,
         indices_array: np.ndarray,
         name: str,
         keep_proxy: bool,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat],
         **kwargs,
     ) -> None:
-        scale_array = load_bytes(scale_array)
-        if not np.issubdtype(scale_array.dtype, np.floating):
+        rescale_array = load_bytes(rescale_array)
+        if not np.issubdtype(rescale_array.dtype, np.floating):
             raise WrongDatatype(
-                "`scale_array` dtype is {}, but must be a float dtype".format(scale_array.dtype)
+                "`rescale_array` dtype is {}, but must be a float dtype".format(rescale_array.dtype)
             )
-        elif scale_array.shape != indices_array.shape:
+        elif rescale_array.shape != indices_array.shape:
             raise ShapeMismatch(
-                "`scale_array` shape ({}) doesn't match `indices_array` ({}).".format(
-                    scale_array.shape, indices_array.shape
+                "`rescale_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                    rescale_array.shape, indices_array.shape
                 )
             )
         self._add_numpy_array_resource(
-            array=scale_array,
+            array=rescale_array,
             group=name,
-            name=name + ".scale",
-            kind="scale",
+            name=name + ".rescale",
+            kind="rescale",
             keep_proxy=keep_proxy,
             matrix_serialize_format_type=matrix_serialize_format_type,
             meta_object="vector",
@@ -1131,7 +1131,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,  # Not interface
-        scale_array: Optional[np.ndarray] = None,  # Not interface
+        rescale_array: Optional[np.ndarray] = None,  # Not interface
         params_array: Optional[np.ndarray] = None,  # Not interface
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -1145,7 +1145,7 @@ class Datapackage(DatapackageBase):
         stored on disk. ``interface`` must implement ``__next__()`` and return a
         1-D numpy array of length ``len(indices_array)`` each time it is called.
 
-        The ``indices_array``, optional ``flip_array``, optional ``scale_array``,
+        The ``indices_array``, optional ``flip_array``, optional ``rescale_array``,
         and optional ``params_array`` are static and are stored as normal numpy
         resources.  See ``add_persistent_vector`` for documentation of the
         ``params_array``, ``param_labels``, and ``param_label_schema`` arguments.
@@ -1159,7 +1159,7 @@ class Datapackage(DatapackageBase):
             name: Optional resource group name; auto-generated if omitted.
             flip_array: Optional boolean array; where ``True`` the value is
                 multiplied by ``-1`` before insertion.
-            scale_array: Optional 1-D float array of multiplicative factors
+            rescale_array: Optional 1-D float array of multiplicative factors
                 applied before matrix insertion.
             keep_proxy: If ``True``, store a proxy rather than the raw array
                 for on-disk resources.
@@ -1208,9 +1208,9 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
-        if scale_array is not None:
-            self._add_scale_array_resource(
-                scale_array=scale_array,
+        if rescale_array is not None:
+            self._add_rescale_array_resource(
+                rescale_array=rescale_array,
                 indices_array=indices_array,
                 name=name,
                 keep_proxy=keep_proxy,
@@ -1264,7 +1264,7 @@ class Datapackage(DatapackageBase):
         indices_array: np.ndarray,  # Not interface
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
-        scale_array: Optional[np.ndarray] = None,  # Not interface
+        rescale_array: Optional[np.ndarray] = None,  # Not interface
         params_array: Optional[np.ndarray] = None,  # Not interface
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -1280,7 +1280,7 @@ class Datapackage(DatapackageBase):
         array for ``args[1]``.  ``ncols`` may be ``None`` for an infinite
         interface.
 
-        The ``indices_array``, optional ``flip_array``, optional ``scale_array``,
+        The ``indices_array``, optional ``flip_array``, optional ``rescale_array``,
         and optional ``params_array`` are static and are stored as normal numpy
         resources.  For dynamic arrays the column count of ``params_array`` is
         not validated against the interface (whose column count may be unknown at
@@ -1296,7 +1296,7 @@ class Datapackage(DatapackageBase):
             name: Optional resource group name; auto-generated if omitted.
             flip_array: Optional boolean array; where ``True`` the value is
                 multiplied by ``-1`` before insertion.
-            scale_array: Optional 1-D float array of multiplicative factors
+            rescale_array: Optional 1-D float array of multiplicative factors
                 applied before matrix insertion.
             keep_proxy: If ``True``, store a proxy rather than the raw array
                 for on-disk resources.
@@ -1348,9 +1348,9 @@ class Datapackage(DatapackageBase):
                     meta_type="generic",
                     **kwargs,
                 )
-        if scale_array is not None:
-            self._add_scale_array_resource(
-                scale_array=scale_array,
+        if rescale_array is not None:
+            self._add_rescale_array_resource(
+                rescale_array=rescale_array,
                 indices_array=indices_array,
                 name=name,
                 keep_proxy=keep_proxy,
