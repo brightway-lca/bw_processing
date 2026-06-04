@@ -643,6 +643,145 @@ def test_add_dynamic_array_scale_shapemismatch():
         )
 
 
+def _add_vector_with_distributions(dp, name, data_array, indices_array, distributions_array):
+    """Add a resource group including a distributions array, bypassing
+    add_persistent_vector's early-exit filter.  Used to set up test state
+    that _prune_trivial_distributions is meant to clean up."""
+    kwargs = {"matrix": "m", "category": "vector", "nrows": len(indices_array)}
+    dp._add_numpy_array_resource(
+        array=indices_array, name=name + ".indices", group=name, kind="indices",
+        meta_object="vector", meta_type="indices", **kwargs,
+    )
+    dp._add_numpy_array_resource(
+        array=data_array, name=name + ".data", group=name, kind="data",
+        meta_object="vector", meta_type="generic", **kwargs,
+    )
+    dp._add_numpy_array_resource(
+        array=distributions_array, name=name + ".distributions", group=name, kind="distributions",
+        meta_object="vector", meta_type="distributions", **kwargs,
+    )
+
+
+def test_finalize_removes_trivial_distributions_type0(tmp_path):
+    """uncertainty_type=0 with loc==amount → distributions resource must be pruned."""
+    data_array = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    distributions_array = np.array(
+        [(0, 1.0, np.nan, np.nan, np.nan, np.nan, False),
+         (0, 2.0, np.nan, np.nan, np.nan, np.nan, False),
+         (0, 3.0, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "r", data_array, indices_array, distributions_array)
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    assert "distributions" not in {r["kind"] for r in dp2.resources}
+
+
+def test_finalize_removes_trivial_distributions_type1(tmp_path):
+    """uncertainty_type=1 with loc==amount is also trivial and must be pruned."""
+    data_array = np.array([5.0, 6.0], dtype=np.float32)
+    indices_array = np.array([(1, 4), (2, 5)], dtype=INDICES_DTYPE)
+    distributions_array = np.array(
+        [(1, 5.0, np.nan, np.nan, np.nan, np.nan, False),
+         (1, 6.0, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "r", data_array, indices_array, distributions_array)
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    assert "distributions" not in {r["kind"] for r in dp2.resources}
+
+
+def test_finalize_removes_trivial_distributions_file_deleted(tmp_path):
+    """The .distributions.npy file must be physically removed from disk."""
+    data_array = np.array([1.0, 2.0], dtype=np.float32)
+    indices_array = np.array([(1, 4), (2, 5)], dtype=INDICES_DTYPE)
+    distributions_array = np.array(
+        [(0, 1.0, np.nan, np.nan, np.nan, np.nan, False),
+         (0, 2.0, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "r", data_array, indices_array, distributions_array)
+    dist_path = tmp_path / "r.distributions.npy"
+    assert dist_path.exists()
+    dp.finalize_serialization()
+    assert not dist_path.exists()
+
+
+def test_finalize_keeps_distributions_real_uncertainty(tmp_path):
+    """uncertainty_type>=2 must be retained even if loc==amount."""
+    data_array = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    distributions_array = np.array(
+        [(2, 1.0, 0.5, np.nan, np.nan, np.nan, False),
+         (2, 2.0, 0.5, np.nan, np.nan, np.nan, False),
+         (2, 3.0, 0.5, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "r", data_array, indices_array, distributions_array)
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    assert "distributions" in {r["kind"] for r in dp2.resources}
+
+
+def test_finalize_keeps_distributions_loc_mismatch(tmp_path):
+    """All uncertainty_type=0/1 but loc!=amount → must be retained."""
+    data_array = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+    distributions_array = np.array(
+        [(0, 1.0, np.nan, np.nan, np.nan, np.nan, False),
+         (0, 9.0, np.nan, np.nan, np.nan, np.nan, False),  # loc != amount
+         (0, 3.0, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "r", data_array, indices_array, distributions_array)
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    assert "distributions" in {r["kind"] for r in dp2.resources}
+
+
+def test_finalize_mixed_groups_prunes_only_trivial(tmp_path):
+    """Two groups: trivial distributions pruned, real distributions kept."""
+    indices_array = np.array([(1, 4), (2, 5)], dtype=INDICES_DTYPE)
+    data_array = np.array([1.0, 2.0], dtype=np.float32)
+
+    trivial_dist = np.array(
+        [(0, 1.0, np.nan, np.nan, np.nan, np.nan, False),
+         (0, 2.0, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+    real_dist = np.array(
+        [(3, 1.0, 0.2, np.nan, np.nan, np.nan, False),
+         (3, 2.0, 0.2, np.nan, np.nan, np.nan, False)],
+        dtype=UNCERTAINTY_DTYPE,
+    )
+
+    dp = create_datapackage(fs=generic_directory_filesystem(dirpath=tmp_path), name="test")
+    _add_vector_with_distributions(dp, "trivial", data_array, indices_array, trivial_dist)
+    _add_vector_with_distributions(dp, "real", data_array, indices_array, real_dist)
+    dp.finalize_serialization()
+
+    dp2 = load_datapackage(generic_directory_filesystem(dirpath=tmp_path))
+    dist_resources = [r for r in dp2.resources if r["kind"] == "distributions"]
+    assert len(dist_resources) == 1
+    assert dist_resources[0]["group"] == "real"
+
+
 def test_scale_array_parquet_roundtrip(tmp_path):
     scale_array = np.array([0.5, 1.0, 2.0])
     indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)

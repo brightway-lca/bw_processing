@@ -8,6 +8,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 if TYPE_CHECKING:
     from bw_processing.matrix_entry import MatrixEntry
 
+try:
+    from stats_arrays import NoUncertainty, UndefinedUncertainty
+    _NO_UNCERTAINTY_IDS = (NoUncertainty.id, UndefinedUncertainty.id)
+except ImportError:
+    _NO_UNCERTAINTY_IDS = (0, 1)
+
 import numpy as np
 import pandas as pd
 from fsspec import AbstractFileSystem
@@ -384,6 +390,59 @@ class Datapackage(DatapackageBase):
 
         self.data = []
 
+    def _prune_trivial_distributions(self) -> None:
+        """Remove distributions resources that carry no information beyond the data array.
+
+        A distributions resource is considered trivial when every row has an
+        ``uncertainty_type`` of 0 (no uncertainty) or 1 (unknown uncertainty)
+        *and* the ``loc`` values are equal to the corresponding data-array
+        amounts (at float32 precision).  Such a resource duplicates what the
+        data array already encodes, so it is deleted from the filesystem and
+        removed from ``self.data`` / ``self.resources``.
+        """
+        to_remove = []
+
+        for idx, resource in enumerate(self.resources):
+            if resource.get("kind") != "distributions":
+                continue
+
+            group = resource.get("group")
+            if group is None:
+                continue
+
+            data_idx = next(
+                (
+                    i
+                    for i, r in enumerate(self.resources)
+                    if r.get("group") == group and r.get("kind") == "data"
+                ),
+                None,
+            )
+            if data_idx is None:
+                continue
+
+            dist_arr = self.data[idx]
+            if isinstance(dist_arr, (Proxy, partial)):
+                dist_arr = dist_arr()
+
+            data_arr = self.data[data_idx]
+            if isinstance(data_arr, (Proxy, partial)):
+                data_arr = data_arr()
+
+            all_trivial = np.all(np.isin(dist_arr["uncertainty_type"], _NO_UNCERTAINTY_IDS))
+            loc_matches = np.array_equal(dist_arr["loc"], data_arr.astype(np.float32))
+
+            if all_trivial and loc_matches:
+                to_remove.append(idx)
+
+        for idx in sorted(to_remove, reverse=True):
+            try:
+                self.fs.rm(self.resources[idx]["path"])
+            except (KeyError, FileNotFoundError):
+                pass
+            del self.resources[idx]
+            del self.data[idx]
+
     def finalize_serialization(self) -> None:
         """Write the metadata file and close the filesystem.
 
@@ -402,6 +461,7 @@ class Datapackage(DatapackageBase):
             raise ValueError("In-memory file systems can't be serialized")
 
         self._dehydrate_interfaces()
+        self._prune_trivial_distributions()
         self._check_length_consistency()
 
         file_writer(
