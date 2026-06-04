@@ -676,18 +676,18 @@ class Datapackage(DatapackageBase):
                 )
         if flip_array is not None:
             flip_array = load_bytes(flip_array)
+            if flip_array.dtype != bool:
+                raise WrongDatatype(
+                    "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
+                )
+            if flip_array.shape != indices_array.shape:
+                raise ShapeMismatch(
+                    "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                        flip_array.shape, indices_array.shape
+                    )
+                )
             # If no flips, don't need to store it
             if flip_array.sum():
-                if flip_array.dtype != bool:
-                    raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
-                    )
-                elif flip_array.shape != indices_array.shape:
-                    raise ShapeMismatch(
-                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
-                            flip_array.shape, indices_array.shape
-                        )
-                    )
                 self._add_numpy_array_resource(
                     array=flip_array,
                     group=name,
@@ -813,17 +813,18 @@ class Datapackage(DatapackageBase):
         )
         if flip_array is not None:
             flip_array = load_bytes(flip_array)
+            if flip_array.dtype != bool:
+                raise WrongDatatype(
+                    "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
+                )
+            if flip_array.shape != indices_array.shape:
+                raise ShapeMismatch(
+                    "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                        flip_array.shape, indices_array.shape
+                    )
+                )
+            # If no flips, don't need to store it
             if flip_array.sum():
-                if flip_array.dtype != bool:
-                    raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
-                    )
-                elif flip_array.shape != indices_array.shape:
-                    raise ShapeMismatch(
-                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
-                            flip_array.shape, indices_array.shape
-                        )
-                    )
                 self._add_numpy_array_resource(
                     array=flip_array,
                     group=name,
@@ -1181,17 +1182,18 @@ class Datapackage(DatapackageBase):
         )
         if flip_array is not None:
             flip_array = load_bytes(flip_array)
+            if flip_array.dtype != bool:
+                raise WrongDatatype(
+                    "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
+                )
+            if flip_array.shape != indices_array.shape:
+                raise ShapeMismatch(
+                    "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                        flip_array.shape, indices_array.shape
+                    )
+                )
+            # If no flips, don't need to store it
             if flip_array.sum():
-                if flip_array.dtype != bool:
-                    raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
-                    )
-                elif flip_array.shape != indices_array.shape:
-                    raise ShapeMismatch(
-                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
-                            flip_array.shape, indices_array.shape
-                        )
-                    )
                 self._add_numpy_array_resource(
                     array=flip_array,
                     group=name,
@@ -1301,8 +1303,13 @@ class Datapackage(DatapackageBase):
         self._check_params_args(params_array, param_labels, param_label_schema)
         self._prepare_modifications()
 
-        if isinstance(flip_array, np.ndarray) and not flip_array.sum():
-            flip_array = None
+        if isinstance(flip_array, np.ndarray):
+            if flip_array.dtype != bool:
+                raise WrongDatatype(
+                    "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
+                )
+            if not flip_array.sum():
+                flip_array = None
 
         kwargs.update({"matrix": matrix, "category": "array", "nrows": len(indices_array)})
         name = self._prepare_name(name)
@@ -1321,17 +1328,18 @@ class Datapackage(DatapackageBase):
         )
         if flip_array is not None:
             flip_array = load_bytes(flip_array)
+            if flip_array.dtype != bool:
+                raise WrongDatatype(
+                    "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
+                )
+            if flip_array.shape != indices_array.shape:
+                raise ShapeMismatch(
+                    "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                        flip_array.shape, indices_array.shape
+                    )
+                )
+            # If no flips, don't need to store it
             if flip_array.sum():
-                if flip_array.dtype != bool:
-                    raise WrongDatatype(
-                        "`flip_array` dtype is {}, but must be `bool`".format(flip_array.dtype)
-                    )
-                elif flip_array.shape != indices_array.shape:
-                    raise ShapeMismatch(
-                        "`flip_array` shape ({}) doesn't match `indices_array` ({}).".format(
-                            flip_array.shape, indices_array.shape
-                        )
-                    )
                 self._add_numpy_array_resource(
                     array=flip_array,
                     group=name,
