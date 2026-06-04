@@ -350,6 +350,24 @@ class TestAddEntries:
         stored = dp.data[dp.resources.index(rescale_resource)]
         np.testing.assert_array_almost_equal(sorted(stored), [0.5, 2.0])
 
+    def test_rescale_resource_written_when_only_some_entries_rescaled(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0),           # rescale=1.0 (default)
+            MatrixEntry(row=3, col=4, amount=2.0, rescale=0.5),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        idx_resource = next(r for r in group.resources if r["kind"] == "indices")
+        rescale_resource = next(r for r in group.resources if r["kind"] == "rescale")
+        indices = dp.data[dp.resources.index(idx_resource)]
+        rescales = dp.data[dp.resources.index(rescale_resource)]
+        for i, idx in enumerate(indices):
+            if idx["row"] == 1:
+                assert rescales[i] == pytest.approx(1.0)
+            else:
+                assert rescales[i] == pytest.approx(0.5)
+
     def test_rescale_sorted_with_data(self):
         dp = create_datapackage()
         entries = [

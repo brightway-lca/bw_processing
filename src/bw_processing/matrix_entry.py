@@ -60,7 +60,9 @@ class MatrixEntry:
         negative: Whether the underlying value is negative.
         rescale: Per-exchange multiplicative factor applied before matrix
             insertion. ``1.0`` (the default) leaves the value unchanged.
-            Stored as a ``rescale_array`` resource (``kind="rescale"``).
+            Stored as a ``rescale_array`` resource (``kind="rescale"``). Note
+            that the Python ``float`` value is downcast to ``numpy.float32``
+            when written to the structured array.
     """
 
     row: int

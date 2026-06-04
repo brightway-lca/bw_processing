@@ -560,8 +560,8 @@ class Datapackage(DatapackageBase):
         """Add matrix data from a list of :class:`.ArrayEntry` objects.
 
         Each :class:`.ArrayEntry` becomes one persistent-array resource group.
-        Resource group names are auto-generated. If an entry has a ``scale``
-        array it is stored as a ``rescale_array`` resource (``kind="scale"``).
+        Resource group names are auto-generated. If an entry has a ``rescale``
+        array it is stored as a ``rescale_array`` resource (``kind="rescale"``).
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
