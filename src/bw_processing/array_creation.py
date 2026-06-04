@@ -152,7 +152,10 @@ def create_array(iterable, nrows=None, dtype=np.float32):
             array[i, :] = tuple(row)
 
     else:
-        ncols, data = get_ncols(iterable)
+        try:
+            ncols, data = get_ncols(iterable)
+        except StopIteration:
+            return np.zeros((0, 0), dtype=dtype)
         array = create_chunked_array(data, ncols, dtype)
 
     return array
