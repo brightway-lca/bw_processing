@@ -511,6 +511,7 @@ class Datapackage(DatapackageBase):
             indices_array,
             distributions_array,
             flip_array,
+            scale_array,
         ) = resolve_dict_iterator(dict_iterator, nrows)
         self.add_persistent_vector(
             matrix=matrix,
@@ -520,6 +521,7 @@ class Datapackage(DatapackageBase):
             indices_array=indices_array,
             flip_array=flip_array,
             distributions_array=distributions_array,
+            scale_array=scale_array,
             matrix_serialize_format_type=matrix_serialize_format_type,
             **kwargs,
         )
@@ -534,7 +536,8 @@ class Datapackage(DatapackageBase):
         """Add matrix data from a list of :class:`MatrixEntry` objects.
 
         High-level convenience method that does not require working directly
-        with NumPy arrays.
+        with NumPy arrays. If any entry has a ``rescale`` value other than
+        ``1.0``, the rescale values are stored as a ``scale_array`` resource.
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -557,7 +560,8 @@ class Datapackage(DatapackageBase):
         """Add matrix data from a list of :class:`.ArrayEntry` objects.
 
         Each :class:`.ArrayEntry` becomes one persistent-array resource group.
-        Resource group names are auto-generated.
+        Resource group names are auto-generated. If an entry has a ``scale``
+        array it is stored as a ``scale_array`` resource (``kind="scale"``).
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -572,6 +576,7 @@ class Datapackage(DatapackageBase):
                 indices_array=indices,
                 data_array=entry.data,
                 flip_array=entry.flip,
+                scale_array=entry.scale,
             )
 
     def add_persistent_vector(

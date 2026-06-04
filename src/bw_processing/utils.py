@@ -64,6 +64,7 @@ def dictionary_formatter(row: dict) -> tuple:
         row.get("maximum", np.nan),
         row.get("negative", False),
         row.get("flip", False),
+        row.get("rescale", 1.0),
     )
 
 
@@ -73,11 +74,13 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(
         data,
-        INDICES_DTYPE + [("amount", np.float32)] + UNCERTAINTY_DTYPE + [("flip", bool)],
+        INDICES_DTYPE + [("amount", np.float32)] + UNCERTAINTY_DTYPE + [("flip", bool), ("rescale", np.float32)],
         nrows=nrows,
         sort=True,
         sort_fields=sort_fields,
     )
+    rescale = array["rescale"]
+    scale_array = rescale if (rescale != 1.0).any() else None
     return (
         array["amount"],
         # Not repacking fields would cause this multi-field index to return a view
@@ -98,6 +101,7 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
             ]
         ),
         array["flip"],
+        scale_array,
     )
 
 
