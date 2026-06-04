@@ -1,6 +1,9 @@
 import dataclasses
 import math
 from enum import Enum
+from typing import Optional, Union
+
+import numpy as np
 
 try:
     from stats_arrays import NoUncertainty, UndefinedUncertainty
@@ -81,6 +84,52 @@ class MatrixEntry:
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
+class ArrayEntry:
+    """All index/flip metadata for one persistent-array resource group.
+
+    Unlike :class:`MatrixEntry`, which represents a single row, ``ArrayEntry``
+    holds every row of a resource group together so that the 2-D scenario
+    ``data`` array can be supplied directly without decomposing and
+    reassembling it.
+
+    Args:
+        rows: 1-D sequence of integer row indices, one per matrix entry.
+        cols: 1-D sequence of integer column indices, one per matrix entry.
+        data: 2-D array of shape ``(n_entries, n_scenarios)``.
+        flip: Optional 1-D boolean sequence of length ``n_entries``.
+    """
+
+    rows: Union[np.ndarray, list]
+    cols: Union[np.ndarray, list]
+    data: np.ndarray
+    flip: Optional[Union[np.ndarray, list]] = None
+
+    def __post_init__(self):
+        rows = np.asarray(self.rows)
+        cols = np.asarray(self.cols)
+        data = np.asarray(self.data)
+
+        if rows.ndim != 1:
+            raise ValueError(f"`rows` must be 1-D, got shape {rows.shape}")
+        if cols.shape != rows.shape:
+            raise ValueError(
+                f"`cols` shape {cols.shape} doesn't match `rows` shape {rows.shape}"
+            )
+        if data.ndim != 2:
+            raise ValueError(f"`data` must be 2-D, got {data.ndim}-D")
+        if data.shape[0] != len(rows):
+            raise ValueError(
+                f"`data` has {data.shape[0]} rows but `rows` has {len(rows)} entries"
+            )
+        if self.flip is not None:
+            flip = np.asarray(self.flip)
+            if flip.shape != rows.shape:
+                raise ValueError(
+                    f"`flip` shape {flip.shape} doesn't match `rows` shape {rows.shape}"
+                )
 
 
 def create_datapackage_from_entries(

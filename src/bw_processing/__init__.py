@@ -17,6 +17,7 @@ __all__ = (
     "generic_zipfile_filesystem",
     "INDICES_DTYPE",
     "load_datapackage",
+    "ArrayEntry",
     "MatrixEntry",
     "MatrixName",
     "MatrixSerializeFormat",
@@ -58,7 +59,7 @@ from bw_processing.examples import examples_dir
 from bw_processing.filesystem import clean_datapackage_name, md5, safe_filename
 from bw_processing.indexing import reindex, reset_index
 from bw_processing.io_helpers import generic_directory_filesystem, generic_zipfile_filesystem
-from bw_processing.matrix_entry import MatrixEntry, MatrixName, create_datapackage_from_entries
+from bw_processing.matrix_entry import ArrayEntry, MatrixEntry, MatrixName, create_datapackage_from_entries
 from bw_processing.merging import merge_datapackages_with_mask
 from bw_processing.proxies import UndefinedInterface
 from bw_processing.unique_fields import as_unique_attributes, as_unique_attributes_dataframe

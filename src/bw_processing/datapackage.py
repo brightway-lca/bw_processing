@@ -6,7 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from bw_processing.matrix_entry import MatrixEntry
+    from bw_processing.matrix_entry import ArrayEntry, MatrixEntry
 
 try:
     from stats_arrays import NoUncertainty, UndefinedUncertainty
@@ -547,6 +547,34 @@ class Datapackage(DatapackageBase):
             dict_iterator=(e.as_dict() for e in entries),
             nrows=len(entries),
         )
+
+    def add_array_entries(
+        self,
+        *,
+        matrix: str,
+        entries: list["ArrayEntry"],
+    ) -> None:
+        """Add matrix data from a list of :class:`.ArrayEntry` objects.
+
+        Each :class:`.ArrayEntry` becomes one persistent-array resource group.
+        Resource group names are auto-generated.
+
+        Args:
+            matrix: Name of the target matrix (e.g. ``"technosphere"``).
+            entries: List of :class:`.ArrayEntry` instances.
+        """
+        for entry in entries:
+            indices = np.array(
+                list(zip(entry.rows, entry.cols)),
+                dtype=INDICES_DTYPE,
+            )
+            flip_array = np.asarray(entry.flip) if entry.flip is not None else None
+            self.add_persistent_array(
+                matrix=matrix,
+                indices_array=indices,
+                data_array=np.asarray(entry.data),
+                flip_array=flip_array,
+            )
 
     def add_persistent_vector(
         self,
