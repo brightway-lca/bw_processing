@@ -1,5 +1,13 @@
 # `bw_processing` Changelog
 
+## [1.5] - 2026-06-04
+
+* [PR #100: Deduplicate chunked bucket-fill logic; fix #95 and #97](https://github.com/brightway-lca/bw_processing/pull/100)
+* [PR #101: Prune trivial distributions arrays in `finalize_serialization`](https://github.com/brightway-lca/bw_processing/pull/101)
+* [PR #102: Add `ArrayEntry` dataclass and `add_array_entries` method](https://github.com/brightway-lca/bw_processing/pull/102)
+* [PR #103: Fix data-dependent `flip_array` dtype check in all `add_*` methods](https://github.com/brightway-lca/bw_processing/pull/103)
+* [PR #104: Add `rescale` to `MatrixEntry`/`ArrayEntry` and rename `scale_array` → `rescale_array`](https://github.com/brightway-lca/bw_processing/pull/104)
+
 ## [1.4] - 2026-06-03
 
 * [PR #93: Add `params_array` support for sensitivity analysis](https://github.com/brightway-lca/bw_processing/pull/93)
