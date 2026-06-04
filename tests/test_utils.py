@@ -37,7 +37,7 @@ def test_dictionary_formatter_sparse():
     result = dictionary_formatter(given)
     assert result[:5] == (1, 1, 4, 0, 4)
     assert all(np.isnan(x) for x in result[5:9])
-    assert result[9:] == (False, False)
+    assert result[9:] == (False, False, 1.0)
 
 
 def test_dictionary_formatter_uncertainty_type():
@@ -68,7 +68,7 @@ def test_dictionary_formatter_complete():
         "negative": True,
         "flip": False,
     }
-    expected = (1, 2, 3, 4, 5, 6, 7, 8, 9, True, False)
+    expected = (1, 2, 3, 4, 5, 6, 7, 8, 9, True, False, 1.0)
     assert dictionary_formatter(given) == expected
 
 
@@ -85,8 +85,20 @@ def test_dictionary_formatter_one_dimensional():
         "negative": True,
         "flip": False,
     }
-    expected = (1, 1, 3, 4, 5, 6, 7, 8, 9, True, False)
+    expected = (1, 1, 3, 4, 5, 6, 7, 8, 9, True, False, 1.0)
     assert dictionary_formatter(given) == expected
+
+
+def test_dictionary_formatter_rescale():
+    given = {"row": 1, "col": 2, "amount": 3.0, "rescale": 0.5}
+    result = dictionary_formatter(given)
+    assert result[-1] == 0.5
+
+
+def test_dictionary_formatter_rescale_default():
+    given = {"row": 1, "amount": 4}
+    result = dictionary_formatter(given)
+    assert result[-1] == 1.0
 
 
 def test_check_suffix():

@@ -58,6 +58,11 @@ class MatrixEntry:
         minimum: Lower bound for distribution sampling.
         maximum: Upper bound for distribution sampling.
         negative: Whether the underlying value is negative.
+        rescale: Per-exchange multiplicative factor applied before matrix
+            insertion. ``1.0`` (the default) leaves the value unchanged.
+            Stored as a ``rescale_array`` resource (``kind="rescale"``). Note
+            that the Python ``float`` value is downcast to ``numpy.float32``
+            when written to the structured array.
     """
 
     row: int
@@ -71,6 +76,7 @@ class MatrixEntry:
     minimum: float = math.nan
     maximum: float = math.nan
     negative: bool = False
+    rescale: float = 1.0
 
     def __post_init__(self):
         if self.uncertainty_type in _NO_UNCERTAINTY_IDS:
@@ -100,12 +106,16 @@ class ArrayEntry:
         cols: 1-D sequence of integer column indices, one per matrix entry.
         data: 2-D array of shape ``(n_entries, n_scenarios)``.
         flip: Optional 1-D boolean sequence of length ``n_entries``.
+        rescale: Optional 1-D float array of per-entry multiplicative factors
+            (one per row). ``1.0`` leaves the value unchanged. Stored as a
+            ``rescale_array`` resource (``kind="rescale"``).
     """
 
     rows: np.ndarray
     cols: np.ndarray
     data: np.ndarray
     flip: Optional[np.ndarray] = None
+    rescale: Optional[np.ndarray] = None
 
     def __post_init__(self):
         self.rows = np.asarray(self.rows)
@@ -133,6 +143,12 @@ class ArrayEntry:
             if self.flip.shape != self.rows.shape:
                 raise ValueError(
                     f"`flip` shape {self.flip.shape} doesn't match `rows` shape {self.rows.shape}"
+                )
+        if self.rescale is not None:
+            self.rescale = np.asarray(self.rescale, dtype=np.float32)
+            if self.rescale.shape != self.rows.shape:
+                raise ValueError(
+                    f"`rescale` shape {self.rescale.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
 
 

@@ -49,6 +49,15 @@ class TestMatrixEntry:
         assert math.isnan(e.shape)
         assert math.isnan(e.minimum)
         assert math.isnan(e.maximum)
+        assert e.rescale == pytest.approx(1.0)
+
+    def test_rescale_custom_value(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0, rescale=0.5)
+        assert e.rescale == pytest.approx(0.5)
+
+    def test_rescale_in_as_dict(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0, rescale=2.0)
+        assert e.as_dict()["rescale"] == pytest.approx(2.0)
 
     def test_loc_set_to_amount_for_no_uncertainty(self):
         e = MatrixEntry(row=1, col=2, amount=5.0)
@@ -81,6 +90,7 @@ class TestMatrixEntry:
         assert set(d.keys()) == {
             "row", "col", "amount", "flip", "uncertainty_type",
             "loc", "scale", "shape", "minimum", "maximum", "negative",
+            "rescale",
         }
 
     def test_as_dict_values(self):
@@ -228,6 +238,19 @@ class TestArrayEntry:
         with pytest.raises(ValueError, match="flip.*rows"):
             ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), flip=[True, False, True])
 
+    def test_rescale_default_is_none(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)))
+        assert e.rescale is None
+
+    def test_rescale_coerced_to_float32(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), rescale=[2.0, 0.5])
+        assert e.rescale.dtype == np.float32
+        np.testing.assert_array_almost_equal(e.rescale, [2.0, 0.5])
+
+    def test_rescale_shape_mismatch(self):
+        with pytest.raises(ValueError, match="rescale.*rows"):
+            ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), rescale=[1.0, 2.0, 3.0])
+
 
 class TestAddArrayEntries:
     def test_single_entry(self):
@@ -284,6 +307,86 @@ class TestAddArrayEntries:
         group = next(iter(dp.groups.values()))
         kinds = [r["kind"] for r in group.resources]
         assert "flip" not in kinds
+
+    def test_no_rescale_resource_when_rescale_is_none(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)))
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "rescale" not in kinds
+
+    def test_rescale_stored_correctly(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)), rescale=[2.0, 0.5])
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        rescale_resource = next(r for r in group.resources if r["kind"] == "rescale")
+        stored = dp.data[dp.resources.index(rescale_resource)]
+        np.testing.assert_array_almost_equal(stored, [2.0, 0.5])
+
+
+class TestAddEntries:
+    def test_no_rescale_resource_when_all_rescale_one(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0),
+            MatrixEntry(row=3, col=4, amount=2.0),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "rescale" not in kinds
+
+    def test_rescale_resource_stored_when_rescale_set(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0, rescale=0.5),
+            MatrixEntry(row=3, col=4, amount=2.0, rescale=2.0),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        rescale_resource = next(r for r in group.resources if r["kind"] == "rescale")
+        stored = dp.data[dp.resources.index(rescale_resource)]
+        np.testing.assert_array_almost_equal(sorted(stored), [0.5, 2.0])
+
+    def test_rescale_resource_written_when_only_some_entries_rescaled(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0),           # rescale=1.0 (default)
+            MatrixEntry(row=3, col=4, amount=2.0, rescale=0.5),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        idx_resource = next(r for r in group.resources if r["kind"] == "indices")
+        rescale_resource = next(r for r in group.resources if r["kind"] == "rescale")
+        indices = dp.data[dp.resources.index(idx_resource)]
+        rescales = dp.data[dp.resources.index(rescale_resource)]
+        for i, idx in enumerate(indices):
+            if idx["row"] == 1:
+                assert rescales[i] == pytest.approx(1.0)
+            else:
+                assert rescales[i] == pytest.approx(0.5)
+
+    def test_rescale_sorted_with_data(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=3, col=4, amount=2.0, rescale=2.0),
+            MatrixEntry(row=1, col=2, amount=1.0, rescale=0.5),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+
+        idx_resource = next(r for r in group.resources if r["kind"] == "indices")
+        rescale_resource = next(r for r in group.resources if r["kind"] == "rescale")
+        indices = dp.data[dp.resources.index(idx_resource)]
+        rescales = dp.data[dp.resources.index(rescale_resource)]
+
+        for i, idx in enumerate(indices):
+            if idx["row"] == 1:
+                assert rescales[i] == pytest.approx(0.5)
+            else:
+                assert rescales[i] == pytest.approx(2.0)
 
 
 class TestSimpleGraphDeprecation:
