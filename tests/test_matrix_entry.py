@@ -5,12 +5,14 @@ import numpy as np
 import pytest
 
 from bw_processing import (
+    ArrayEntry,
     MatrixEntry,
     MatrixName,
+    create_datapackage,
     create_datapackage_from_entries,
     simple_graph,
 )
-from bw_processing.constants import UNCERTAINTY_DTYPE
+from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
 
 
 class TestMatrixName:
@@ -167,6 +169,122 @@ class TestCreateDatapackageFromEntries:
             name="my-package",
         )
         assert dp.metadata["name"] == "my-package"
+
+class TestArrayEntry:
+    def test_basic_construction(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)))
+        assert list(e.rows) == [0, 1]
+        assert list(e.cols) == [2, 3]
+        assert e.data.shape == (2, 4)
+        assert e.flip is None
+
+    def test_with_flip(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), flip=[True, False])
+        assert list(e.flip) == [True, False]
+
+    def test_numpy_inputs(self):
+        rows = np.array([0, 1, 2])
+        cols = np.array([3, 4, 5])
+        data = np.ones((3, 10))
+        e = ArrayEntry(rows=rows, cols=cols, data=data)
+        assert e.data.shape == (3, 10)
+
+    def test_fields_are_normalized_to_ndarray(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)))
+        assert isinstance(e.rows, np.ndarray)
+        assert isinstance(e.cols, np.ndarray)
+        assert isinstance(e.data, np.ndarray)
+
+    def test_flip_coerced_to_bool(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), flip=[1, 0])
+        assert e.flip.dtype == bool
+        assert list(e.flip) == [True, False]
+
+    def test_rows_must_be_1d(self):
+        with pytest.raises(ValueError, match="1-D"):
+            ArrayEntry(rows=[[0, 1], [2, 3]], cols=[0, 1, 2, 3], data=np.ones((4, 2)))
+
+    def test_rows_must_be_integer_dtype(self):
+        with pytest.raises(ValueError, match="integer dtype"):
+            ArrayEntry(rows=np.array([1.7, 2.9]), cols=np.array([3, 4]), data=np.ones((2, 3)))
+
+    def test_cols_must_be_integer_dtype(self):
+        with pytest.raises(ValueError, match="integer dtype"):
+            ArrayEntry(rows=np.array([1, 2]), cols=np.array([3.0, 4.0]), data=np.ones((2, 3)))
+
+    def test_cols_shape_mismatch(self):
+        with pytest.raises(ValueError, match="cols.*rows"):
+            ArrayEntry(rows=[0, 1], cols=[0, 1, 2], data=np.ones((2, 3)))
+
+    def test_data_must_be_2d(self):
+        with pytest.raises(ValueError, match="2-D"):
+            ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones(2))
+
+    def test_data_row_count_mismatch(self):
+        with pytest.raises(ValueError, match="data.*rows"):
+            ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((3, 4)))
+
+    def test_flip_shape_mismatch(self):
+        with pytest.raises(ValueError, match="flip.*rows"):
+            ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), flip=[True, False, True])
+
+
+class TestAddArrayEntries:
+    def test_single_entry(self):
+        dp = create_datapackage()
+        data = np.array([[1.0, 2.0], [3.0, 4.0]])
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=data)
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        assert len(dp.groups) == 1
+
+    def test_indices_stored_correctly(self):
+        dp = create_datapackage()
+        data = np.ones((2, 3))
+        entry = ArrayEntry(rows=[5, 6], cols=[7, 8], data=data)
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        idx_resource = next(r for r in group.resources if r["kind"] == "indices")
+        idx = dp.data[dp.resources.index(idx_resource)]
+        assert idx.dtype == np.dtype(INDICES_DTYPE)
+        assert list(idx["row"]) == [5, 6]
+        assert list(idx["col"]) == [7, 8]
+
+    def test_data_stored_correctly(self):
+        dp = create_datapackage()
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=data)
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        data_resource = next(r for r in group.resources if r["kind"] == "data")
+        stored = dp.data[dp.resources.index(data_resource)]
+        np.testing.assert_array_equal(stored, data)
+
+    def test_flip_stored(self):
+        dp = create_datapackage()
+        data = np.ones((2, 3))
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=data, flip=[True, False])
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        flip_resource = next(r for r in group.resources if r["kind"] == "flip")
+        flip = dp.data[dp.resources.index(flip_resource)]
+        assert flip[0] is np.bool_(True)
+        assert flip[1] is np.bool_(False)
+
+    def test_multiple_entries_create_multiple_groups(self):
+        dp = create_datapackage()
+        e1 = ArrayEntry(rows=[0], cols=[1], data=np.ones((1, 2)))
+        e2 = ArrayEntry(rows=[2], cols=[3], data=np.ones((1, 5)))
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[e1, e2])
+        assert len(dp.groups) == 2
+
+    def test_no_flip_resource_when_flip_is_none(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)))
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "flip" not in kinds
+
 
 class TestSimpleGraphDeprecation:
     def test_deprecation_warning(self):

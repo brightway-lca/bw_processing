@@ -1,6 +1,9 @@
 import dataclasses
 import math
 from enum import Enum
+from typing import Optional
+
+import numpy as np
 
 try:
     from stats_arrays import NoUncertainty, UndefinedUncertainty
@@ -81,6 +84,56 @@ class MatrixEntry:
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
+class ArrayEntry:
+    """All index/flip metadata for one persistent-array resource group.
+
+    Unlike :class:`MatrixEntry`, which represents a single row, ``ArrayEntry``
+    holds every row of a resource group together so that the 2-D scenario
+    ``data`` array can be supplied directly without decomposing and
+    reassembling it.
+
+    Args:
+        rows: 1-D sequence of integer row indices, one per matrix entry.
+        cols: 1-D sequence of integer column indices, one per matrix entry.
+        data: 2-D array of shape ``(n_entries, n_scenarios)``.
+        flip: Optional 1-D boolean sequence of length ``n_entries``.
+    """
+
+    rows: np.ndarray
+    cols: np.ndarray
+    data: np.ndarray
+    flip: Optional[np.ndarray] = None
+
+    def __post_init__(self):
+        self.rows = np.asarray(self.rows)
+        self.cols = np.asarray(self.cols)
+        self.data = np.asarray(self.data)
+
+        if self.rows.ndim != 1:
+            raise ValueError(f"`rows` must be 1-D, got shape {self.rows.shape}")
+        if not np.issubdtype(self.rows.dtype, np.integer):
+            raise ValueError(f"`rows` must have integer dtype, got {self.rows.dtype}")
+        if self.cols.shape != self.rows.shape:
+            raise ValueError(
+                f"`cols` shape {self.cols.shape} doesn't match `rows` shape {self.rows.shape}"
+            )
+        if not np.issubdtype(self.cols.dtype, np.integer):
+            raise ValueError(f"`cols` must have integer dtype, got {self.cols.dtype}")
+        if self.data.ndim != 2:
+            raise ValueError(f"`data` must be 2-D, got {self.data.ndim}-D")
+        if self.data.shape[0] != len(self.rows):
+            raise ValueError(
+                f"`data` has {self.data.shape[0]} rows but `rows` has {len(self.rows)} entries"
+            )
+        if self.flip is not None:
+            self.flip = np.asarray(self.flip, dtype=bool)
+            if self.flip.shape != self.rows.shape:
+                raise ValueError(
+                    f"`flip` shape {self.flip.shape} doesn't match `rows` shape {self.rows.shape}"
+                )
 
 
 def create_datapackage_from_entries(
