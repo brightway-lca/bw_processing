@@ -21,46 +21,50 @@ def chunked(iterable, chunk_size):
     return iter(lambda: list(itertools.islice(iterable, chunk_size)), [])
 
 
-def create_chunked_structured_array(iterable, dtype, bucket_size=20000):
-    """Create a numpy structured array from an iterable of indeterminate length.
+def _fill_chunked(iterable, bucket_shape, empty_shape, dtype, bucket_size):
+    """Fill a numpy array from an iterable of unknown length using fixed-size buckets.
 
-    Needed when we can't determine the length of the iterable ahead of time (e.g. for a generator or a database cursor), so can't create the complete array in memory in on step
-
-    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is exhausted, then concatenates them.
-
-    Args:
-        iterable: Iterable of data used to populate the array.
-        dtype: Numpy dtype of the created array
-        format_function: If provided, this function will be called on each row of ``iterable`` before insertion in the array.
-        bucket_size: Number of rows in each intermediate array.
-
-    Returns:.
-        Returns the created array. Will return a zero-length array if ``iterable`` has no data.
-
+    Works for both 1D structured arrays (bucket_shape=(n,)) and 2D plain arrays
+    (bucket_shape=(n, ncols)).  Concatenates along axis=0 in both cases.
     """
     arrays = []
-    array = np.zeros(bucket_size, dtype=dtype)
-
+    array = np.zeros(bucket_shape, dtype=dtype)
     for chunk in chunked(iterable, bucket_size):
         for i, row in enumerate(chunk):
             array[i] = row
         if i < bucket_size - 1:
-            array = array[: i + 1]
-            arrays.append(array)
+            # .copy() releases the oversized bucket buffer immediately rather
+            # than keeping it alive as a view until the final concatenation.
+            arrays.append(array[: i + 1].copy())
         else:
             arrays.append(array)
-            array = np.zeros(bucket_size, dtype=dtype)
-
-    # Empty iterable - create zero-length array
+            array = np.zeros(bucket_shape, dtype=dtype)
+    # Empty iterable - create zero-length array.
     # Needed because we return iterators for SQL databases
-    # but don't know if e.g. sometime a database has
-    # no biosphere exchanges
-    if arrays:
-        array = np.hstack(arrays)
-    else:
-        array = np.zeros(0, dtype=dtype)
+    # but don't know if e.g. sometimes a database has no biosphere exchanges.
+    return np.concatenate(arrays, axis=0) if arrays else np.zeros(empty_shape, dtype=dtype)
 
-    return array
+
+def create_chunked_structured_array(iterable, dtype, bucket_size=20000):
+    """Create a numpy structured array from an iterable of indeterminate length.
+
+    Needed when we can't determine the length of the iterable ahead of time
+    (e.g. for a generator or a database cursor), so can't create the complete
+    array in memory in one step.
+
+    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is
+    exhausted, then concatenates them.
+
+    Args:
+        iterable: Iterable of data used to populate the array.
+        dtype: Numpy dtype of the created array.
+        bucket_size: Number of rows in each intermediate array.
+
+    Returns:
+        Returns the created array. Will return a zero-length array if
+        ``iterable`` has no data.
+    """
+    return _fill_chunked(iterable, (bucket_size,), (0,), dtype, bucket_size)
 
 
 def create_structured_array(iterable, dtype, nrows=None, sort=False, sort_fields=None):
@@ -96,39 +100,24 @@ def create_structured_array(iterable, dtype, nrows=None, sort=False, sort_fields
 def create_chunked_array(iterable, ncols, dtype=np.float32, bucket_size=500):
     """Create a numpy array from an iterable of indeterminate length.
 
-    Needed when we can't determine the length of the iterable ahead of time (e.g. for a generator or a database cursor), so can't create the complete array in memory in on step
+    Needed when we can't determine the length of the iterable ahead of time
+    (e.g. for a generator or a database cursor), so can't create the complete
+    array in memory in one step.
 
-    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is exhausted, then concatenates them.
+    Creates a list of arrays with ``bucket_size`` rows until ``iterable`` is
+    exhausted, then concatenates them.
 
     Args:
         iterable: Iterable of data used to populate the array.
         ncols: Number of columns in the created array.
-        dtype: Numpy dtype of the created array
+        dtype: Numpy dtype of the created array.
         bucket_size: Number of rows in each intermediate array.
 
-    Returns:.
-        Returns the created array. Will return a zero-length array if ``iterable`` has no data.
-
+    Returns:
+        Returns the created array. Will return a zero-length array if
+        ``iterable`` has no data.
     """
-    arrays = []
-    array = np.zeros((bucket_size, ncols), dtype=dtype)
-
-    for chunk in chunked(iterable, bucket_size):
-        for i, row in enumerate(chunk):
-            array[i, :] = row
-        if i < bucket_size - 1:
-            array = array[: i + 1, :]
-            arrays.append(array)
-        else:
-            arrays.append(array)
-            array = np.zeros((bucket_size, ncols), dtype=dtype)
-
-    if arrays:
-        array = np.hstack(arrays)
-    else:
-        array = np.zeros((0, ncols), dtype=dtype)
-
-    return array
+    return _fill_chunked(iterable, (bucket_size, ncols), (0, ncols), dtype, bucket_size)
 
 
 def create_array(iterable, nrows=None, dtype=np.float32):
