@@ -1,5 +1,9 @@
 # `bw_processing` Changelog
 
+## [1.6] - 2026-07-10
+
+* Add optional `reference` boolean column marking reference (production) exchanges. Stored as a `reference_array` side-resource (`kind="reference"`) analogous to `flip`, and exposed on `MatrixEntry`/`ArrayEntry` and all `add_*` methods. Lets modellers record the reference exchange explicitly instead of relying on `bw_graph_tools`' structural heuristics, which cannot disambiguate co-production columns. See cauldron/brightway-api#739.
+
 ## [1.5] - 2026-06-04
 
 * [PR #100: Deduplicate chunked bucket-fill logic; fix #95 and #97](https://github.com/brightway-lca/bw_processing/pull/100)

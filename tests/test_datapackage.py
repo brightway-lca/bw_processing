@@ -947,3 +947,101 @@ def test_zipfile_compressed_roundtrip(tmp_path):
     dp = load_datapackage(ZipFileSystem(str(zip_path)))
     data, _ = dp.get_resource("sa-data-vector.data")
     assert np.allclose(data, [2, 7, 12])
+
+
+REFERENCE_INDICES = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+
+
+def test_reference_array_stored():
+    dp = create_datapackage()
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=np.array([2, 7, 12]),
+        name="sa-ref",
+        indices_array=REFERENCE_INDICES,
+        reference_array=np.array([True, False, False], dtype=bool),
+    )
+    data, _ = dp.get_resource("sa-ref.reference")
+    assert data.dtype == bool
+    assert list(data) == [True, False, False]
+
+
+def test_reference_array_not_stored_when_all_false():
+    dp = create_datapackage()
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=np.array([2, 7, 12]),
+        name="sa-ref",
+        indices_array=REFERENCE_INDICES,
+        reference_array=np.array([False, False, False], dtype=bool),
+    )
+    assert "sa-ref.reference" not in [r["name"] for r in dp.resources]
+
+
+def test_reference_array_wrong_dtype():
+    dp = create_datapackage()
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=np.array([2, 7, 12]),
+            name="sa-ref",
+            indices_array=REFERENCE_INDICES,
+            reference_array=np.array([1, 0, 0], dtype=int),
+        )
+
+
+def test_reference_array_shape_mismatch():
+    dp = create_datapackage()
+    with pytest.raises(ShapeMismatch):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            data_array=np.array([2, 7, 12]),
+            name="sa-ref",
+            indices_array=REFERENCE_INDICES,
+            reference_array=np.array([True, False], dtype=bool),
+        )
+
+
+def test_reference_array_persistent_array():
+    dp = create_datapackage()
+    dp.add_persistent_array(
+        matrix="sa_matrix",
+        data_array=np.arange(12).reshape((3, 4)),
+        name="sa-ref-arr",
+        indices_array=REFERENCE_INDICES,
+        reference_array=np.array([False, True, False], dtype=bool),
+    )
+    data, _ = dp.get_resource("sa-ref-arr.reference")
+    assert list(data) == [False, True, False]
+
+
+def test_reference_array_dynamic_vector():
+    dp = create_datapackage()
+    dp.add_dynamic_vector(
+        interface=Dummy(),
+        matrix="sa_matrix",
+        name="sa-ref-dyn",
+        indices_array=REFERENCE_INDICES,
+        reference_array=np.array([False, False, True], dtype=bool),
+    )
+    data, _ = dp.get_resource("sa-ref-dyn.reference")
+    assert list(data) == [False, False, True]
+
+
+def test_reference_array_roundtrip(tmp_path):
+    fs = generic_zipfile_filesystem(dirpath=tmp_path, filename="ref.zip")
+    dp = create_datapackage(fs=fs, name="test-reference")
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        data_array=np.array([2, 7, 12]),
+        name="sa-ref",
+        indices_array=REFERENCE_INDICES,
+        reference_array=np.array([True, False, True], dtype=bool),
+    )
+    dp.finalize_serialization()
+
+    loaded = load_datapackage(ZipFileSystem(str(tmp_path / "ref.zip")))
+    data, resource = loaded.get_resource("sa-ref.reference")
+    assert resource["kind"] == "reference"
+    assert data.dtype == bool
+    assert list(data) == [True, False, True]
