@@ -53,7 +53,7 @@ def add_resource_suffix(metadata: dict, suffix: str) -> dict:
     last = metadata["name"].split(".")[-1]
     rest = metadata["name"][: -len(last) - 1]
 
-    if last not in {"indices", "data", "distributions", "flip"}:
+    if last not in {"indices", "data", "distributions", "flip", "rescale", "reference"}:
         raise ValueError("Can't understand resource name suffix")
 
     rest = metadata["name"][: -len(last) - 1]

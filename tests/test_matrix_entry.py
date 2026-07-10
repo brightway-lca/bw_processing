@@ -59,6 +59,18 @@ class TestMatrixEntry:
         e = MatrixEntry(row=1, col=2, amount=3.0, rescale=2.0)
         assert e.as_dict()["rescale"] == pytest.approx(2.0)
 
+    def test_reference_default_is_false(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0)
+        assert e.reference is False
+
+    def test_reference_custom_value(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0, reference=True)
+        assert e.reference is True
+
+    def test_reference_in_as_dict(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0, reference=True)
+        assert e.as_dict()["reference"] is True
+
     def test_loc_set_to_amount_for_no_uncertainty(self):
         e = MatrixEntry(row=1, col=2, amount=5.0)
         assert e.loc == pytest.approx(5.0)
@@ -90,7 +102,7 @@ class TestMatrixEntry:
         assert set(d.keys()) == {
             "row", "col", "amount", "flip", "uncertainty_type",
             "loc", "scale", "shape", "minimum", "maximum", "negative",
-            "rescale",
+            "rescale", "reference",
         }
 
     def test_as_dict_values(self):
@@ -251,6 +263,19 @@ class TestArrayEntry:
         with pytest.raises(ValueError, match="rescale.*rows"):
             ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), rescale=[1.0, 2.0, 3.0])
 
+    def test_reference_default_is_none(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)))
+        assert e.reference is None
+
+    def test_reference_coerced_to_bool(self):
+        e = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), reference=[1, 0])
+        assert e.reference.dtype == bool
+        assert list(e.reference) == [True, False]
+
+    def test_reference_shape_mismatch(self):
+        with pytest.raises(ValueError, match="reference.*rows"):
+            ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 4)), reference=[True, False, True])
+
 
 class TestAddArrayEntries:
     def test_single_entry(self):
@@ -325,6 +350,32 @@ class TestAddArrayEntries:
         stored = dp.data[dp.resources.index(rescale_resource)]
         np.testing.assert_array_almost_equal(stored, [2.0, 0.5])
 
+    def test_reference_stored_correctly(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)), reference=[True, False])
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        reference_resource = next(r for r in group.resources if r["kind"] == "reference")
+        stored = dp.data[dp.resources.index(reference_resource)]
+        assert stored.dtype == bool
+        assert list(stored) == [True, False]
+
+    def test_no_reference_resource_when_reference_is_none(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)))
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "reference" not in kinds
+
+    def test_no_reference_resource_when_all_false(self):
+        dp = create_datapackage()
+        entry = ArrayEntry(rows=[0, 1], cols=[2, 3], data=np.ones((2, 3)), reference=[False, False])
+        dp.add_array_entries(matrix="technosphere_matrix", entries=[entry])
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "reference" not in kinds
+
 
 class TestAddEntries:
     def test_no_rescale_resource_when_all_rescale_one(self):
@@ -387,6 +438,49 @@ class TestAddEntries:
                 assert rescales[i] == pytest.approx(0.5)
             else:
                 assert rescales[i] == pytest.approx(2.0)
+
+    def test_no_reference_resource_when_no_references(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0),
+            MatrixEntry(row=3, col=4, amount=2.0),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        kinds = [r["kind"] for r in group.resources]
+        assert "reference" not in kinds
+
+    def test_reference_resource_stored_when_set(self):
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=1, col=2, amount=1.0, reference=True),
+            MatrixEntry(row=3, col=4, amount=2.0, reference=True),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        reference_resource = next(r for r in group.resources if r["kind"] == "reference")
+        stored = dp.data[dp.resources.index(reference_resource)]
+        assert stored.dtype == bool
+        assert list(stored) == [True, True]
+
+    def test_reference_aligned_with_data_when_sorted(self):
+        # add_entries sorts by (row, col); reference flags must follow the same order
+        dp = create_datapackage()
+        entries = [
+            MatrixEntry(row=3, col=4, amount=2.0, reference=False),
+            MatrixEntry(row=1, col=2, amount=1.0, reference=True),
+        ]
+        dp.add_entries(matrix="technosphere_matrix", entries=entries)
+        group = next(iter(dp.groups.values()))
+        idx_resource = next(r for r in group.resources if r["kind"] == "indices")
+        reference_resource = next(r for r in group.resources if r["kind"] == "reference")
+        indices = dp.data[dp.resources.index(idx_resource)]
+        references = dp.data[dp.resources.index(reference_resource)]
+        for i, idx in enumerate(indices):
+            if idx["row"] == 1:
+                assert references[i] == np.bool_(True)
+            else:
+                assert references[i] == np.bool_(False)
 
 
 class TestSimpleGraphDeprecation:

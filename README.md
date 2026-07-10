@@ -168,12 +168,12 @@ print(data_obj.url)
 
 ### Scale arrays
 
-Any resource group (persistent or dynamic, vector or array) can carry an optional `scale_array`: a one-dimensional float array of the same length as `indices_array`. Each element is a multiplicative factor applied to the corresponding data value before it is inserted into the matrix. The factor is applied to both static and stochastically-sampled values. A value of `1.0` leaves the data unchanged.
+Any resource group (persistent or dynamic, vector or array) can carry an optional `rescale_array`: a one-dimensional float array of the same length as `indices_array`. Each element is a multiplicative factor applied to the corresponding data value before it is inserted into the matrix. The factor is applied to both static and stochastically-sampled values. A value of `1.0` leaves the data unchanged.
 
 Typical use cases:
 
-* **Allocation factors** — when a process produces multiple products, the exchange amounts must be partitioned between them. Storing the allocation coefficients as a `scale_array` keeps them alongside the data they modify without requiring a separate processing step.
-* **Unit conversions** — when source data is expressed in a unit that differs from the matrix convention, a constant conversion factor can be stored as a `scale_array` rather than baked into every data value.
+* **Allocation factors** — when a process produces multiple products, the exchange amounts must be partitioned between them. Storing the allocation coefficients as a `rescale_array` keeps them alongside the data they modify without requiring a separate processing step.
+* **Unit conversions** — when source data is expressed in a unit that differs from the matrix convention, a constant conversion factor can be stored as a `rescale_array` rather than baked into every data value.
 
 ```python
 import numpy as np
@@ -183,18 +183,45 @@ from bw_processing.constants import INDICES_DTYPE
 dp = create_datapackage()
 indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
 data_array = np.array([100.0, 200.0, 300.0])
-scale_array = np.array([0.6, 1.0, 0.4])  # e.g. allocation factors
+rescale_array = np.array([0.6, 1.0, 0.4])  # e.g. allocation factors
 
 dp.add_persistent_vector(
     matrix="technosphere",
     name="my-process",
     indices_array=indices_array,
     data_array=data_array,
-    scale_array=scale_array,
+    rescale_array=rescale_array,
 )
 ```
 
-The stored resource has `kind="scale"` and can be retrieved via `dp.get_resource("my-process.scale")`. The `scale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
+The stored resource has `kind="rescale"` and can be retrieved via `dp.get_resource("my-process.rescale")`. The `rescale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
+
+### Reference (production) exchanges
+
+Any resource group can also carry an optional `reference_array`: a one-dimensional boolean array of the same length as `indices_array`. Where an element is `True`, that exchange is the **reference (production) exchange** for its activity/column.
+
+The five structural heuristics in `bw_graph_tools` (matching ids, single non-flipped entry, single positive, single negative, unique product) cannot always identify the reference exchange — whenever an activity has more than one same-sign exchange and the products also appear in other columns, the choice is genuinely ambiguous. Only the modeller knows the answer. `reference_array` records it directly so downstream tools can read it instead of guessing.
+
+```python
+import numpy as np
+from bw_processing import create_datapackage
+from bw_processing.constants import INDICES_DTYPE
+
+dp = create_datapackage()
+indices_array = np.array([(1, 4), (2, 5), (3, 6)], dtype=INDICES_DTYPE)
+data_array = np.array([1.0, 0.5, 2.0])
+reference_array = np.array([True, False, False])  # first exchange is the reference
+
+dp.add_persistent_vector(
+    matrix="technosphere",
+    name="my-process",
+    indices_array=indices_array,
+    data_array=data_array,
+    reference_array=reference_array,
+)
+```
+
+The stored resource has `kind="reference"` and can be retrieved via `dp.get_resource("my-process.reference")`. It must be a boolean array; passing a non-boolean array raises `WrongDatatype`. To keep the common case cheap, the resource is written only when at least one entry is `True` — a group with no reference flags carries no `reference` resource. Using the high-level `MatrixEntry`/`ArrayEntry` API, set `reference=True` (or a boolean `reference` array) on the entries you want flagged.
 
 ### Parameter arrays for sensitivity analysis
 

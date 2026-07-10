@@ -512,6 +512,7 @@ class Datapackage(DatapackageBase):
             distributions_array,
             flip_array,
             rescale_array,
+            reference_array,
         ) = resolve_dict_iterator(dict_iterator, nrows)
         self.add_persistent_vector(
             matrix=matrix,
@@ -522,6 +523,7 @@ class Datapackage(DatapackageBase):
             flip_array=flip_array,
             distributions_array=distributions_array,
             rescale_array=rescale_array,
+            reference_array=reference_array,
             matrix_serialize_format_type=matrix_serialize_format_type,
             **kwargs,
         )
@@ -538,6 +540,8 @@ class Datapackage(DatapackageBase):
         High-level convenience method that does not require working directly
         with NumPy arrays. If any entry has a ``rescale`` value other than
         ``1.0``, the rescale values are stored as a ``rescale_array`` resource.
+        If any entry has ``reference=True``, the reference flags are stored as
+        a ``reference_array`` resource (``kind="reference"``).
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -562,6 +566,8 @@ class Datapackage(DatapackageBase):
         Each :class:`.ArrayEntry` becomes one persistent-array resource group.
         Resource group names are auto-generated. If an entry has a ``rescale``
         array it is stored as a ``rescale_array`` resource (``kind="rescale"``).
+        If an entry has a ``reference`` array with any ``True`` value it is
+        stored as a ``reference_array`` resource (``kind="reference"``).
 
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
@@ -577,6 +583,7 @@ class Datapackage(DatapackageBase):
                 data_array=entry.data,
                 flip_array=entry.flip,
                 rescale_array=entry.rescale,
+                reference_array=entry.reference,
             )
 
     def add_persistent_vector(
@@ -589,6 +596,7 @@ class Datapackage(DatapackageBase):
         flip_array: Optional[np.ndarray] = None,
         distributions_array: Optional[np.ndarray] = None,
         rescale_array: Optional[np.ndarray] = None,
+        reference_array: Optional[np.ndarray] = None,
         params_array: Optional[np.ndarray] = None,
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -604,6 +612,12 @@ class Datapackage(DatapackageBase):
         the value is inserted into the matrix.  Typical uses are allocation
         factors and unit conversions.  A value of ``1.0`` leaves the data
         unchanged.
+
+        ``reference_array`` is an optional 1-D boolean array of the same length
+        as ``indices_array``.  Where ``True``, that entry is the reference
+        (production) exchange for its column.  It is stored as a
+        ``reference_array`` resource (``kind="reference"``) only when at least
+        one entry is flagged.
 
         ``params_array`` is an optional 1-D float array recording the values of
         independent variables (e.g. model parameters) used to generate this
@@ -713,6 +727,15 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if reference_array is not None:
+            self._add_reference_array_resource(
+                reference_array=reference_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
         if params_array is not None:
             params_array = load_bytes(params_array)
             if params_array.ndim != 1:
@@ -751,6 +774,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         rescale_array: Optional[np.ndarray] = None,
+        reference_array: Optional[np.ndarray] = None,
         params_array: Optional[np.ndarray] = None,
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -766,6 +790,12 @@ class Datapackage(DatapackageBase):
         the value is inserted into the matrix.  Typical uses are allocation
         factors and unit conversions.  A value of ``1.0`` leaves the data
         unchanged.
+
+        ``reference_array`` is an optional 1-D boolean array of the same length
+        as ``indices_array``.  Where ``True``, that entry is the reference
+        (production) exchange for its column.  It is stored as a
+        ``reference_array`` resource (``kind="reference"``) only when at least
+        one entry is flagged.
 
         ``params_array`` is an optional 2-D float array of shape
         ``(n_params, n_scenarios)`` where ``n_scenarios`` must equal
@@ -850,6 +880,15 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if reference_array is not None:
+            self._add_reference_array_resource(
+                reference_array=reference_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
         if params_array is not None:
             params_array = load_bytes(params_array)
             if params_array.ndim != 2:
@@ -912,7 +951,7 @@ class Datapackage(DatapackageBase):
                     if kind == "indices":
                         meta_object = "vector"
                         meta_type = "indices"
-                    elif kind in ("flip", "rescale", "params"):
+                    elif kind in ("flip", "rescale", "reference", "params"):
                         meta_object = "vector"
                         meta_type = "generic"
                     elif kind == "distributions":
@@ -985,6 +1024,41 @@ class Datapackage(DatapackageBase):
             meta_type="generic",
             **kwargs,
         )
+
+    def _add_reference_array_resource(
+        self,
+        *,
+        reference_array: np.ndarray,
+        indices_array: np.ndarray,
+        name: str,
+        keep_proxy: bool,
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat],
+        **kwargs,
+    ) -> None:
+        reference_array = load_bytes(reference_array)
+        if reference_array.dtype != bool:
+            raise WrongDatatype(
+                "`reference_array` dtype is {}, but must be `bool`".format(reference_array.dtype)
+            )
+        if reference_array.shape != indices_array.shape:
+            raise ShapeMismatch(
+                "`reference_array` shape ({}) doesn't match `indices_array` ({}).".format(
+                    reference_array.shape, indices_array.shape
+                )
+            )
+        # If no references flagged, don't need to store it
+        if reference_array.sum():
+            self._add_numpy_array_resource(
+                array=reference_array,
+                group=name,
+                name=name + ".reference",
+                kind="reference",
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                meta_object="vector",
+                meta_type="generic",
+                **kwargs,
+            )
 
     @staticmethod
     def _check_params_args(
@@ -1133,6 +1207,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,  # Not interface
         rescale_array: Optional[np.ndarray] = None,  # Not interface
+        reference_array: Optional[np.ndarray] = None,  # Not interface
         params_array: Optional[np.ndarray] = None,  # Not interface
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -1147,7 +1222,7 @@ class Datapackage(DatapackageBase):
         1-D numpy array of length ``len(indices_array)`` each time it is called.
 
         The ``indices_array``, optional ``flip_array``, optional ``rescale_array``,
-        and optional ``params_array`` are static and are stored as normal numpy
+        optional ``reference_array``, and optional ``params_array`` are static and are stored as normal numpy
         resources.  See ``add_persistent_vector`` for documentation of the
         ``params_array``, ``param_labels``, and ``param_label_schema`` arguments.
 
@@ -1162,6 +1237,8 @@ class Datapackage(DatapackageBase):
                 multiplied by ``-1`` before insertion.
             rescale_array: Optional 1-D float array of multiplicative factors
                 applied before matrix insertion.
+            reference_array: Optional 1-D boolean array; where ``True`` the
+                entry is the reference (production) exchange for its column.
             keep_proxy: If ``True``, store a proxy rather than the raw array
                 for on-disk resources.
             matrix_serialize_format_type: Override the instance-level
@@ -1219,6 +1296,15 @@ class Datapackage(DatapackageBase):
                 matrix_serialize_format_type=matrix_serialize_format_type,
                 **kwargs,
             )
+        if reference_array is not None:
+            self._add_reference_array_resource(
+                reference_array=reference_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
         if params_array is not None:
             params_array = load_bytes(params_array)
             if params_array.ndim != 1:
@@ -1267,6 +1353,7 @@ class Datapackage(DatapackageBase):
         name: Optional[str] = None,
         flip_array: Optional[np.ndarray] = None,
         rescale_array: Optional[np.ndarray] = None,  # Not interface
+        reference_array: Optional[np.ndarray] = None,  # Not interface
         params_array: Optional[np.ndarray] = None,  # Not interface
         param_labels: Optional[list] = None,
         param_label_schema: Optional[AnyLabelSchema] = None,
@@ -1283,7 +1370,7 @@ class Datapackage(DatapackageBase):
         interface.
 
         The ``indices_array``, optional ``flip_array``, optional ``rescale_array``,
-        and optional ``params_array`` are static and are stored as normal numpy
+        optional ``reference_array``, and optional ``params_array`` are static and are stored as normal numpy
         resources.  For dynamic arrays the column count of ``params_array`` is
         not validated against the interface (whose column count may be unknown at
         write time).  See ``add_persistent_vector`` for documentation of the
@@ -1300,6 +1387,8 @@ class Datapackage(DatapackageBase):
                 multiplied by ``-1`` before insertion.
             rescale_array: Optional 1-D float array of multiplicative factors
                 applied before matrix insertion.
+            reference_array: Optional 1-D boolean array; where ``True`` the
+                entry is the reference (production) exchange for its column.
             keep_proxy: If ``True``, store a proxy rather than the raw array
                 for on-disk resources.
             matrix_serialize_format_type: Override the instance-level
@@ -1359,6 +1448,15 @@ class Datapackage(DatapackageBase):
         if rescale_array is not None:
             self._add_rescale_array_resource(
                 rescale_array=rescale_array,
+                indices_array=indices_array,
+                name=name,
+                keep_proxy=keep_proxy,
+                matrix_serialize_format_type=matrix_serialize_format_type,
+                **kwargs,
+            )
+        if reference_array is not None:
+            self._add_reference_array_resource(
+                reference_array=reference_array,
                 indices_array=indices_array,
                 name=name,
                 keep_proxy=keep_proxy,

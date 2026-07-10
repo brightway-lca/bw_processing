@@ -63,6 +63,12 @@ class MatrixEntry:
             Stored as a ``rescale_array`` resource (``kind="rescale"``). Note
             that the Python ``float`` value is downcast to ``numpy.float32``
             when written to the structured array.
+        reference: If True, this exchange is the reference (production) exchange
+            for its activity/column. Consumers such as bw_graph_tools use this
+            to identify production exchanges directly instead of guessing from
+            matrix structure. Stored as a ``reference_array`` resource
+            (``kind="reference"``) only when at least one entry is flagged;
+            defaults to False.
     """
 
     row: int
@@ -77,6 +83,7 @@ class MatrixEntry:
     maximum: float = math.nan
     negative: bool = False
     rescale: float = 1.0
+    reference: bool = False
 
     def __post_init__(self):
         if self.uncertainty_type in _NO_UNCERTAINTY_IDS:
@@ -109,6 +116,10 @@ class ArrayEntry:
         rescale: Optional 1-D float array of per-entry multiplicative factors
             (one per row). ``1.0`` leaves the value unchanged. Stored as a
             ``rescale_array`` resource (``kind="rescale"``).
+        reference: Optional 1-D boolean sequence of length ``n_entries``.
+            Where True, that entry is the reference (production) exchange for
+            its column. Stored as a ``reference_array`` resource
+            (``kind="reference"``) only when at least one entry is flagged.
     """
 
     rows: np.ndarray
@@ -116,6 +127,7 @@ class ArrayEntry:
     data: np.ndarray
     flip: Optional[np.ndarray] = None
     rescale: Optional[np.ndarray] = None
+    reference: Optional[np.ndarray] = None
 
     def __post_init__(self):
         self.rows = np.asarray(self.rows)
@@ -149,6 +161,12 @@ class ArrayEntry:
             if self.rescale.shape != self.rows.shape:
                 raise ValueError(
                     f"`rescale` shape {self.rescale.shape} doesn't match `rows` shape {self.rows.shape}"
+                )
+        if self.reference is not None:
+            self.reference = np.asarray(self.reference, dtype=bool)
+            if self.reference.shape != self.rows.shape:
+                raise ValueError(
+                    f"`reference` shape {self.reference.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
 
 
