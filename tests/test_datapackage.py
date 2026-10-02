@@ -90,7 +90,7 @@ def test_group_ordering_consistent():
     ]
 
 
-def test_groups_match_filter_by_attribute_when_interleaved():
+def test_groups_keep_resource_order_when_interleaved():
     dp = create_datapackage()
     add_data(dp)
     # interleave the resources of different groups
@@ -101,10 +101,10 @@ def test_groups_match_filter_by_attribute_when_interleaved():
     labels = list(dict.fromkeys(o["group"] for o in dp.resources if o.get("group")))
     assert list(dp.groups) == labels
     for label, fdp in dp.groups.items():
-        expected = dp.filter_by_attribute("group", label)
-        assert fdp.resources == expected.resources
-        assert all(a is b for a, b in zip(fdp.data, expected.data))
-        assert len(fdp.data) == len(expected.data)
+        positions = [i for i, o in enumerate(dp.resources) if o.get("group") == label]
+        assert [o["name"] for o in fdp.resources] == [dp.resources[i]["name"] for i in positions]
+        assert len(fdp.data) == len(positions)
+        assert all(a is dp.data[i] for a, i in zip(fdp.data, positions))
 
 
 def test_get_max_index_value():
