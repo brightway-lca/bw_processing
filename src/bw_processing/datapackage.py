@@ -68,7 +68,8 @@ class DatapackageBase(ABC):
         return len(self.data)
 
     def __contains__(self, key):
-        return key in {o["name"] for o in self.resources} or key in self.groups
+        groups = {o.get("group") for o in self.resources if o.get("group")}
+        return key in {o["name"] for o in self.resources} or key in groups
 
     resources = property(__get_resources, __set_resources)
 
@@ -144,7 +145,7 @@ class DatapackageBase(ABC):
         if self._modified:
             raise PotentialInconsistency("Datapackage is modified; save modifications or reload")
 
-        indices = [i for i, resource in enumerate(self.resources) if resource.get("group") == name]
+        indices = {i for i, resource in enumerate(self.resources) if resource.get("group") == name}
 
         for obj in (obj for i, obj in enumerate(self.resources) if i in indices):
             try:
