@@ -90,6 +90,23 @@ def test_group_ordering_consistent():
     ]
 
 
+def test_groups_match_filter_by_attribute_when_interleaved():
+    dp = create_datapackage()
+    add_data(dp)
+    # interleave the resources of different groups
+    order = list(range(0, len(dp), 2)) + list(range(1, len(dp), 2))
+    dp.resources = [dp.resources[i] for i in order]
+    dp.data = [dp.data[i] for i in order]
+
+    labels = list(dict.fromkeys(o["group"] for o in dp.resources if o.get("group")))
+    assert list(dp.groups) == labels
+    for label, fdp in dp.groups.items():
+        expected = dp.filter_by_attribute("group", label)
+        assert fdp.resources == expected.resources
+        assert all(a is b for a, b in zip(fdp.data, expected.data))
+        assert len(fdp.data) == len(expected.data)
+
+
 def test_get_max_index_value():
     dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     assert dp.metadata.get("64_bit_indices")
