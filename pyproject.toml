@@ -31,7 +31,7 @@ requires-python = ">=3.9"
 dependencies = [
     # dependencies as strings with quotes, e.g. "foo"
     # You can add version requirements
-    "fsspec",
+    "fsspec>=2023.3.0",
     "jsonschema>=4.0",
     "morefs",
     "numpy",
