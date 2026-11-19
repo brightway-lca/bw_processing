@@ -218,6 +218,14 @@ class DatapackageBase(ABC):
             ]
         )
 
+    def _check_length_consistency(self) -> None:
+        if len(self.resources) != len(self.data):
+            raise LengthMismatch(
+                "Number of resources ({}) doesn't match number of data objects ({})".format(
+                    len(self.resources), len(self.data)
+                )
+            )
+
     def _filtered(self, indices: List[int]) -> "FilteredDatapackage":
         """Create a ``FilteredDatapackage`` with the resources at ``indices``, sharing their data."""
         self._check_length_consistency()
@@ -307,14 +315,6 @@ class Datapackage(DatapackageBase):
 
     def __eq__(self, other):
         return (id(self.fs), self.metadata) == (id(other.fs), other.metadata)
-
-    def _check_length_consistency(self) -> None:
-        if len(self.resources) != len(self.data):
-            raise LengthMismatch(
-                "Number of resources ({}) doesn't match number of data objects ({})".format(
-                    len(self.resources), len(self.data)
-                )
-            )
 
     def _load(
         self, fs: AbstractFileSystem, mmap_mode: Optional[str] = None, proxy: bool = False
