@@ -196,6 +196,15 @@ def test_shape_mismatch_data():
             second_resource_group_label="sa-data-vector2",
             mask_array=np.zeros((5,), dtype=bool),
         )
+    # Mask matches the first datapackage, so only the second one is wrong
+    with pytest.raises(LengthMismatch):
+        merge_datapackages_with_mask(
+            first_dp=dp1,
+            first_resource_group_label="sa-data-vector",
+            second_dp=dp2,
+            second_resource_group_label="sa-data-vector2",
+            mask_array=np.zeros((10,), dtype=bool),
+        )
 
 
 def test_shape_mismatch_mask():

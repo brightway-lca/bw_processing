@@ -90,6 +90,57 @@ def test_group_ordering_consistent():
     ]
 
 
+def test_groups_keep_resource_order_when_interleaved():
+    dp = create_datapackage()
+    add_data(dp)
+    # interleave the resources of different groups
+    order = list(range(0, len(dp), 2)) + list(range(1, len(dp), 2))
+    dp.resources = [dp.resources[i] for i in order]
+    dp.data = [dp.data[i] for i in order]
+
+    labels = list(dict.fromkeys(o["group"] for o in dp.resources if o.get("group")))
+    assert list(dp.groups) == labels
+    for label, fdp in dp.groups.items():
+        positions = [i for i, o in enumerate(dp.resources) if o.get("group") == label]
+        assert [o["name"] for o in fdp.resources] == [dp.resources[i]["name"] for i in positions]
+        assert len(fdp.data) == len(positions)
+        assert all(a is dp.data[i] for a, i in zip(fdp.data, positions))
+
+
+def test_contains_names_and_group_labels():
+    dp = create_datapackage()
+    add_data(dp)
+
+    assert "sa-data-vector.indices" in dp
+    assert "sa-data-vector" in dp
+    assert "sa-data-array-json-metadata" in dp
+    assert "missing" not in dp
+    assert None not in dp
+
+
+def test_contains_name_with_unhashable_group_label():
+    dp = create_datapackage()
+    add_data(dp)
+    dp.resources[-1]["group"] = ["a", "b"]
+
+    assert "sa-data-vector.indices" in dp
+    assert "sa-data-vector" in dp
+
+
+def test_add_metadata_unknown_group():
+    dp = create_datapackage()
+    add_data(dp)
+
+    with pytest.raises(AssertionError):
+        dp.add_json_metadata(data={}, valid_for="missing", name="json-missing")
+    with pytest.raises(AssertionError):
+        dp.add_csv_metadata(
+            dataframe=pd.DataFrame([{"a": 1}]),
+            valid_for=[("missing", "rows")],
+            name="csv-missing",
+        )
+
+
 def test_get_max_index_value():
     dp = load_datapackage(ZipFileSystem(dirpath / "test-fixture.zip"))
     assert dp.metadata.get("64_bit_indices")

@@ -5,6 +5,7 @@ import pytest
 from fsspec.implementations.zip import ZipFileSystem
 
 from bw_processing import INDICES_DTYPE, UNCERTAINTY_DTYPE, create_datapackage, load_datapackage
+from bw_processing.errors import LengthMismatch
 from bw_processing.io_helpers import generic_directory_filesystem
 
 dirpath = Path(__file__).parent.resolve() / "fixtures"
@@ -149,3 +150,15 @@ def test_exclude_resource_group_kind(erg):
         "first.flip",
     }
     assert not any(obj.dtype == UNCERTAINTY_DTYPE for obj in result.data)
+
+
+@pytest.mark.parametrize("change", [lambda data: data.pop(), lambda data: data.append(None)])
+def test_filtering_checks_resources_match_data(erg, change):
+    change(erg.data)
+
+    with pytest.raises(LengthMismatch):
+        erg.groups
+    with pytest.raises(LengthMismatch):
+        erg.filter_by_attribute("group", "first")
+    with pytest.raises(LengthMismatch):
+        erg.exclude({"group": "first"})

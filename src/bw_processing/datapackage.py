@@ -68,7 +68,11 @@ class DatapackageBase(ABC):
         return len(self.data)
 
     def __contains__(self, key):
-        return key in {o["name"] for o in self.resources} or key in self.groups
+        return key in {o["name"] for o in self.resources} or self._has_group(key)
+
+    def _has_group(self, label: Any) -> bool:
+        """Check for a resource group label without building the filtered ``groups``."""
+        return bool(label) and any(o.get("group") == label for o in self.resources)
 
     resources = property(__get_resources, __set_resources)
 
@@ -78,14 +82,14 @@ class DatapackageBase(ABC):
 
         Ignores resources which don't have group labels.
         """
-        labels = []
-        for resource in self.resources:
-            if not resource.get("group"):
-                continue
-            elif resource["group"] not in labels:
-                labels.append(resource["group"])
+        # One pass over the resources: filtering once per label made this
+        # quadratic in the number of resources.
+        indices = {}
+        for i, resource in enumerate(self.resources):
+            if resource.get("group"):
+                indices.setdefault(resource["group"], []).append(i)
 
-        return {label: self.filter_by_attribute("group", label) for label in labels}
+        return {label: self._filtered(lst) for label, lst in indices.items()}
 
     def _get_index(self, name_or_index: Union[str, int]) -> int:
         """Get index of a resource by name or index.
@@ -144,7 +148,7 @@ class DatapackageBase(ABC):
         if self._modified:
             raise PotentialInconsistency("Datapackage is modified; save modifications or reload")
 
-        indices = [i for i, resource in enumerate(self.resources) if resource.get("group") == name]
+        indices = {i for i, resource in enumerate(self.resources) if resource.get("group") == name}
 
         for obj in (obj for i, obj in enumerate(self.resources) if i in indices):
             try:
@@ -188,16 +192,9 @@ class DatapackageBase(ABC):
 
         This method was introduced to allow for the efficient construction of matrices; each datapackage can have data for multiple matrices, and we can then create filtered datapackages which exclusively have data for the matrix of interest. As such, they should be considered read-only, though this is not enforced.
         """
-        fdp = FilteredDatapackage()
-        fdp.fs = self.fs
-        fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
-        fdp.metadata["resources"] = []
-        to_include = [i for i, resource in enumerate(self.resources) if resource.get(key) == value]
-        fdp.data = [o for i, o in enumerate(self.data) if i in to_include]
-        fdp.resources = [o for i, o in enumerate(self.resources) if i in to_include]
-        if hasattr(self, "indexer"):
-            fdp.indexer = self.indexer
-        return fdp
+        return self._filtered(
+            [i for i, resource in enumerate(self.resources) if resource.get(key) == value]
+        )
 
     def exclude(self, filters: Dict[str, str]) -> "FilteredDatapackage":
         """Filter a datapackage to exclude resources matching a filter.
@@ -213,21 +210,25 @@ class DatapackageBase(ABC):
             exclude_generic({"group': "some_group", "kind": "some_kind"})
 
         """
+        return self._filtered(
+            [
+                i
+                for i, resource in enumerate(self.resources)
+                if any(resource.get(key) != value for key, value in filters.items())
+            ]
+        )
+
+    def _filtered(self, indices: List[int]) -> "FilteredDatapackage":
+        """Create a ``FilteredDatapackage`` with the resources at ``indices``, sharing their data."""
+        self._check_length_consistency()
         fdp = FilteredDatapackage()
         fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
         fdp.metadata["resources"] = []
-
+        fdp.data = [self.data[i] for i in indices]
+        fdp.resources = [self.resources[i] for i in indices]
         if hasattr(self, "indexer"):
             fdp.indexer = self.indexer
-
-        indices_to_include = [
-            i
-            for i, resource in enumerate(self.resources)
-            if any(resource.get(key) != value for key, value in filters.items())
-        ]
-        fdp.data = [o for i, o in enumerate(self.data) if i in indices_to_include]
-        fdp.resources = [o for i, o in enumerate(self.resources) if i in indices_to_include]
         return fdp
 
     def _dehydrate_interfaces(self) -> None:
@@ -1537,7 +1538,7 @@ class Datapackage(DatapackageBase):
         assert isinstance(dataframe, pd.DataFrame)
         assert isinstance(valid_for, list)
 
-        assert all(x in self.groups for x, y in valid_for)
+        assert all(self._has_group(x) for x, y in valid_for)
 
         name = self._prepare_name(name)
         self._prepare_modifications()
@@ -1587,7 +1588,7 @@ class Datapackage(DatapackageBase):
 
         """
         assert isinstance(valid_for, str)
-        assert valid_for in self.groups
+        assert self._has_group(valid_for)
 
         self._prepare_modifications()
 
