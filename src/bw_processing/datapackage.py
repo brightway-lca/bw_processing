@@ -68,8 +68,11 @@ class DatapackageBase(ABC):
         return len(self.data)
 
     def __contains__(self, key):
-        groups = {o.get("group") for o in self.resources if o.get("group")}
-        return key in {o["name"] for o in self.resources} or key in groups
+        return key in {o["name"] for o in self.resources} or self._has_group(key)
+
+    def _has_group(self, label: Any) -> bool:
+        """Check for a resource group label without building the filtered ``groups``."""
+        return bool(label) and any(o.get("group") == label for o in self.resources)
 
     resources = property(__get_resources, __set_resources)
 
@@ -1535,7 +1538,7 @@ class Datapackage(DatapackageBase):
         assert isinstance(dataframe, pd.DataFrame)
         assert isinstance(valid_for, list)
 
-        assert all(x in self.groups for x, y in valid_for)
+        assert all(self._has_group(x) for x, y in valid_for)
 
         name = self._prepare_name(name)
         self._prepare_modifications()
@@ -1585,7 +1588,7 @@ class Datapackage(DatapackageBase):
 
         """
         assert isinstance(valid_for, str)
-        assert valid_for in self.groups
+        assert self._has_group(valid_for)
 
         self._prepare_modifications()
 
