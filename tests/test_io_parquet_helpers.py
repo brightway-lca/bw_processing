@@ -2,7 +2,6 @@
 """
 Unit tests for saving and loading to/from parquet files.
 """
-import sys
 
 import numpy as np
 import pyarrow.parquet as pq
@@ -23,7 +22,6 @@ ARR_LIST = [
 
 
 @pytest.mark.parametrize("arr_fixture_name, meta_object, meta_type", ARR_LIST)
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file(
     arr_fixture_name, meta_object, meta_type, tmp_path_factory, request
 ):
@@ -39,7 +37,6 @@ def test_save_load_parquet_file(
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.float64])
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_data_vector(dtype, tmp_path_factory):
 
     arr = data_vector(dtype=dtype)
@@ -53,7 +50,6 @@ def test_save_load_parquet_file_data_vector(dtype, tmp_path_factory):
 
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.float64])
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
 
     arr = data_matrix(dtype=dtype)
@@ -65,7 +61,6 @@ def test_save_load_parquet_file_data_matrix(dtype, tmp_path_factory):
     assert arr.dtype == loaded_arr.dtype and np.array_equal(arr, loaded_arr)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_distribution_vector(distributions_vector, tmp_path_factory):
 
     arr = distributions_vector
@@ -77,7 +72,6 @@ def test_save_load_parquet_file_distribution_vector(distributions_vector, tmp_pa
     assert vector_equal_with_uncertainty_dtype(arr, loaded_arr)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_meta_object(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
@@ -99,7 +93,6 @@ def test_save_load_parquet_file_wrong_meta_object(indices_vector, tmp_path_facto
         load_ndarray_from_parquet(file)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_meta_type(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
@@ -121,7 +114,6 @@ def test_save_load_parquet_file_wrong_meta_type(indices_vector, tmp_path_factory
         load_ndarray_from_parquet(file)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="Doesn't work in CI filesystem")
 def test_save_load_parquet_file_wrong_metadata_format(indices_vector, tmp_path_factory):
     file = tmp_path_factory.mktemp("data") / "indices_vector.parquet"
 
