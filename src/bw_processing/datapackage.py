@@ -217,6 +217,7 @@ class DatapackageBase(ABC):
 
     def _filtered(self, indices: List[int]) -> "FilteredDatapackage":
         """Create a ``FilteredDatapackage`` with the resources at ``indices``, sharing their data."""
+        self._check_length_consistency()
         fdp = FilteredDatapackage()
         fdp.fs = self.fs
         fdp.metadata = {k: v for k, v in self.metadata.items() if k != "resources"}
