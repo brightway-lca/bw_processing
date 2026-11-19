@@ -122,9 +122,9 @@ def merge_datapackages_with_mask(
         raise ValueError(f"Resource group not {second_resource_group_label} not in ``second_dp``")
 
     DIMENSION_ERROR = """Dimension mismatch. All array lengths must be the same, but got:\n\tFirst DP: {}\n\tSecond DP: {}\n\t Mask array: {}"""
-    if not (len(first_dp.data[0]) == len(first_dp.data[0]) == len(mask_array)):
+    if not (len(first_dp.data[0]) == len(second_dp.data[0]) == len(mask_array)):
         raise LengthMismatch(
-            DIMENSION_ERROR.format(len(first_dp.data[0]), len(first_dp.data[0]), len(mask_array))
+            DIMENSION_ERROR.format(len(first_dp.data[0]), len(second_dp.data[0]), len(mask_array))
         )
 
     if output_fs is None:
