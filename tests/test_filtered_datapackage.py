@@ -162,3 +162,33 @@ def test_filtering_checks_resources_match_data(erg, change):
         erg.filter_by_attribute("group", "first")
     with pytest.raises(LengthMismatch):
         erg.exclude({"group": "first"})
+
+
+def test_filtered_datapackage_can_be_filtered_again(erg):
+    # https://github.com/brightway-lca/bw_processing/issues/117
+    fdp = erg.filter_by_attribute("matrix", "one")
+
+    assert list(fdp.groups) == ["first"]
+    assert {obj["name"] for obj in fdp.groups["first"].resources} == {
+        "first.data",
+        "first.indices",
+        "first.distributions",
+        "first.flip",
+    }
+    assert {obj["name"] for obj in fdp.filter_by_attribute("kind", "indices").resources} == {
+        "first.indices"
+    }
+    assert len(fdp.exclude({"kind": "distributions"}).resources) == 3
+
+
+@pytest.mark.parametrize("change", [lambda data: data.pop(), lambda data: data.append(None)])
+def test_filtering_filtered_datapackage_checks_resources_match_data(erg, change):
+    fdp = erg.filter_by_attribute("matrix", "one")
+    change(fdp.data)
+
+    with pytest.raises(LengthMismatch):
+        fdp.groups
+    with pytest.raises(LengthMismatch):
+        fdp.filter_by_attribute("group", "first")
+    with pytest.raises(LengthMismatch):
+        fdp.exclude({"group": "first"})
