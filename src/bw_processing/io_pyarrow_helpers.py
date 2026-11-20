@@ -181,7 +181,10 @@ def numpy_distributions_vector_to_pyarrow_distributions_vector_table(
     """
     assert isinstance(arr, np.ndarray)
     assert arr.ndim == 1
-    assert arr.dtype == UNCERTAINTY_DTYPE
+    if arr.dtype != UNCERTAINTY_DTYPE:
+        # Arrays built with the float32 fields used before version 1.7
+        assert arr.dtype.names == np.dtype(UNCERTAINTY_DTYPE).names
+        arr = arr.astype(UNCERTAINTY_DTYPE)
 
     from_dict = {}
     for i in range(NBR_UNCERTAINTY_FIELDS):

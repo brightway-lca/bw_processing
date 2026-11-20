@@ -64,3 +64,18 @@ def test_double_conversion_data_matrix(dtype):
 
     assert arr.dtype == data_mat.dtype
     assert np.array_equal(arr, data_mat)
+
+
+def test_distribution_vector_float32_fields_widened(distributions_vector):
+    # Arrays built with the float32 fields used before 1.7 can still be written.
+    from bw_processing import UNCERTAINTY_DTYPE
+
+    legacy_dtype = [
+        (name, np.float32 if kind is np.float64 else kind) for name, kind in UNCERTAINTY_DTYPE
+    ]
+    legacy = distributions_vector.astype(legacy_dtype)
+    table = numpy_distributions_vector_to_pyarrow_distributions_vector_table(legacy)
+    arr = pyarrow_distributions_vector_table_to_numpy_distributions_vector(table)
+    assert arr.dtype == np.dtype(UNCERTAINTY_DTYPE)
+    assert np.array_equal(arr["loc"], legacy["loc"])
+    assert np.array_equal(arr["uncertainty_type"], legacy["uncertainty_type"])

@@ -194,7 +194,7 @@ dp.add_persistent_vector(
 )
 ```
 
-The stored resource has `kind="rescale"` and can be retrieved via `dp.get_resource("my-process.rescale")`. The `rescale_array` must be a float dtype (`float32` or `float64`); passing an integer array raises `WrongDatatype`.
+The stored resource has `kind="rescale"` and can be retrieved via `dp.get_resource("my-process.rescale")`. The `rescale_array` must be a float dtype and is always stored as `float64`; passing an integer array raises `WrongDatatype`.
 
 ### Reference (production) exchanges
 

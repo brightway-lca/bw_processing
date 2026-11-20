@@ -30,6 +30,7 @@ from bw_processing.constants import (
     NUMPY_SERIALIZE_FORMAT_NAME,
     PARQUET_SERIALIZE_FORMAT_EXTENSION,
     PARQUET_SERIALIZE_FORMAT_NAME,
+    UNCERTAINTY_DTYPE,
     MatrixSerializeFormat,
 )
 from bw_processing.errors import (
@@ -397,7 +398,7 @@ class Datapackage(DatapackageBase):
         A distributions resource is considered trivial when every row has an
         ``uncertainty_type`` of 0 (no uncertainty) or 1 (unknown uncertainty)
         *and* the ``loc`` values are equal to the corresponding data-array
-        amounts (at float32 precision).  Such a resource duplicates what the
+        amounts.  Such a resource duplicates what the
         data array already encodes, so it is deleted from the filesystem and
         removed from ``self.data`` / ``self.resources``.
         """
@@ -431,7 +432,7 @@ class Datapackage(DatapackageBase):
                 data_arr = data_arr()
 
             all_trivial = np.all(np.isin(dist_arr["uncertainty_type"], _NO_UNCERTAINTY_IDS))
-            loc_matches = np.array_equal(dist_arr["loc"], data_arr.astype(np.float32))
+            loc_matches = np.array_equal(dist_arr["loc"], data_arr)
 
             if all_trivial and loc_matches:
                 to_remove.append(idx)
@@ -675,6 +676,15 @@ class Datapackage(DatapackageBase):
             )
         if distributions_array is not None:
             distributions_array = load_bytes(distributions_array)
+            if distributions_array.dtype != UNCERTAINTY_DTYPE:
+                # Always store float fields as float64, e.g. for arrays built
+                # with the float32 fields used before version 1.7
+                if distributions_array.dtype.names != np.dtype(UNCERTAINTY_DTYPE).names:
+                    raise WrongDatatype(
+                        "`distributions_array` dtype is {}, but must have the fields of "
+                        "`UNCERTAINTY_DTYPE`".format(distributions_array.dtype)
+                    )
+                distributions_array = distributions_array.astype(UNCERTAINTY_DTYPE)
             # If no uncertainty, don't need to store it
             if (distributions_array["uncertainty_type"] < 2).sum() < len(distributions_array):
                 if distributions_array.shape != indices_array.shape:
@@ -1008,7 +1018,9 @@ class Datapackage(DatapackageBase):
             raise WrongDatatype(
                 "`rescale_array` dtype is {}, but must be a float dtype".format(rescale_array.dtype)
             )
-        elif rescale_array.shape != indices_array.shape:
+        # Always store rescale factors as float64, same as `ArrayEntry.rescale`
+        rescale_array = rescale_array.astype(np.float64, copy=False)
+        if rescale_array.shape != indices_array.shape:
             raise ShapeMismatch(
                 "`rescale_array` shape ({}) doesn't match `indices_array` ({}).".format(
                     rescale_array.shape, indices_array.shape

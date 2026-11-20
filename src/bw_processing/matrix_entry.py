@@ -113,8 +113,9 @@ class ArrayEntry:
         data: 2-D array of shape ``(n_entries, n_scenarios)``.
         flip: Optional 1-D boolean sequence of length ``n_entries``.
         rescale: Optional 1-D float array of per-entry multiplicative factors
-            (one per row). ``1.0`` leaves the value unchanged. Stored as a
-            ``rescale_array`` resource (``kind="rescale"``).
+            (one per row). ``1.0`` leaves the value unchanged. Always
+            converted to ``numpy.float64`` and stored as a ``rescale_array``
+            resource (``kind="rescale"``).
         reference: Optional 1-D boolean sequence of length ``n_entries``.
             Where True, that entry is the reference (production) exchange for
             its column. Stored as a ``reference_array`` resource

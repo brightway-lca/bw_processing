@@ -403,6 +403,27 @@ class TestAddEntries:
         assert data[0] == amount
         assert stored_rescale[0] == rescale
 
+    def test_loc_matches_amount_at_float64(self):
+        # A deterministic exchange in a group that keeps its distributions
+        # resource must have the same value in `loc` as in the data array.
+        amount = 1 / 3
+        dp = create_datapackage()
+        dp.add_entries(
+            matrix="technosphere_matrix",
+            entries=[
+                MatrixEntry(row=1, col=2, amount=amount),
+                MatrixEntry(row=3, col=4, amount=1e39, uncertainty_type=2, loc=0.1, scale=0.2),
+            ],
+            name="g",
+        )
+        data = dp.get_resource("g.data")[0]
+        dist = dp.get_resource("g.distributions")[0]
+        assert dist["loc"].dtype == np.float64
+        assert dist["scale"].dtype == np.float64
+        assert dist["loc"][0] == data[0] == amount
+        assert dist["scale"][1] == 0.2
+        assert data[1] == 1e39
+
     def test_no_rescale_resource_when_all_rescale_one(self):
         dp = create_datapackage()
         entries = [
