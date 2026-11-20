@@ -76,9 +76,9 @@ def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     array = create_structured_array(
         data,
         INDICES_DTYPE
-        + [("amount", np.float32)]
+        + [("amount", np.float64)]
         + UNCERTAINTY_DTYPE
-        + [("flip", bool), ("rescale", np.float32), ("reference", bool)],
+        + [("flip", bool), ("rescale", np.float64), ("reference", bool)],
         nrows=nrows,
         sort=True,
         sort_fields=sort_fields,

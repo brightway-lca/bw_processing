@@ -1,5 +1,10 @@
 # `bw_processing` Changelog
 
+## Unreleased
+
+* Store exchange amounts and rescale factors as `float64` instead of `float32` when building datapackages from iterators (`add_persistent_vector_from_iterator`, `add_entries`, `create_datapackage_from_entries`) and in `ArrayEntry.rescale`. Removes ~1e-7 relative rounding error, which mattered for round-trip parity checks and for net results that are small differences of large gross terms. Uncertainty parameters (`loc`, `scale`, etc.) remain `float32`. Fixes #112.
+* **Breaking:** Remove `create_array`, a thin wrapper around numpy array construction that defaulted to `float32`. Use `np.array(rows, dtype=...)` or `np.fromiter(rows, dtype=(dtype, ncols))` instead.
+
 ## [1.6] - 2026-07-10
 
 * Add optional `reference` boolean column marking reference (production) exchanges. Stored as a `reference_array` side-resource (`kind="reference"`) analogous to `flip`, and exposed on `MatrixEntry`/`ArrayEntry` and all `add_*` methods. Lets modellers record the reference exchange explicitly instead of relying on `bw_graph_tools`' structural heuristics, which cannot disambiguate co-production columns. See cauldron/brightway-api#739.

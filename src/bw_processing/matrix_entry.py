@@ -60,9 +60,8 @@ class MatrixEntry:
         negative: Whether the underlying value is negative.
         rescale: Per-exchange multiplicative factor applied before matrix
             insertion. ``1.0`` (the default) leaves the value unchanged.
-            Stored as a ``rescale_array`` resource (``kind="rescale"``). Note
-            that the Python ``float`` value is downcast to ``numpy.float32``
-            when written to the structured array.
+            Stored as a ``rescale_array`` resource (``kind="rescale"``) with
+            ``numpy.float64`` precision.
         reference: If True, this exchange is the reference (production) exchange
             for its activity/column. Consumers such as bw_graph_tools use this
             to identify production exchanges directly instead of guessing from
@@ -157,7 +156,7 @@ class ArrayEntry:
                     f"`flip` shape {self.flip.shape} doesn't match `rows` shape {self.rows.shape}"
                 )
         if self.rescale is not None:
-            self.rescale = np.asarray(self.rescale, dtype=np.float32)
+            self.rescale = np.asarray(self.rescale, dtype=np.float64)
             if self.rescale.shape != self.rows.shape:
                 raise ValueError(
                     f"`rescale` shape {self.rescale.shape} doesn't match `rows` shape {self.rows.shape}"

@@ -4,7 +4,6 @@ __all__ = (
     "as_unique_attributes",
     "as_unique_attributes_dataframe",
     "clean_datapackage_name",
-    "create_array",
     "create_datapackage",
     "create_datapackage_from_entries",
     "create_structured_array",
@@ -38,7 +37,7 @@ __all__ = (
 __version__ = "1.6"
 
 
-from bw_processing.array_creation import create_array, create_structured_array
+from bw_processing.array_creation import create_structured_array
 from bw_processing.constants import DEFAULT_LICENSES, INDICES_DTYPE, UNCERTAINTY_DTYPE, MatrixSerializeFormat
 from bw_processing.param_labels import (
     AnyLabelSchema,
