@@ -74,7 +74,13 @@ class MatrixEntry:
             defaults to False.
 
     Equality and hashing treat two NaN fields as equal, so entries built
-    from the same arguments compare equal and deduplicate in sets.
+    from the same arguments compare equal and hash identically.
+
+    .. warning::
+        Equal entries are not redundant. Because entries with the same
+        (row, col) are summed during matrix construction, collecting entries
+        in a ``set`` or as ``dict`` keys collapses duplicates and changes the
+        resulting matrix values. Keep entries in a list.
     """
 
     row: int
