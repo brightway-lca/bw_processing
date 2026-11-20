@@ -13,6 +13,7 @@ from bw_processing import (
     simple_graph,
 )
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
+from bw_processing.utils import VECTOR_ROW_DTYPE, dictionary_formatter
 
 
 class TestMatrixName:
@@ -149,6 +150,97 @@ class TestMatrixEntry:
         assert d["loc"] == pytest.approx(0.9)
         assert d["scale"] == pytest.approx(0.1)
         assert d["negative"] is True
+
+    @pytest.mark.parametrize(
+        "entry",
+        [
+            MatrixEntry(row=1, col=2, amount=3.0),
+            MatrixEntry(
+                row=5, col=10, amount=2.5, flip=True, uncertainty_type=5, loc=0.9,
+                scale=0.1, shape=0.2, minimum=0.3, maximum=0.4, negative=True,
+                rescale=0.5, reference=True,
+            ),
+        ],
+    )
+    def test_as_tuple_matches_dictionary_formatter(self, entry):
+        expected = dictionary_formatter(entry.as_dict())
+        actual = entry.as_tuple()
+        assert len(actual) == len(VECTOR_ROW_DTYPE)
+        # Compare NaN-aware, element by element
+        for a, b in zip(actual, expected, strict=True):
+            assert a == b or (math.isnan(a) and math.isnan(b))
+
+    def test_as_tuple_field_names_match_dtype(self):
+        # Each value in as_tuple() should come from the MatrixEntry field
+        # with the same name as the corresponding dtype field.
+        values = {
+            "row": 1, "col": 2, "amount": 3.0, "flip": True,
+            "uncertainty_type": 4, "loc": 5.0, "scale": 6.0, "shape": 7.0,
+            "minimum": 8.0, "maximum": 9.0, "negative": True, "rescale": 10.0,
+            "reference": True,
+        }
+        e = MatrixEntry(**values)
+        names = [name for name, _ in VECTOR_ROW_DTYPE]
+        assert e.as_tuple() == tuple(values[name] for name in names)
+
+
+def _entry_arrays(dp, group_name):
+    group = dp.groups[group_name]
+    return {r["kind"]: group.data[i] for i, r in enumerate(group.resources)}
+
+
+class TestAddEntries:
+    ENTRIES = [
+        MatrixEntry(row=3, col=6, amount=12.0, flip=True),
+        MatrixEntry(row=1, col=4, amount=2.0, uncertainty_type=2, loc=0.7, scale=0.1),
+        MatrixEntry(row=2, col=5, amount=7.0, rescale=0.5, reference=True),
+    ]
+
+    def _dicts_dp(self):
+        dp = create_datapackage()
+        dp.add_persistent_vector_from_iterator(
+            matrix="m", name="g", dict_iterator=(e.as_dict() for e in self.ENTRIES)
+        )
+        return dp
+
+    @pytest.mark.parametrize(
+        "make_entries",
+        [lambda e: list(e), lambda e: iter(e), lambda e: (x for x in e)],
+        ids=["list", "iterator", "generator"],
+    )
+    def test_matches_dict_path(self, make_entries):
+        dp = create_datapackage()
+        dp.add_entries(matrix="m", name="g", entries=make_entries(self.ENTRIES))
+        expected = _entry_arrays(self._dicts_dp(), "g")
+        actual = _entry_arrays(dp, "g")
+        assert actual.keys() == expected.keys()
+        for kind in expected:
+            np.testing.assert_array_equal(actual[kind], expected[kind])
+
+    def test_generator_with_nrows(self):
+        dp = create_datapackage()
+        dp.add_entries(
+            matrix="m", name="g", entries=(e for e in self.ENTRIES), nrows=len(self.ENTRIES)
+        )
+        assert sorted(_entry_arrays(dp, "g")["data"]) == [2.0, 7.0, 12.0]
+
+    def test_generator_longer_than_nrows_raises(self):
+        dp = create_datapackage()
+        with pytest.raises(ValueError):
+            dp.add_entries(matrix="m", entries=(e for e in self.ENTRIES), nrows=2)
+
+    def test_empty_generator(self):
+        dp = create_datapackage()
+        dp.add_entries(matrix="m", name="g", entries=(e for e in []))
+        assert len(_entry_arrays(dp, "g")["data"]) == 0
+
+    def test_create_datapackage_from_entries_accepts_generator(self):
+        dp = create_datapackage_from_entries(
+            {MatrixName.technosphere: (e for e in self.ENTRIES)}
+        )
+        group = dp.groups["technosphere_matrix-data"]
+        data = group.data[[r["kind"] for r in group.resources].index("data")]
+        assert sorted(data) == [2.0, 7.0, 12.0]
 
 
 class TestCreateDatapackageFromEntries:

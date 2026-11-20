@@ -69,16 +69,30 @@ def dictionary_formatter(row: dict) -> tuple:
     )
 
 
+VECTOR_ROW_DTYPE = (
+    INDICES_DTYPE
+    + [("amount", np.float64)]
+    + UNCERTAINTY_DTYPE
+    + [("flip", bool), ("rescale", np.float64), ("reference", bool)]
+)
+"""Field order of the tuples produced by ``dictionary_formatter`` and
+``MatrixEntry.as_tuple``, and consumed by ``resolve_tuple_iterator``."""
+
+
 def resolve_dict_iterator(iterator: Any, nrows: int = None) -> tuple:
     """Note that this function produces sorted arrays."""
+    return resolve_tuple_iterator((dictionary_formatter(row) for row in iterator), nrows)
+
+
+def resolve_tuple_iterator(iterator: Any, nrows: int = None) -> tuple:
+    """Like ``resolve_dict_iterator``, but ``iterator`` yields tuples already in
+    ``VECTOR_ROW_DTYPE`` field order (e.g. from ``MatrixEntry.as_tuple``).
+
+    Note that this function produces sorted arrays."""
     sort_fields = ["row", "col", "amount", "uncertainty_type"]
-    data = (dictionary_formatter(row) for row in iterator)
     array = create_structured_array(
-        data,
-        INDICES_DTYPE
-        + [("amount", np.float64)]
-        + UNCERTAINTY_DTYPE
-        + [("flip", bool), ("rescale", np.float64), ("reference", bool)],
+        iterator,
+        VECTOR_ROW_DTYPE,
         nrows=nrows,
         sort=True,
         sort_fields=sort_fields,

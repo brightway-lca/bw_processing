@@ -3,7 +3,7 @@ import uuid
 import warnings
 from abc import ABC
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 if TYPE_CHECKING:
     from bw_processing.matrix_entry import ArrayEntry, MatrixEntry
@@ -46,7 +46,14 @@ from bw_processing.filesystem import clean_datapackage_name
 from bw_processing.io_helpers import file_reader, file_writer
 from bw_processing.param_labels import AnyLabelSchema
 from bw_processing.proxies import Proxy, UndefinedInterface
-from bw_processing.utils import check_name, check_suffix, load_bytes, resolve_dict_iterator, utc_now
+from bw_processing.utils import (
+    check_name,
+    check_suffix,
+    load_bytes,
+    resolve_dict_iterator,
+    resolve_tuple_iterator,
+    utc_now,
+)
 
 
 class DatapackageBase(ABC):
@@ -507,6 +514,25 @@ class Datapackage(DatapackageBase):
         """Create a persistant vector from an iterator. Uses the utility function ``resolve_dict_iterator``.
 
         This is the **only array creation method which produces sorted arrays**."""
+        self._add_persistent_vector_from_resolved(
+            resolve_dict_iterator(dict_iterator, nrows),
+            matrix=matrix,
+            name=name,
+            matrix_serialize_format_type=matrix_serialize_format_type,
+            **kwargs,
+        )
+
+    def _add_persistent_vector_from_resolved(
+        self,
+        resolved: tuple,
+        *,
+        matrix: str,
+        name: Optional[str],
+        matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
+        **kwargs,
+    ) -> None:
+        """Add a persistent vector from the output of ``resolve_dict_iterator``
+        or ``resolve_tuple_iterator``."""
         name = self._prepare_name(name)
         (
             data_array,
@@ -515,7 +541,7 @@ class Datapackage(DatapackageBase):
             flip_array,
             rescale_array,
             reference_array,
-        ) = resolve_dict_iterator(dict_iterator, nrows)
+        ) = resolved
         self.add_persistent_vector(
             matrix=matrix,
             name=name,
@@ -534,10 +560,11 @@ class Datapackage(DatapackageBase):
         self,
         *,
         matrix: str,
-        entries: list["MatrixEntry"],
+        entries: Iterable["MatrixEntry"],
         name: Optional[str] = None,
+        nrows: Optional[int] = None,
     ) -> None:
-        """Add matrix data from a list of :class:`MatrixEntry` objects.
+        """Add matrix data from :class:`MatrixEntry` objects.
 
         High-level convenience method that does not require working directly
         with NumPy arrays. If any entry has a ``rescale`` value other than
@@ -545,16 +572,25 @@ class Datapackage(DatapackageBase):
         If any entry has ``reference=True``, the reference flags are stored as
         a ``reference_array`` resource (``kind="reference"``).
 
+        ``entries`` can be a list or any iterable, such as a generator
+        streaming rows from a database cursor. Entries are converted with
+        :meth:`.MatrixEntry.as_tuple`, skipping the dict round trip of
+        :meth:`add_persistent_vector_from_iterator`.
+
         Args:
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
-            entries: List of :class:`.MatrixEntry` instances.
+            entries: Iterable of :class:`.MatrixEntry` instances.
             name: Optional resource group name; auto-generated if omitted.
+            nrows: Number of entries, if known and ``entries`` has no
+                ``len()``. Lets the array be allocated in one step; otherwise
+                it is built in chunks.
         """
-        self.add_persistent_vector_from_iterator(
+        if nrows is None and hasattr(entries, "__len__"):
+            nrows = len(entries)
+        self._add_persistent_vector_from_resolved(
+            resolve_tuple_iterator((e.as_tuple() for e in entries), nrows),
             matrix=matrix,
             name=name,
-            dict_iterator=(e.as_dict() for e in entries),
-            nrows=len(entries),
         )
 
     def add_array_entries(
