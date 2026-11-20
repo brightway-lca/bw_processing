@@ -33,7 +33,10 @@ class MatrixName(str, Enum):
         return self.value
 
 
-@dataclasses.dataclass(frozen=True)
+_NAN_KEY = ("nan",)
+
+
+@dataclasses.dataclass(frozen=True, eq=False)
 class MatrixEntry:
     """A single entry destined for a matrix cell.
 
@@ -69,6 +72,9 @@ class MatrixEntry:
             matrix structure. Stored as a ``reference_array`` resource
             (``kind="reference"``) only when at least one entry is flagged;
             defaults to False.
+
+    Equality and hashing treat two NaN fields as equal, so entries built
+    from the same arguments compare equal and deduplicate in sets.
     """
 
     row: int
@@ -94,6 +100,23 @@ class MatrixEntry:
                     f"uncertainty_type {self.uncertainty_type} requires loc == amount, "
                     f"got loc={self.loc} but amount={self.amount}"
                 )
+
+    def _key(self) -> tuple:
+        # NaN != NaN, and hash(nan) is identity-based, so map NaN to a
+        # sentinel so that entries built from the same arguments compare
+        # (and hash) equal.
+        return tuple(
+            _NAN_KEY if isinstance(v, float) and math.isnan(v) else v
+            for v in dataclasses.astuple(self)
+        )
+
+    def __eq__(self, other):
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+        return self._key() == other._key()
+
+    def __hash__(self):
+        return hash(self._key())
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
