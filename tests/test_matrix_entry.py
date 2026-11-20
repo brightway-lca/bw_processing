@@ -96,6 +96,38 @@ class TestMatrixEntry:
         with pytest.raises(Exception):
             e.amount = 99.0
 
+    def test_equal_with_nan_defaults(self):
+        a = MatrixEntry(row=1, col=2, amount=3.0)
+        b = MatrixEntry(row=1, col=2, amount=3.0)
+        assert a == b
+        assert not (a != b)
+        assert hash(a) == hash(b)
+        assert len({a, b}) == 1
+
+    def test_equal_with_nan_loc(self):
+        a = MatrixEntry(row=1, col=2, amount=3.0, uncertainty_type=2, scale=0.1)
+        b = MatrixEntry(row=1, col=2, amount=3.0, uncertainty_type=2, scale=0.1)
+        assert math.isnan(a.loc)
+        assert a == b
+        assert hash(a) == hash(b)
+
+    def test_not_equal_when_fields_differ(self):
+        a = MatrixEntry(row=1, col=2, amount=3.0)
+        assert a != MatrixEntry(row=1, col=2, amount=4.0)
+        assert a != MatrixEntry(row=1, col=2, amount=3.0, flip=True)
+        b = MatrixEntry(row=1, col=2, amount=3.0, uncertainty_type=2, scale=0.1)
+        assert b != MatrixEntry(row=1, col=2, amount=3.0, uncertainty_type=2, scale=0.2)
+        assert b != MatrixEntry(row=1, col=2, amount=3.0, uncertainty_type=2)
+
+    def test_not_equal_to_other_types(self):
+        e = MatrixEntry(row=1, col=2, amount=3.0)
+        assert e != e.as_dict()
+        assert e != (1, 2, 3.0)
+
+    def test_usable_as_dict_key(self):
+        d = {MatrixEntry(row=1, col=2, amount=3.0): "x"}
+        assert d[MatrixEntry(row=1, col=2, amount=3.0)] == "x"
+
     def test_as_dict_keys(self):
         e = MatrixEntry(row=1, col=2, amount=3.0)
         d = e.as_dict()
