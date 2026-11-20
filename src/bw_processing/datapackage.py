@@ -2,6 +2,7 @@ import datetime
 import uuid
 import warnings
 from abc import ABC
+from collections.abc import Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
@@ -514,6 +515,9 @@ class Datapackage(DatapackageBase):
         """Create a persistant vector from an iterator. Uses the utility function ``resolve_dict_iterator``.
 
         This is the **only array creation method which produces sorted arrays**."""
+        # Check the name before consuming the iterator, which might not be
+        # restartable.
+        name = self._prepare_name(name)
         self._add_persistent_vector_from_resolved(
             resolve_dict_iterator(dict_iterator, nrows),
             matrix=matrix,
@@ -527,13 +531,15 @@ class Datapackage(DatapackageBase):
         resolved: tuple,
         *,
         matrix: str,
-        name: Optional[str],
+        name: str,
         matrix_serialize_format_type: Optional[MatrixSerializeFormat] = None,
         **kwargs,
     ) -> None:
         """Add a persistent vector from the output of ``resolve_dict_iterator``
-        or ``resolve_tuple_iterator``."""
-        name = self._prepare_name(name)
+        or ``resolve_tuple_iterator``.
+
+        ``name`` must already have been checked with ``_prepare_name``, so
+        that a bad name is rejected before the iterator is consumed."""
         (
             data_array,
             indices_array,
@@ -581,12 +587,19 @@ class Datapackage(DatapackageBase):
             matrix: Name of the target matrix (e.g. ``"technosphere"``).
             entries: Iterable of :class:`.MatrixEntry` instances.
             name: Optional resource group name; auto-generated if omitted.
-            nrows: Number of entries, if known and ``entries`` has no
-                ``len()``. Lets the array be allocated in one step; otherwise
-                it is built in chunks.
+            nrows: Exact number of entries, if known and ``entries`` is not a
+                sequence. Lets the array be allocated in one step; otherwise
+                it is built in chunks. Raises ``ValueError`` if ``entries``
+                yields more or fewer than ``nrows`` entries.
         """
-        if nrows is None and hasattr(entries, "__len__"):
+        # Only take the length of real sequences. Other objects with
+        # ``__len__`` can be lazy: ``len()`` runs the whole query on an ORM
+        # query object, and raises for a ``tqdm`` wrapper with no total.
+        if nrows is None and isinstance(entries, Sequence):
             nrows = len(entries)
+        # Check the name before consuming the iterator, which might not be
+        # restartable.
+        name = self._prepare_name(name)
         self._add_persistent_vector_from_resolved(
             resolve_tuple_iterator((e.as_tuple() for e in entries), nrows),
             matrix=matrix,

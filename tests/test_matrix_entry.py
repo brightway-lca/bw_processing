@@ -13,6 +13,7 @@ from bw_processing import (
     simple_graph,
 )
 from bw_processing.constants import INDICES_DTYPE, UNCERTAINTY_DTYPE
+from bw_processing.errors import NonUnique
 from bw_processing.utils import VECTOR_ROW_DTYPE, dictionary_formatter
 
 
@@ -189,7 +190,7 @@ def _entry_arrays(dp, group_name):
     return {r["kind"]: group.data[i] for i, r in enumerate(group.resources)}
 
 
-class TestAddEntries:
+class TestAddEntriesFromIterables:
     ENTRIES = [
         MatrixEntry(row=3, col=6, amount=12.0, flip=True),
         MatrixEntry(row=1, col=4, amount=2.0, uncertainty_type=2, loc=0.7, scale=0.1),
@@ -215,7 +216,10 @@ class TestAddEntries:
         actual = _entry_arrays(dp, "g")
         assert actual.keys() == expected.keys()
         for kind in expected:
-            np.testing.assert_array_equal(actual[kind], expected[kind])
+            assert actual[kind].dtype == expected[kind].dtype
+            # Structured arrays don't compare NaN-aware, so go field by field
+            for field in expected[kind].dtype.names or [...]:
+                np.testing.assert_array_equal(actual[kind][field], expected[kind][field])
 
     def test_generator_with_nrows(self):
         dp = create_datapackage()
@@ -228,6 +232,52 @@ class TestAddEntries:
         dp = create_datapackage()
         with pytest.raises(ValueError):
             dp.add_entries(matrix="m", entries=(e for e in self.ENTRIES), nrows=2)
+
+    def test_generator_shorter_than_nrows_raises(self):
+        dp = create_datapackage()
+        with pytest.raises(ValueError, match="Fewer rows"):
+            dp.add_entries(matrix="m", entries=(e for e in self.ENTRIES), nrows=5)
+
+    def test_duplicate_name_raises_before_consuming_entries(self):
+        dp = create_datapackage()
+        dp.add_entries(matrix="m", name="g", entries=self.ENTRIES)
+        entries = iter(self.ENTRIES)
+        with pytest.raises(NonUnique):
+            dp.add_entries(matrix="m", name="g", entries=entries)
+        # Nothing was read, so the caller can retry with another name
+        assert list(entries) == self.ENTRIES
+
+    def test_duplicate_name_raises_before_consuming_dict_iterator(self):
+        dp = self._dicts_dp()
+        dicts = (e.as_dict() for e in self.ENTRIES)
+        with pytest.raises(NonUnique):
+            dp.add_persistent_vector_from_iterator(matrix="m", name="g", dict_iterator=dicts)
+        assert len(list(dicts)) == len(self.ENTRIES)
+
+    def test_dict_iterator_shorter_than_nrows_raises(self):
+        dp = create_datapackage()
+        with pytest.raises(ValueError, match="Fewer rows"):
+            dp.add_persistent_vector_from_iterator(
+                matrix="m", dict_iterator=(e.as_dict() for e in self.ENTRIES), nrows=5
+            )
+
+    def test_len_not_called_on_non_sequence(self):
+        class Lazy:
+            """Like an ORM query or ``tqdm`` wrapper: iterable, but ``len()``
+            is expensive or fails."""
+
+            def __init__(self, entries):
+                self.entries = entries
+
+            def __iter__(self):
+                return iter(self.entries)
+
+            def __len__(self):
+                raise TypeError("no length")
+
+        dp = create_datapackage()
+        dp.add_entries(matrix="m", name="g", entries=Lazy(self.ENTRIES))
+        assert sorted(_entry_arrays(dp, "g")["data"]) == [2.0, 7.0, 12.0]
 
     def test_empty_generator(self):
         dp = create_datapackage()
