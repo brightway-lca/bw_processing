@@ -8,7 +8,6 @@
 * `UNCERTAINTY_DTYPE` now uses `float64` for `loc`, `scale`, `shape`, `minimum` and `maximum`, so a deterministic exchange has the same value in the data and distributions arrays. Existing datapackages with `float32` columns still load unchanged. A `distributions_array` with `float32` fields passed to `add_persistent_vector` is converted to `UNCERTAINTY_DTYPE`.
 * `rescale_array` is always stored as `float64`, whether passed directly to an `add_*` method or through `ArrayEntry`.
 * Require `numpy>=2.0`.
-* Add `stats_arrays>=5.0.1` as a dependency. It was previously an optional import with no version constraint.
 * **Breaking:** Remove `create_array`, a thin wrapper around numpy array construction that defaulted to `float32`. Use `np.array(rows, dtype=...)` or `np.fromiter(rows, dtype=(dtype, ncols))` instead.
 
 ## [1.6] - 2026-07-10
