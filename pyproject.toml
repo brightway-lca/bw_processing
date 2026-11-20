@@ -34,7 +34,6 @@ dependencies = [
     "morefs",
     "numpy>=2.0",
     "pandas",
-
 ]
 
 [project.urls]
