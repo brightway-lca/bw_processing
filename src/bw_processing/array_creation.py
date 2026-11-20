@@ -57,10 +57,15 @@ def create_structured_array(iterable, dtype, nrows=None, sort=False, sort_fields
         if not nrows:
             nrows = len(iterable)
         array = np.zeros(nrows, dtype=dtype)
+        count = 0
         for i, row in enumerate(iterable):
             if i > (nrows - 1):
                 raise ValueError("More rows than `nrows`")
             array[i] = tuple(row)
+            count = i + 1
+        if count < nrows:
+            # Unfilled rows would be stored as zeros (row 0, col 0, amount 0)
+            raise ValueError(f"Fewer rows ({count}) than `nrows` ({nrows})")
 
     else:
         array = create_chunked(iterable, dtype)
