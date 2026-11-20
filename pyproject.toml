@@ -32,7 +32,7 @@ dependencies = [
     "fsspec>=2023.3.0",
     "jsonschema>=4.0",
     "morefs",
-    "numpy",
+    "numpy>=2.0",
     "pandas",
 
 ]

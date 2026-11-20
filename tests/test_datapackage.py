@@ -616,6 +616,56 @@ def test_add_persistent_vector_scale_shapemismatch():
         )
 
 
+def test_add_persistent_vector_distributions_float32_stored_as_float64():
+    legacy_dtype = [
+        (name, np.float32 if kind is np.float64 else kind) for name, kind in UNCERTAINTY_DTYPE
+    ]
+    distributions_array = np.array(
+        [(2, 0.5, 0.25, np.nan, np.nan, np.nan, False), (0, 1.5, np.nan, np.nan, np.nan, np.nan, False)],
+        dtype=legacy_dtype,
+    )
+    dp = create_datapackage()
+    dp.add_persistent_vector(
+        matrix="sa_matrix",
+        name="g",
+        indices_array=np.array([(0, 0), (1, 1)], dtype=INDICES_DTYPE),
+        data_array=np.array([0.5, 1.5]),
+        distributions_array=distributions_array,
+    )
+    data, _ = dp.get_resource("g.distributions")
+    assert data.dtype == np.dtype(UNCERTAINTY_DTYPE)
+    assert np.array_equal(data["loc"], [0.5, 1.5])
+    assert np.array_equal(data["uncertainty_type"], [2, 0])
+
+
+def test_add_persistent_vector_distributions_wrong_fields():
+    dp = create_datapackage()
+    with pytest.raises(WrongDatatype):
+        dp.add_persistent_vector(
+            matrix="sa_matrix",
+            name="g",
+            indices_array=np.array([(0, 0)], dtype=INDICES_DTYPE),
+            distributions_array=np.array([(2, 0.5)], dtype=[("uncertainty_type", np.uint8), ("loc", float)]),
+        )
+
+
+@pytest.mark.parametrize("method", ["add_persistent_vector", "add_persistent_array"])
+def test_rescale_array_float32_stored_as_float64(method):
+    dp = create_datapackage()
+    indices_array = np.array([(0, 0), (1, 1), (2, 2)], dtype=INDICES_DTYPE)
+    data_array = np.ones(3) if method == "add_persistent_vector" else np.ones((3, 2))
+    getattr(dp, method)(
+        matrix="sa_matrix",
+        name="g",
+        indices_array=indices_array,
+        data_array=data_array,
+        rescale_array=np.array([0.5, 1.0, 2.0], dtype=np.float32),
+    )
+    data, _ = dp.get_resource("g.rescale")
+    assert data.dtype == np.float64
+    assert np.array_equal(data, [0.5, 1.0, 2.0])
+
+
 def test_add_persistent_array_rescale_array():
     dp = create_datapackage()
     data_array = np.arange(12, dtype=float).reshape(3, 4)

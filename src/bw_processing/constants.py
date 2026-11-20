@@ -14,11 +14,11 @@ MAX_SIGNED_64BIT_INT = 9223372036854775807
 # but -687ms to append two columns.
 UNCERTAINTY_DTYPE = [
     ("uncertainty_type", np.uint8),
-    ("loc", np.float32),
-    ("scale", np.float32),
-    ("shape", np.float32),
-    ("minimum", np.float32),
-    ("maximum", np.float32),
+    ("loc", np.float64),
+    ("scale", np.float64),
+    ("shape", np.float64),
+    ("minimum", np.float64),
+    ("maximum", np.float64),
     ("negative", bool),
 ]
 INDICES_DTYPE = [("row", np.int64), ("col", np.int64)]
